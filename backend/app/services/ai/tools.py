@@ -1,6 +1,8 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from google.ai.generativelanguage_v1beta.types import content
-
+from app.core.config import settings
+from app.services.ai.agents import AGENT_REGISTRY
+import datetime
 
 def get_chat_tools() -> List[content.Tool]:
     """Get list of tools available to the AI chat assistant."""
@@ -76,78 +78,155 @@ def get_chat_tools() -> List[content.Tool]:
             required=["name", "rule"]
         )
     )
+
+    get_agent_status = content.FunctionDeclaration(
+        name="get_agent_status",
+        description="Check health and recent activity of a specific AI agent",
+        parameters=content.Schema(
+            type=content.Type.OBJECT,
+            properties={
+                "agent_id": content.Schema(
+                    type=content.Type.STRING,
+                    description="The ID/Slug of the agent (e.g., 'admissions/intelligence')"
+                )
+            },
+            required=["agent_id"]
+        )
+    )
+
+    execute_agent_action = content.FunctionDeclaration(
+        name="execute_agent_action",
+        description="Execute a specific action for a given agent and get real-time processing results.",
+        parameters=content.Schema(
+            type=content.Type.OBJECT,
+            properties={
+                "agent_id": content.Schema(
+                    type=content.Type.STRING,
+                    description="The ID/Slug of the agent (e.g., 'admissions-intelligence', 'hr-bot')"
+                ),
+                "action": content.Schema(
+                    type=content.Type.STRING,
+                    description="The action to perform (e.g., 'Match Now', 'Generate Report')"
+                ),
+                "context": content.Schema(
+                    type=content.Type.STRING,
+                    description="Additional context or parameters needed for the action"
+                )
+            },
+            required=["agent_id", "action"]
+        )
+    )
     
     return [content.Tool(function_declarations=[
         get_user_info,
         get_system_stats,
         search_audit_logs,
         create_policy,
+        get_agent_status,
+        execute_agent_action
     ])]
 
 
 async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     """Execute a tool function and return results."""
     
+    now = datetime.datetime.now().isoformat()
+
     if tool_name == "get_user_info":
         return {
             "user_identifier": args.get("user_identifier"),
             "status": "active",
             "role": "DEVELOPER",
             "last_login": "2026-03-14T10:30:00Z",
-            "message": "User information retrieved successfully"
+            "message": "User information retrieved successfully",
+            "approval_status": "APPROVED"
         }
     
     elif tool_name == "get_system_stats":
         metric_type = args.get("metric_type", "all")
         return {
             "metric_type": metric_type,
-            "timestamp": "2026-03-15T12:00:00Z",
+            "timestamp": now,
             "performance": {
-                "avg_response_time_ms": 245,
-                "p95_response_time_ms": 680,
-                "cpu_usage_percent": 45,
-                "memory_usage_percent": 62
+                "avg_latency_ms": 184,
+                "p99_latency_ms": 1120,
+                "cpu_load": "42%",
+                "memory_free": "2.4GB"
             },
             "usage": {
-                "active_users": 127,
-                "api_requests_today": 15432,
-                "database_queries": 8921
+                "active_agents": 24,
+                "total_queries_today": 3240,
+                "unique_users_24h": 142
             },
             "errors": {
-                "error_rate_percent": 0.8,
-                "total_errors_today": 23
+                "status": "HEALTHY",
+                "error_rate": "0.04%",
+                "last_incident": "4 days ago"
             }
         }
     
     elif tool_name == "search_audit_logs":
         query = args.get("query", "")
-        limit = args.get("limit", 10)
         return {
             "query": query,
-            "total_found": 3,
-            "results": [
+            "results_count": 2,
+            "logs": [
                 {
-                    "timestamp": "2026-03-15T11:45:00Z",
-                    "action": "user.approve",
-                    "user": "admin@atlasuniversity.edu.in",
-                    "details": f"Matched query: {query}"
+                    "ts": now,
+                    "event": "policy.update",
+                    "actor": "admin@atlas.edu",
+                    "meta": "Admission weighting adjusted"
                 },
                 {
-                    "timestamp": "2026-03-15T10:30:00Z",
-                    "action": "policy.create",
-                    "user": "developer@atlasuniversity.edu.in",
-                    "details": f"Related to: {query}"
+                    "ts": now,
+                    "event": "agent.deploy",
+                    "actor": "system",
+                    "meta": "Procurement Agent v1.0.4"
                 }
             ]
         }
     
     elif tool_name == "create_policy":
         return {
-            "policy_id": 12345,
+            "policy_id": "pol_88291",
             "name": args.get("name"),
-            "status": "created",
-            "message": "Policy created successfully and will be translated to DSL"
+            "status": "PENDING_TRANSLATION",
+            "message": "Policy requested. Our translator agent is converting this to RBAC mappings."
         }
+
+    elif tool_name == "get_agent_status":
+        agent_id = args.get("agent_id")
+        return {
+            "agent_id": agent_id,
+            "status": "ONLINE",
+            "uptime": "14d 6h",
+            "recent_events": 84,
+            "last_output": "Successfully matched 12 students to Microsoft internship",
+            "health_check": "PASS"
+        }
+        
+    elif tool_name == "execute_agent_action":
+        agent_id = args.get("agent_id")
+        action = args.get("action", "Unknown Action")
+        context = args.get("context", "")
+
+        agent = AGENT_REGISTRY.get(agent_id)
+        if not agent:
+            # Try to find by name if ID fails (for robustness)
+            for a in AGENT_REGISTRY.values():
+                if a.agent_name.lower() in str(agent_id).lower():
+                    agent = a
+                    break
+        
+        if not agent:
+            return {
+                "status": "ERROR",
+                "message": f"Agent '{agent_id}' not found in registry.",
+                "available_agents": list(AGENT_REGISTRY.keys())
+            }
+
+        result = await agent.run(action=action, context=context)
+        return result
     
     else:
         return {"error": f"Unknown tool: {tool_name}"}
