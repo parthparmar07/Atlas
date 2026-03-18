@@ -10,20 +10,33 @@ import {
   BarChart3, Users, Settings, BookOpen, GraduationCap,
   Briefcase, Target, Shield, LayoutDashboard, ChevronLeft, Menu, Activity, ChevronDown
 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/api";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const MENU_ITEMS = [
-  { group: "Platform Core", items: [
-    { title: "Command Center", icon: LayoutDashboard, href: "/", color: "text-indigo-400" },
-    { title: "Active Directory", icon: Users, href: "/admin/users", color: "text-slate-300" },
-    { title: "Administrator", icon: Settings, href: "/settings", color: "text-slate-300" },
-    { title: "Audit Logs", icon: Activity, href: "/admin/audit", color: "text-slate-300" },
-    { title: "Security Core", icon: Shield, href: "/ai/policies", color: "text-slate-300" },
-  ]},
-  { group: "Platform Domains", items: [
+const ICON_MAP: Record<string, any> = {
+  "layout-dashboard": LayoutDashboard,
+  "users": Users,
+  "settings": Settings,
+  "activity": Activity,
+  "shield": Shield,
+  "book-open": BookOpen,
+  "graduation-cap": GraduationCap,
+  "briefcase": Briefcase,
+  "target": Target,
+};
+
+const DEFAULT_PLATFORM_CORE = [
+  { title: "Command Center", href: "/", icon: "layout-dashboard", color: "text-indigo-400" },
+  { title: "Active Directory", href: "/admin/users", icon: "users", color: "text-slate-300" },
+  { title: "Administrator", href: "/settings", icon: "settings", color: "text-slate-300" },
+  { title: "Audit Logs", href: "/admin/audit", icon: "activity", color: "text-slate-300" },
+  { title: "Security Core", href: "/ai/policies", icon: "shield", color: "text-slate-300" },
+];
+
+const DOMAIN_GROUP = { group: "Platform Domains", items: [
     { 
       title: "Admissions & Leads", icon: Users, href: "/admissions", color: "text-indigo-400",
       subItems: [
@@ -78,8 +91,7 @@ const MENU_ITEMS = [
         { title: "Accreditation", href: "/finance/accreditation" }
       ]
     }
-  ]}
-];
+  ]};
 
 function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean, pathname: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -177,10 +189,38 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [platformCoreItems, setPlatformCoreItems] = useState<any[]>(
+    DEFAULT_PLATFORM_CORE.map((item) => ({ ...item, icon: ICON_MAP[item.icon] || LayoutDashboard }))
+  );
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    const loadPlatformCore = async () => {
+      try {
+        const res = await fetchWithAuth("/api/admin/navigation/platform-core");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data?.items)) return;
+        const mapped = data.items.map((item: any) => ({
+          title: item.title,
+          href: item.href,
+          color: item.color || "text-slate-300",
+          icon: ICON_MAP[item.icon] || LayoutDashboard,
+        }));
+        if (mapped.length > 0) setPlatformCoreItems(mapped);
+      } catch {
+        // Keep defaults when API is unavailable.
+      }
+    };
+    loadPlatformCore();
+  }, []);
 
   if (!mounted) return <div className="w-[280px] bg-[#1a163a] shrink-0" />;
+
+  const menuItems = [
+    { group: "Platform Core", items: platformCoreItems },
+    DOMAIN_GROUP,
+  ];
 
   return (
     <motion.aside
@@ -219,7 +259,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 flex flex-col gap-6 w-full">
-        {MENU_ITEMS.map((group, idx) => (
+        {menuItems.map((group, idx) => (
           <div key={idx} className="flex flex-col w-full">
             <AnimatePresence>
               {!collapsed && (

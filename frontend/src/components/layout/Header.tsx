@@ -9,7 +9,11 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export default function Header() {
+interface HeaderProps {
+  onOpenAIManager?: () => void;
+}
+
+export default function Header({ onOpenAIManager }: HeaderProps) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   return (
@@ -31,7 +35,10 @@ export default function Header() {
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
           />
-          <button className="flex items-center gap-2 m-1 px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-xs font-bold rounded-full mr-1 tracking-wide shadow-sm">
+          <button
+            onClick={onOpenAIManager}
+            className="flex items-center gap-2 m-1 px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-xs font-bold rounded-full mr-1 tracking-wide shadow-sm"
+          >
             <Zap className="w-3.5 h-3.5" /> AI MANAGER
           </button>
         </div>

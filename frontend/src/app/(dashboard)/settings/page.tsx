@@ -1,14 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Save, User, Bell, Shield, Key } from "lucide-react";
+import { fetchWithAuth } from "@/lib/api";
+
+type PlatformCoreItem = {
+  title: string;
+  href: string;
+  icon: string;
+  color: string;
+};
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
+  const [navSaved, setNavSaved] = useState(false);
+  const [navLoading, setNavLoading] = useState(false);
+  const [platformCoreItems, setPlatformCoreItems] = useState<PlatformCoreItem[]>([]);
+
+  useEffect(() => {
+    const loadPlatformCore = async () => {
+      try {
+        const res = await fetchWithAuth("/api/admin/navigation/platform-core");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data?.items)) {
+          setPlatformCoreItems(data.items);
+        }
+      } catch {
+        // keep empty on failure
+      }
+    };
+    loadPlatformCore();
+  }, []);
 
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const updatePlatformCoreItem = (index: number, field: keyof PlatformCoreItem, value: string) => {
+    setPlatformCoreItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  };
+
+  const savePlatformCoreItems = async () => {
+    setNavLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/navigation/platform-core", {
+        method: "PUT",
+        body: JSON.stringify({ items: platformCoreItems }),
+      });
+      if (!res.ok) throw new Error("Failed to save platform core settings");
+      setNavSaved(true);
+      setTimeout(() => setNavSaved(false), 2000);
+    } catch {
+      // no-op for now
+    } finally {
+      setNavLoading(false);
+    }
   };
 
   return (
@@ -76,6 +124,55 @@ export default function SettingsPage() {
                 </div>
                 <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-slate-100 dark:bg-slate-800" />
               </label>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden p-8">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Platform Core Navigation</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              These sidebar items are dynamic. Edit titles/routes/icons and save.
+            </p>
+            <div className="space-y-4">
+              {platformCoreItems.map((item, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                  <input
+                    type="text"
+                    value={item.title}
+                    onChange={(e) => updatePlatformCoreItem(index, "title", e.target.value)}
+                    placeholder="Title"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={item.href}
+                    onChange={(e) => updatePlatformCoreItem(index, "href", e.target.value)}
+                    placeholder="Route (e.g. /admin/users)"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={item.icon}
+                    onChange={(e) => updatePlatformCoreItem(index, "icon", e.target.value)}
+                    placeholder="Icon key (users, settings, shield...)"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                type="button"
+                onClick={savePlatformCoreItems}
+                disabled={navLoading}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-bold text-sm"
+              >
+                {navLoading ? "Saving..." : "Save Platform Core"}
+              </button>
+              {navSaved && (
+                <span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-4 py-2 rounded-lg">
+                  Platform Core updated
+                </span>
+              )}
             </div>
           </div>
 

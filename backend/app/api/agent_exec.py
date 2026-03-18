@@ -1,6 +1,8 @@
 """
 /api/agent-exec   — Real agent execution API router
 """
+import datetime
+
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from pydantic import BaseModel
 from typing import Optional
@@ -13,10 +15,35 @@ from app.models.audit import AuditLog
 router = APIRouter(prefix="/agent-exec", tags=["agent-exec"])
 
 
+def _resolve_agent(agent_id: str):
+    """Resolve an agent by registry key or by the agent object's own agent_id."""
+    # Fast path: direct key lookup
+    direct = AGENT_REGISTRY.get(agent_id)
+    if direct:
+        return direct
+
+    # Fallback: match against declared agent_id on each agent instance
+    for agent in AGENT_REGISTRY.values():
+        if getattr(agent, "agent_id", None) == agent_id:
+            return agent
+    return None
+
+
+def _list_unique_agents():
+    """Return unique agents by agent_id to avoid duplicate rows from alias keys."""
+    unique: dict[str, object] = {}
+    for key, agent in AGENT_REGISTRY.items():
+        aid = getattr(agent, "agent_id", None) or key
+        if aid not in unique:
+            unique[aid] = agent
+    return list(unique.values())
+
+
 class AgentRunRequest(BaseModel):
     agent_id: str
     action: str
     context: Optional[str] = ""
+    dry_run: bool = False
 
 
 @router.post("/run")
@@ -29,12 +56,28 @@ async def run_agent(
     Execute a named action on a specific agent.
     agent_id must match one of the 24 registered agent slugs.
     """
-    agent = AGENT_REGISTRY.get(body.agent_id)
+    agent = _resolve_agent(body.agent_id)
     if not agent:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Agent '{body.agent_id}' not found. Available: {list(AGENT_REGISTRY.keys())}",
         )
+
+    if body.dry_run:
+        return {
+            "agent_id": getattr(agent, "agent_id", body.agent_id),
+            "agent_name": getattr(agent, "agent_name", "Unknown Agent"),
+            "domain": getattr(agent, "domain", "Unknown"),
+            "action": body.action,
+            "status": "SUCCESS",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "result": "Dry run executed successfully. Endpoint wiring is valid.",
+            "telemetry": {
+                "duration_ms": 0,
+                "model": "dry-run",
+                "steps_executed": 0,
+            },
+        }
 
     result = await agent.run(action=body.action, context=body.context or "")
 
@@ -61,14 +104,14 @@ async def list_agents():
             "domain": a.domain,
             "actions": list(a.get_action_prompts().keys()),
         }
-        for a in AGENT_REGISTRY.values()
+        for a in _list_unique_agents()
     ]
 
 
 @router.get("/agents/{agent_id}")
 async def get_agent(agent_id: str):
     """Get details about a specific agent."""
-    agent = AGENT_REGISTRY.get(agent_id)
+    agent = _resolve_agent(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found.")
     return {

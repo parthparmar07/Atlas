@@ -112,13 +112,13 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-sm">
       <div 
-        className="glass-card flex flex-col w-full max-w-2xl overflow-hidden shadow-2xl"
-        style={{ height: "min(800px, 90vh)", background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+        className="flex flex-col w-full max-w-3xl overflow-hidden shadow-2xl bg-white border border-slate-200 rounded-2xl"
+        style={{ height: "min(820px, 92vh)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg"
               style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
@@ -126,23 +126,23 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
               🤖
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white tracking-wide uppercase">AI Command Manager</h2>
+              <h2 className="text-sm font-bold text-slate-900 tracking-wide uppercase">AI Command Manager</h2>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <p style={{ color: "var(--text-muted)", fontSize: 10 }}>GROQ POWERED • LOGGED IN</p>
+                <p className="text-[10px] text-slate-500 font-semibold">GROQ POWERED • LOGGED IN</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={clearHistory}
-              className="text-[11px] px-3 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+              className="text-[11px] px-3 py-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors font-semibold"
             >
               Clear
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+              className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-900"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -154,15 +154,15 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
         {/* Chat Area */}
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
+          className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar bg-white"
         >
           {messages.length === 0 && (
             <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4 border border-purple-500/20">
+              <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-4 border border-violet-200">
                 <span className="text-3xl">✨</span>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">How can I help you today?</h3>
-              <p style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: 360, margin: "0 auto" }}>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">How can I help you today?</h3>
+              <p className="text-slate-500 text-[13px] max-w-[360px] mx-auto">
                 I can manage system telemetry, analyze audit logs, update security policies, and answer questions about the platform.
               </p>
               
@@ -171,7 +171,7 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
                   <button
                     key={tip}
                     onClick={() => setInput(tip)}
-                    className="p-3 rounded-xl border border-white/5 bg-white/5 text-xs text-left text-slate-300 hover:bg-white/10 hover:border-white/10 transition-all"
+                    className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-left text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all font-medium"
                   >
                     {tip}
                   </button>
@@ -188,11 +188,11 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
               <div
                 className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-sm ${
                   message.role === "user"
-                    ? "bg-purple-600 text-white border-none"
-                    : "bg-white/5 border border-white/10 text-slate-200"
+                    ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-none shadow-violet-300/40"
+                    : "bg-slate-50 border border-slate-200 text-slate-800"
                 }`}
               >
-                <div className={`prose prose-invert prose-sm max-w-none ${message.role === "user" ? "text-white" : "text-slate-200"}`}>
+                <div className={`prose prose-sm max-w-none leading-relaxed ${message.role === "user" ? "text-white prose-headings:text-white prose-p:text-white prose-strong:text-white prose-li:text-white" : "text-slate-800 prose-headings:text-slate-900 prose-p:text-slate-700 prose-strong:text-slate-900 prose-li:text-slate-700"}`}>
                   <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
                 
@@ -201,13 +201,13 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
                     {message.tool_calls.map((call, i) => (
                       <div
                         key={i}
-                        className="text-xs bg-black/40 rounded-xl p-3 border border-white/5"
+                        className="text-xs bg-white rounded-xl p-3 border border-slate-200"
                       >
-                        <p className="font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <p className="font-bold text-emerald-600 mb-2 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                           {call.tool.toUpperCase()}
                         </p>
-                        <pre className="text-[10px] text-slate-400 overflow-x-auto">
+                        <pre className="text-[10px] text-slate-600 overflow-x-auto">
                           {JSON.stringify(call.result, null, 2)}
                         </pre>
                       </div>
@@ -220,7 +220,7 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
 
           {loading && (
             <div className="flex gap-3 justify-start">
-               <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4">
+               <div className="bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4">
                 <div className="flex gap-1.5">
                   <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -232,7 +232,7 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
         </div>
 
         {/* Input area */}
-        <div className="p-4 border-t border-white/5 bg-white/5">
+        <div className="p-4 border-t border-slate-200 bg-slate-50">
           <div className="relative flex items-center">
             <input
               type="text"
@@ -240,24 +240,23 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask for system stats, logs, or policy updates..."
-              className="w-full pl-4 pr-32 py-3.5 rounded-2xl border border-white/10 outline-none text-sm transition-all"
-              style={{ background: "var(--bg-card)", color: "var(--text-primary)" }}
+              className="w-full pl-4 pr-32 py-3.5 rounded-2xl border border-slate-300 outline-none text-sm transition-all bg-white text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               disabled={loading}
             />
             <button
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="absolute right-2 px-6 py-2 rounded-xl text-white font-bold text-xs transition-all uppercase tracking-widest disabled:opacity-50"
+              className="absolute right-2 px-6 py-2 rounded-xl text-white font-bold text-xs transition-all uppercase tracking-widest disabled:opacity-50 shadow-lg"
               style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)", boxShadow: "0 0 15px rgba(124,58,237,0.3)" }}
             >
               {loading ? "..." : "Execute"}
             </button>
           </div>
           <div className="flex justify-between mt-3 px-2">
-             <p style={{ color: "var(--text-muted)", fontSize: 9 }} className="uppercase tracking-tighter">
+             <p className="text-slate-500 text-[10px] uppercase tracking-tight font-semibold">
               Awaiting commands • Context: {pathname}
             </p>
-            <p style={{ color: "var(--text-muted)", fontSize: 9 }} className="uppercase tracking-tighter">
+            <p className="text-slate-500 text-[10px] uppercase tracking-tight font-semibold">
               Shift + Enter for new line
             </p>
           </div>
