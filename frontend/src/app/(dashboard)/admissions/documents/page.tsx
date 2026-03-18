@@ -17,6 +17,16 @@ type VerifyResult = {
   extracted_key_info: Record<string, string>;
 };
 
+type LeadDocumentItem = {
+  id: number;
+  lead_id: number;
+  doc_type: string;
+  file_path: string;
+  verified: boolean;
+  ai_extracted: Record<string, any>;
+  uploaded_at?: string | null;
+};
+
 export default function DocumentVerifierPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadId, setLeadId] = useState<string>("");
@@ -25,6 +35,7 @@ export default function DocumentVerifierPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<VerifyResult | null>(null);
+  const [documents, setDocuments] = useState<LeadDocumentItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,6 +50,22 @@ export default function DocumentVerifierPage() {
     };
     void run();
   }, []);
+
+  useEffect(() => {
+    const loadDocs = async () => {
+      if (!leadId) {
+        setDocuments([]);
+        return;
+      }
+      try {
+        const data = await api<LeadDocumentItem[]>(`/api/admissions/leads/${leadId}/documents`);
+        setDocuments(data ?? []);
+      } catch {
+        setDocuments([]);
+      }
+    };
+    void loadDocs();
+  }, [leadId]);
 
   const onFileChange = (incoming: File | null) => {
     setFile(incoming);
@@ -79,6 +106,8 @@ export default function DocumentVerifierPage() {
       });
 
       setResult(verifyData);
+      const docs = await api<LeadDocumentItem[]>(`/api/admissions/leads/${leadId}/documents`);
+      setDocuments(docs ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Document verification failed.");
     } finally {
@@ -113,12 +142,18 @@ export default function DocumentVerifierPage() {
         </div>
         <div>
           <label className="text-xs font-semibold uppercase text-gray-500">Document Type</label>
-          <input
+          <select
             value={docType}
             onChange={(e) => setDocType(e.target.value)}
             className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
-            placeholder="aadhar, marksheet, transcript"
-          />
+          >
+            <option value="id_proof">ID Proof</option>
+            <option value="marksheet">Marksheet</option>
+            <option value="transcript">Transcript</option>
+            <option value="income_certificate">Income Certificate</option>
+            <option value="category_certificate">Category Certificate</option>
+            <option value="other">Other</option>
+          </select>
         </div>
         <div className="flex items-end">
           <button
@@ -202,6 +237,27 @@ export default function DocumentVerifierPage() {
             </div>
           ) : null}
         </div>
+      </div>
+
+      <div className="bg-white border rounded-xl shadow-sm p-6">
+        <h2 className="font-bold border-b pb-3 mb-4 text-gray-900">Uploaded Documents (Selected Lead)</h2>
+        {!documents.length ? (
+          <div className="text-sm text-gray-500">No documents uploaded yet for this lead.</div>
+        ) : (
+          <div className="space-y-3">
+            {documents.map((doc) => (
+              <div key={doc.id} className="border rounded-lg p-3 bg-gray-50 flex items-center justify-between gap-4">
+                <div>
+                  <div className="font-medium text-gray-900">{doc.doc_type}</div>
+                  <div className="text-xs text-gray-500 mt-1">Doc ID: {doc.id} • Uploaded: {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString() : "n/a"}</div>
+                </div>
+                <div className={`text-xs font-bold px-3 py-1 rounded-full ${doc.verified ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                  {doc.verified ? "VERIFIED" : "PENDING"}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

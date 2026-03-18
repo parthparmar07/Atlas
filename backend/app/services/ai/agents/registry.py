@@ -50,3 +50,5 @@ ALL_AGENTS: list[AgentBase] = [
     WellbeingSupportAgent(),
     ITSupportAgent(),
 ]
+
+AGENT_REGISTRY = {a.agent_id: a for a in ALL_AGENTS}

@@ -47,7 +47,8 @@ Be helpful, concise, and proactive. Use available tools when needed. If you don'
                     kb += f"- {p.name}: {p.description} (Type: {p.policy_type})\n"
                 return kb
         except Exception:
-            return "Knowledge base unavailable."
+            pass
+        return "Knowledge base unavailable."
 
     async def chat(
         self,
@@ -119,7 +120,7 @@ Be helpful, concise, and proactive. Use available tools when needed. If you don'
                 last_error = str(e)
                 continue
 
-        if last_error and ("429" in last_error or "rate limit" in last_error.lower()):
+        if isinstance(last_error, str) and ("429" in last_error or "rate limit" in last_error.lower()):
             return {
                 "role": "assistant",
                 "content": "Model quota is temporarily exhausted. I switched to direct admin mode. Try commands like: 'List active users', 'Show pending users', 'Recent audit logs', or 'List security policies'.",

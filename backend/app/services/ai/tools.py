@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 from google.ai.generativelanguage_v1beta.types import content
 from app.core.config import settings
-from app.services.ai.agents import AGENT_REGISTRY
+from app.services.ai.agents.registry import AGENT_REGISTRY
 import datetime
 
 def get_chat_tools() -> List[content.Tool]:

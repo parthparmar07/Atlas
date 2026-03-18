@@ -15,7 +15,9 @@ from app.models.audit import AuditLog
 router = APIRouter(prefix="/agent-exec", tags=["agent-exec"])
 
 
-def _resolve_agent(agent_id: str):
+from app.services.ai.agents.base import AgentBase
+
+def _resolve_agent(agent_id: str) -> Optional[AgentBase]:
     """Resolve an agent by registry key or by the agent object's own agent_id."""
     # Fast path: direct key lookup
     direct = AGENT_REGISTRY.get(agent_id)
@@ -29,13 +31,12 @@ def _resolve_agent(agent_id: str):
     return None
 
 
-def _list_unique_agents():
+def _list_unique_agents() -> list[AgentBase]:
     """Return unique agents by agent_id to avoid duplicate rows from alias keys."""
-    unique: dict[str, object] = {}
+    unique: dict[str, AgentBase] = {}
     for key, agent in AGENT_REGISTRY.items():
         aid = getattr(agent, "agent_id", None) or key
-        if aid not in unique:
-            unique[aid] = agent
+        unique[aid] = agent
     return list(unique.values())
 
 
@@ -81,12 +82,15 @@ async def run_agent(
 
     result = await agent.run(action=body.action, context=body.context or "")
 
+    ctx_val = str(body.context) if body.context else "None"
+    ctx_preview = ctx_val if len(ctx_val) <= 500 else ctx_val[:500]
+
     # Create audit log entry
     audit = AuditLog(
         user_id=1,  # Mock user ID for now
         action=f"AGENT_EXEC:{body.agent_id}:{body.action}",
         ip_address=request.client.host if request.client else "unknown",
-        details=f"Context: {body.context[:500] if body.context else 'None'}",
+        details=f"Context: {ctx_preview}",
     )
     db.add(audit)
     await db.commit()

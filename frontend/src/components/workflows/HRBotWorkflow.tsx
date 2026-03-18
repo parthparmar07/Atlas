@@ -39,10 +39,10 @@ export default function HRBotWorkflow({ agentId, onExecute, isExecuting }: HRBot
               onChange={(e) => setQuery(e.target.value)}
               placeholder="e.g., How many casual leaves do I have left?"
               className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none"
-              onKeyDown={(e) => e.key === 'Enter' && runQuery("Process Leaves")}
+              onKeyDown={(e) => e.key === 'Enter' && runQuery("Process Leave Requests")}
             />
             <button
-              onClick={() => runQuery("Process Leaves")}
+              onClick={() => runQuery("Process Leave Requests")}
               disabled={isExecuting || !query.trim()}
               className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
             >
@@ -53,15 +53,15 @@ export default function HRBotWorkflow({ agentId, onExecute, isExecuting }: HRBot
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-           <button onClick={() => runQuery("Draft Notice", "Draft a notice for upcoming Diwali holidays")} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl hover:border-purple-400 transition-colors text-left group">
+           <button onClick={() => runQuery("HR Policy Lookup", "Draft a notice for upcoming Diwali holidays")} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl hover:border-purple-400 transition-colors text-left group">
              <FileText className="w-6 h-6 text-purple-400 mb-3 group-hover:text-purple-600 transition-colors" />
-             <h3 className="font-bold text-slate-900 dark:text-white mb-1">Draft Holiday Notice</h3>
-             <p className="text-xs text-slate-500 dark:text-slate-400">Generate a standard circular</p>
+             <h3 className="font-bold text-slate-900 dark:text-white mb-1">HR Policy Lookup</h3>
+             <p className="text-xs text-slate-500 dark:text-slate-400">Check leave rules, allowances & service norms</p>
            </button>
-           <button onClick={() => runQuery("Payroll Summary", "Generate Q1 Payroll Summary")} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl hover:border-purple-400 transition-colors text-left group">
+           <button onClick={() => runQuery("Analyse Faculty Load", "Generate load analysis for all departments")} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl hover:border-purple-400 transition-colors text-left group">
              <Calculator className="w-6 h-6 text-purple-400 mb-3 group-hover:text-purple-600 transition-colors" />
-             <h3 className="font-bold text-slate-900 dark:text-white mb-1">Q1 Payroll Summary</h3>
-             <p className="text-xs text-slate-500 dark:text-slate-400">Fetch and calculate payroll</p>
+             <h3 className="font-bold text-slate-900 dark:text-white mb-1">Analyse Faculty Load</h3>
+             <p className="text-xs text-slate-500 dark:text-slate-400">Detect overload & rebalancing needs</p>
            </button>
         </div>
       </div>

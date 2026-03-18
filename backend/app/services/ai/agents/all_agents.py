@@ -27,7 +27,9 @@ from app.modules.events_coordinator.agent import EventsCoordinatorAgent
 from app.modules.wellbeing_support.agent import WellbeingSupportAgent
 from app.modules.it_support.agent import ITSupportAgent
 
-ALL_AGENTS = {
+from app.services.ai.agents.base import AgentBase
+
+ALL_AGENTS: dict[str, AgentBase] = {
     # Admissions
     "admissions-intelligence": AdmissionsChatAgent(),
     "admissions-leads": AdmissionsChatAgent(),

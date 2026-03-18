@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Settings2, Database, CheckCircle2, Loader2, FileText } from "lucide-react";
+import { Play, Database, Loader2, FileText, CheckCircle2, Users, Mail, BarChart2, BookOpen, Award } from "lucide-react";
 
 interface AdmissionsScoringWorkflowProps {
   agentId: string;
@@ -9,201 +9,220 @@ interface AdmissionsScoringWorkflowProps {
   isExecuting: boolean;
 }
 
-export default function AdmissionsScoringWorkflow({ agentId, onExecute, isExecuting }: AdmissionsScoringWorkflowProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  
-  // Step 1: Data Source
-  const [dataSource, setDataSource] = useState<"crm" | "csv">("crm");
-  const [batchId, setBatchId] = useState("BATCH-2026-A");
-  
-  // Step 2: Parameters
-  const [academicWeight, setAcademicWeight] = useState(60);
-  const [extraWeight, setExtraWeight] = useState(30);
-  const [diversityWeight, setDiversityWeight] = useState(10);
+const ACTIONS = [
+  {
+    key: "Qualify Leads",
+    icon: Users,
+    color: "indigo",
+    label: "Qualify Leads",
+    desc: "Score all leads (0–100), tier as Hot/Warm/Cold, generate counsellor briefings for top 5.",
+    fields: [
+      { id: "batch", label: "Batch / Cohort", placeholder: "e.g. BATCH-2026-A", defaultValue: "BATCH-2026-A" },
+      { id: "programme", label: "Programme Filter", placeholder: "e.g. B.Tech CSE or All", defaultValue: "All Programmes" },
+    ],
+  },
+  {
+    key: "Parse Documents",
+    icon: FileText,
+    color: "violet",
+    label: "Parse Documents",
+    desc: "Extract academic scores, skills, certifications from uploaded marksheets, CVs, certificates.",
+    fields: [
+      { id: "doc_type", label: "Document Type", placeholder: "Marksheet / CV / Certificate", defaultValue: "Marksheet" },
+      { id: "source", label: "Upload Source", placeholder: "e.g. CRM upload or email attachment", defaultValue: "CRM Upload" },
+    ],
+  },
+  {
+    key: "Track Funnel",
+    icon: BarChart2,
+    color: "sky",
+    label: "Track Funnel",
+    desc: "Show stage counts, conversion rates, stalled leads >5 days, top 10 today's priority leads.",
+    fields: [
+      { id: "cycle", label: "Admission Cycle", placeholder: "e.g. 2026-27", defaultValue: "2026-27" },
+      { id: "programme", label: "Programme", placeholder: "e.g. All or B.Tech CSE", defaultValue: "All Programmes" },
+    ],
+  },
+  {
+    key: "Generate Follow-Up Messages",
+    icon: Mail,
+    color: "emerald",
+    label: "Generate Follow-Ups",
+    desc: "Personalised WhatsApp + Email follow-ups for leads silent 3+ days. One clear CTA each.",
+    fields: [
+      { id: "channel", label: "Channel", placeholder: "WhatsApp / Email / Both", defaultValue: "Both" },
+      { id: "days_stale", label: "Stale After (days)", placeholder: "e.g. 3", defaultValue: "3" },
+    ],
+  },
+  {
+    key: "Match Scholarships",
+    icon: Award,
+    color: "amber",
+    label: "Match Scholarships",
+    desc: "Match students against Central, Maharashtra state, and institutional scholarship schemes.",
+    fields: [
+      { id: "category", label: "Student Category", placeholder: "e.g. SC/ST, OBC, General", defaultValue: "All Categories" },
+      { id: "min_income", label: "Income Limit (₹/yr)", placeholder: "e.g. 800000", defaultValue: "800000" },
+    ],
+  },
+  {
+    key: "Brief Counsellors",
+    icon: BookOpen,
+    color: "rose",
+    label: "Brief Counsellors",
+    desc: "Pre-call briefings: academic strength, programme fit, objections, talking points, red flags.",
+    fields: [
+      { id: "counsellor", label: "Counsellor Name", placeholder: "e.g. Ms. Sharma or All", defaultValue: "All Counsellors" },
+      { id: "date", label: "Call Date", placeholder: "e.g. Today", defaultValue: "Today" },
+    ],
+  },
+];
+
+const COLOR_MAP: Record<string, string> = {
+  indigo: "border-indigo-400 bg-indigo-50/60 text-indigo-600",
+  violet: "border-violet-400 bg-violet-50/60 text-violet-600",
+  sky: "border-sky-400 bg-sky-50/60 text-sky-600",
+  emerald: "border-emerald-400 bg-emerald-50/60 text-emerald-600",
+  amber: "border-amber-400 bg-amber-50/60 text-amber-600",
+  rose: "border-rose-400 bg-rose-50/60 text-rose-600",
+};
+
+const BTN_MAP: Record<string, string> = {
+  indigo: "bg-indigo-600 hover:bg-indigo-700",
+  violet: "bg-violet-600 hover:bg-violet-700",
+  sky: "bg-sky-600 hover:bg-sky-700",
+  emerald: "bg-emerald-600 hover:bg-emerald-700",
+  amber: "bg-amber-600 hover:bg-amber-700",
+  rose: "bg-rose-600 hover:bg-rose-700",
+};
+
+export default function AdmissionsScoringWorkflow({ onExecute, isExecuting }: AdmissionsScoringWorkflowProps) {
+  const [selected, setSelected] = useState(0);
+  const [fieldValues, setFieldValues] = useState<Record<string, Record<string, string>>>({});
+  const [customContext, setCustomContext] = useState("");
+  const [lastRan, setLastRan] = useState<string | null>(null);
+
+  const action = ACTIONS[selected];
+
+  const getField = (idx: number, fid: string) =>
+    fieldValues[idx]?.[fid] ?? action.fields.find((f) => f.id === fid)?.defaultValue ?? "";
+
+  const setField = (fid: string, val: string) =>
+    setFieldValues((prev) => ({
+      ...prev,
+      [selected]: { ...(prev[selected] ?? {}), [fid]: val },
+    }));
 
   const handleRun = () => {
-    const context = `
-      Workflow: Run Scoring
-      Data Source: ${dataSource === "crm" ? "Live CRM Integration" : "Uploaded CSV"}
-      Batch ID: ${batchId}
-      
-      Scoring Weights:
-      - Academic Performance: ${academicWeight}%
-      - Extracurriculars: ${extraWeight}%
-      - Diversity/Background: ${diversityWeight}%
-      
-      Instructions: Process the batch using these exact weights. Return a structured JSON array of the top 5 candidates with their calculated composite scores and a brief justification.
-    `;
-    
-    setStep(3);
-    onExecute("Run Scoring", context);
+    const fieldLines = action.fields
+      .map((f) => `${f.label}: ${getField(selected, f.id)}`)
+      .join("\n");
+
+    const context = [
+      `Action: ${action.key}`,
+      fieldLines,
+      customContext ? `Additional instructions: ${customContext}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    setLastRan(action.key);
+    onExecute(action.key, context);
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-5 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-slate-900">Application Scoring Engine</h3>
-          <p className="text-sm text-slate-500 mt-1">Multi-variable ML heuristic scoring for incoming batches.</p>
+    <div className="space-y-6">
+      {/* Action Selector Tabs */}
+      <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-6 shadow-xl shadow-slate-200/30">
+        <div className="flex items-center gap-3 mb-5">
+          <Database className="w-5 h-5 text-slate-500" />
+          <h2 className="text-lg font-black text-slate-900 tracking-tight">Admissions Workflow Engine</h2>
         </div>
-        <div className="flex items-center gap-2">
-          <div className={`h-2 w-2 rounded-full ${step === 1 ? 'bg-indigo-600' : 'bg-slate-300'}`} />
-          <div className={`h-2 w-2 rounded-full ${step === 2 ? 'bg-indigo-600' : 'bg-slate-300'}`} />
-          <div className={`h-2 w-2 rounded-full ${step === 3 ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+
+        {/* Tab grid */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {ACTIONS.map((a, i) => {
+            const Icon = a.icon;
+            const active = selected === i;
+            return (
+              <button
+                key={a.key}
+                onClick={() => setSelected(i)}
+                className={`flex items-center gap-2.5 p-3.5 rounded-2xl border-2 text-left transition-all ${
+                  active ? COLOR_MAP[a.color] : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${active ? "" : "text-slate-400"}`} />
+                <span className={`text-[13px] font-bold leading-tight ${active ? "" : "text-slate-600"}`}>
+                  {a.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      <div className="p-6">
-        {/* Step 1: Data Source */}
-        {step === 1 && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center gap-3 text-indigo-600 mb-4">
-              <Database className="w-5 h-5" />
-              <h4 className="font-semibold">Step 1: Select Data Source</h4>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => setDataSource("crm")}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${dataSource === "crm" ? "border-indigo-600 bg-indigo-50/50" : "border-slate-200 hover:border-slate-300"}`}
-              >
-                <div className="font-bold text-slate-900">Live CRM Sync</div>
-                <div className="text-sm text-slate-500 mt-1">Pull latest un-scored applications directly from the admissions portal.</div>
-              </button>
-              <button 
-                onClick={() => setDataSource("csv")}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${dataSource === "csv" ? "border-indigo-600 bg-indigo-50/50" : "border-slate-200 hover:border-slate-300"}`}
-              >
-                <div className="font-bold text-slate-900">CSV Upload</div>
-                <div className="text-sm text-slate-500 mt-1">Process a specific offline batch of applications.</div>
-              </button>
-            </div>
+        {/* Selected action description */}
+        <div className="text-sm text-slate-500 font-medium bg-slate-50 rounded-xl px-4 py-3 mb-6 border border-slate-100">
+          {action.desc}
+        </div>
 
-            <div className="space-y-2 pt-4">
-              <label className="text-sm font-bold text-slate-700">Target Batch ID</label>
-              <input 
-                type="text" 
-                value={batchId}
-                onChange={(e) => setBatchId(e.target.value)}
-                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none font-medium"
+        {/* Dynamic fields */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {action.fields.map((f) => (
+            <div key={f.id}>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-2">
+                {f.label}
+              </label>
+              <input
+                value={getField(selected, f.id)}
+                onChange={(e) => setField(f.id, e.target.value)}
+                placeholder={f.placeholder}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all"
               />
             </div>
+          ))}
+        </div>
 
-            <div className="flex justify-end pt-4">
-              <button 
-                onClick={() => setStep(2)}
-                className="px-6 py-2.5 bg-slate-900 text-white font-medium rounded-xl hover:bg-slate-800 transition-colors"
-              >
-                Next: Configure Parameters
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Extra context */}
+        <div className="mb-5">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-2">
+            Additional Context / Override Instructions
+          </label>
+          <textarea
+            value={customContext}
+            onChange={(e) => setCustomContext(e.target.value)}
+            placeholder="Any extra instructions for the agent..."
+            rows={3}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all resize-none"
+          />
+        </div>
 
-        {/* Step 2: Parameters */}
-        {step === 2 && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center gap-3 text-indigo-600 mb-4">
-              <Settings2 className="w-5 h-5" />
-              <h4 className="font-semibold">Step 2: Tune Scoring Weights</h4>
-            </div>
-
-            <div className="space-y-6 bg-slate-50 p-6 rounded-xl border border-slate-200">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <label className="text-sm font-bold text-slate-700">Academic Performance</label>
-                  <span className="text-sm font-bold text-indigo-600">{academicWeight}%</span>
-                </div>
-                <input 
-                  type="range" min="0" max="100" value={academicWeight}
-                  onChange={(e) => setAcademicWeight(parseInt(e.target.value))}
-                  className="w-full accent-indigo-600"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <label className="text-sm font-bold text-slate-700">Extracurriculars & Leadership</label>
-                  <span className="text-sm font-bold text-indigo-600">{extraWeight}%</span>
-                </div>
-                <input 
-                  type="range" min="0" max="100" value={extraWeight}
-                  onChange={(e) => setExtraWeight(parseInt(e.target.value))}
-                  className="w-full accent-indigo-600"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <label className="text-sm font-bold text-slate-700">Diversity & Background</label>
-                  <span className="text-sm font-bold text-indigo-600">{diversityWeight}%</span>
-                </div>
-                <input 
-                  type="range" min="0" max="100" value={diversityWeight}
-                  onChange={(e) => setDiversityWeight(parseInt(e.target.value))}
-                  className="w-full accent-indigo-600"
-                />
-              </div>
-              
-              {academicWeight + extraWeight + diversityWeight !== 100 && (
-                <div className="text-xs font-bold text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                  Warning: Weights should ideally sum to 100%. Current sum: {academicWeight + extraWeight + diversityWeight}%
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-between pt-4">
-              <button 
-                onClick={() => setStep(1)}
-                className="px-6 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Back
-              </button>
-              <button 
-                onClick={handleRun}
-                disabled={isExecuting}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50"
-              >
-                {isExecuting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                Execute Scoring Engine
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Execution State */}
-        {step === 3 && (
-          <div className="py-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-            {isExecuting ? (
-              <>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-xl animate-pulse" />
-                  <Loader2 className="w-16 h-16 text-indigo-600 animate-spin relative z-10" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mt-6">Processing Batch {batchId}...</h3>
-                <p className="text-slate-500 mt-2 max-w-md">
-                  The AI is currently analyzing applications, applying your custom weights ({academicWeight}/{extraWeight}/{diversityWeight}), and checking for fraud patterns.
-                </p>
-              </>
+        {/* Run button */}
+        <div className="flex justify-end">
+          <button
+            onClick={handleRun}
+            disabled={isExecuting}
+            className={`flex items-center gap-2 px-7 py-3 ${BTN_MAP[action.color]} text-white font-bold rounded-2xl transition-colors disabled:opacity-50 shadow-lg`}
+          >
+            {isExecuting && lastRan === action.key ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <>
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900">Scoring Complete</h3>
-                <p className="text-slate-500 mt-2">The batch has been successfully processed.</p>
-                <button 
-                  onClick={() => setStep(1)}
-                  className="mt-8 px-6 py-2.5 border-2 border-slate-200 text-slate-700 font-medium rounded-xl hover:border-slate-300 transition-colors"
-                >
-                  Run Another Batch
-                </button>
-              </>
+              <Play className="w-4 h-4 fill-current" />
             )}
-          </div>
-        )}
+            {isExecuting && lastRan === action.key ? "Running Agent..." : `Execute: ${action.label}`}
+          </button>
+        </div>
       </div>
+
+      {/* Success state */}
+      {!isExecuting && lastRan && (
+        <div className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold animate-in fade-in duration-500">
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
+          <span>
+            <span className="font-black">{lastRan}</span> executed — results shown in the output drawer below.
+          </span>
+        </div>
+      )}
     </div>
   );
 }

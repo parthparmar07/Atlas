@@ -5,18 +5,63 @@ from app.services.ai.agentic.pipeline import AgentState
 
 class AccreditationAgent(AgentBase):
     agent_id = "finance-accreditation"
-    agent_name = "Accreditation"
-    domain = "Finance"
+    agent_name = "Atlas Finance & Compliance Agent (NAAC)"
+    domain = "Finance & Compliance"
 
-    SYSTEM_PROMPT = """You are the Accreditation Agent for Atlas University.
-    You use specific Python tools to pull financial records, cross-reference them with external accreditation guidelines, and automatically identify compliance gaps."""
+    SYSTEM_PROMPT = """You are the Atlas Finance & Compliance Agent for Atlas Skilltech University — an autonomous financial operations and regulatory compliance partner.
 
-    def get_action_prompts(self):
-        return {
-            "Audit Compliance": "Audit university compliance for upcoming NAAC visit",
-            "Prepare Documentation": "Compile financial documentation for accreditation",
-            "Generate Report": "Generate NAAC readiness report",
-        }
+IDENTITY
+Name: Atlas Finance AI
+Tone: Precise, authoritative, zero ambiguity. Every number must be traceable. Every compliance statement must cite its source.
+
+FOCUS AREA: ACCREDITATION READINESS (NAAC/NBA)
+You are the continuous NAAC/NBA compliance monitor.
+
+NAAC Criteria you track:
+- Criterion 1: Curricular Aspects (syllabus revision frequency, gap analysis, employability courses)
+- Criterion 2: Teaching-Learning (student-teacher ratio, ICT usage, feedback mechanism)
+- Criterion 3: Research & Extension (publications, funded projects, consultancy, MoUs)
+- Criterion 4: Infrastructure (library volumes, labs, sports, IT bandwidth)
+- Criterion 5: Student Support (scholarships, placement %, alumni engagement)
+- Criterion 6: Governance (e-governance, financial audits, professional development)
+- Criterion 7: Institutional Values (green initiatives, inclusion, code of conduct)
+
+For each criterion when given data:
+- Score against NAAC rubric (1–4 scale)
+- Identify evidence gaps: what data is missing that NAAC will ask for
+- Prioritise gaps by impact on final grade
+- Generate the SSR section draft for that criterion (structured, evidence-linked)
+- Maintain a live readiness score (0–100%) updated whenever new data arrives
+
+ADDITIONAL CAPABILITIES
+- Budget monitoring: flag overspend (>80% before Q3) and underspend (<30% by Q3)
+- Regulatory compliance calendar: AICTE ARS, UGC returns, TDS, PF/ESI, POSH annual report
+- Audit support: map queries to records, generate management response drafts
+
+CONSTRAINTS
+- NAAC SSR drafts are internal working documents — never share externally without Principal sign-off
+- All financial figures must include source data reference
+- Never approve expenditure — flag for human approval always
+
+OUTPUT FORMAT
+NAAC tracking: criterion-wise score table + gap list ranked by priority. All outputs structured, not flowing prose."""
+
+    ACTION_PROMPTS = {
+        "Audit Compliance": """Run the current NAAC accreditation readiness assessment.
+Fetch relevant institutional data and score all 7 criteria against the NAAC rubric (1–4 scale).
+Identify evidence gaps for each criterion, prioritised by impact on final grade.
+Generate a live readiness score (0–100%). Output a criterion-wise table with score, gaps, and priority ranking.
+All drafts are pending Principal sign-off before external distribution.""",
+
+        "Prepare Documentation": """Compile the SSR section drafts for the 2 lowest-scoring NAAC criteria.
+For each criterion: structure the SSR section with available evidence, flag missing data points, suggest data to collect.
+Generate a documentation checklist with responsible person and collection deadline for each missing item.""",
+
+        "Generate Report": """Generate the NAAC Readiness Report for the Principal and Governing Body.
+Include: overall readiness score, criterion-wise scores, top 5 evidence gaps by impact, 30-day action plan.
+Format as an executive summary suitable for a committee meeting.
+Mark as internal working document — pending Principal approval for external release.""",
+    }
 
     async def tool_fetch_guidelines(self, body: str) -> str:
         """Fetch latest guidelines from vector DB (simulated)."""
@@ -34,20 +79,4 @@ class AccreditationAgent(AgentBase):
         })
 
     async def execute(self, state: AgentState) -> List[Any]:
-        results = []
-        for step in state.plan:
-            self.memory.short_term.add_step(step)
-            step_lower = step.lower()
-            
-            if "guideline" in step_lower or "requirement" in step_lower:
-                data = await self.tool_fetch_guidelines("NAAC")
-                results.append({"step": step, "tool": "tool_fetch_guidelines", "output": data})
-                state.perception_data["guidelines"] = data
-            elif "financ" in step_lower or "budget" in step_lower or "ratio" in step_lower:
-                metrics = await self.tool_analyze_finances([])
-                results.append({"step": step, "tool": "tool_analyze_finances", "output": metrics})
-            else:
-                prompt = f"Execute step '{step}'. Context: {state.perception_data}. Output markdown."
-                res = await self._call_llm(prompt)
-                results.append({"step": step, "tool": "llm_fallback", "output": res})
-        return results
+        return await super().execute(state)

@@ -1,0 +1,9 @@
+{
+  "include": ["."],
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "useLibraryCodeForTypes": true,
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none",
+  "extraPaths": ["."]
+}

@@ -19,12 +19,23 @@ type LeadProfile = Lead & {
   ai_summary?: string;
 };
 
+type Provenance = {
+  dataset: string;
+  storage: string;
+  api: string;
+  total_records: number;
+  source_mix: Record<string, number>;
+  latest_record_at?: string | null;
+  note: string;
+};
+
 export default function AdmissionsIntelligencePage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [scoringIds, setScoringIds] = useState<number[]>([]);
   const [error, setError] = useState<string>("");
+  const [provenance, setProvenance] = useState<Provenance | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -37,8 +48,12 @@ export default function AdmissionsIntelligencePage() {
     setLoading(true);
     setError("");
     try {
-      const data = await api<Lead[]>("/api/admissions/leads");
+      const [data, provenanceData] = await Promise.all([
+        api<Lead[]>("/api/admissions/leads"),
+        api<Provenance>("/api/admissions/provenance"),
+      ]);
       setLeads(data ?? []);
+      setProvenance(provenanceData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load leads.");
     } finally {
@@ -135,6 +150,18 @@ export default function AdmissionsIntelligencePage() {
         <StatCard label="Warm" value={stats.warm.toString()} tone="text-orange-600" />
         <StatCard label="Cold" value={stats.cold.toString()} tone="text-gray-600" />
       </div>
+
+      {provenance ? (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900">
+          <div className="font-semibold mb-1">Data Provenance</div>
+          <div>
+            Dataset: <span className="font-mono">{provenance.dataset}</span> | Source API: <span className="font-mono">{provenance.api}</span> | Storage: {provenance.storage}
+          </div>
+          <div className="mt-1">Total records: {provenance.total_records}</div>
+          <div className="mt-1">Source mix: {Object.entries(provenance.source_mix).map(([k, v]) => `${k}=${v}`).join(", ") || "n/a"}</div>
+          <div className="mt-1">{provenance.note}</div>
+        </div>
+      ) : null}
 
       <div className="bg-white border rounded-xl p-4 shadow-sm space-y-4">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2">

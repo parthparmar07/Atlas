@@ -40,28 +40,4 @@ class AdmissionsIntelligenceAgent(AgentBase):
 
     # Overriding Execution Layer to use tools dynamically
     async def execute(self, state: AgentState) -> List[Any]:
-        results = []
-        
-        # Simulated Tool-Use Negotiation based on plan
-        for step in state.plan:
-            self.memory.short_term.add_step(f"Executing step: {step}")
-            step_lower = step.lower()
-            
-            if "fetch" in step_lower or "get" in step_lower:
-                data = await self.tool_fetch_applications()
-                results.append({"step": step, "tool": "tool_fetch_applications", "output": data})
-                state.perception_data["raw_apps"] = data
-                
-            elif "score" in step_lower or "ml" in step_lower:
-                raw = state.perception_data.get("raw_apps", "[]")
-                scored = await self.tool_run_ml_scoring(raw)
-                results.append({"step": step, "tool": "tool_run_ml_scoring", "output": scored})
-                state.perception_data["scored_apps"] = scored
-                
-            else:
-                # Fallback to LLM reasoning if no tool matches
-                prompt = f"Execute step '{step}' based on context: {state.perception_data}. Generate the report section."
-                res = await self._call_llm(prompt)
-                results.append({"step": step, "tool": "llm_fallback", "output": res})
-                
-        return results
+        return await super().execute(state)

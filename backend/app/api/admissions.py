@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, BackgroundTasks, HTTPE
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
 from app.core.database import get_db, async_session_maker
-from app.models.admissions import Lead, LeadDocument, LeadInteraction, LeadStage, LeadSource
+from app.models.admissions import Lead, LeadDocument, LeadInteraction, LeadStage, LeadSource, Scholarship
 from app.modules.admissions.service import admissions_service
 from app.api.telemetry import broadcast
 import os
@@ -177,18 +177,109 @@ async def funnel_stats(db: AsyncSession = Depends(get_db)):
     # format enum keys to string
     return {getattr(row[0], "value", str(row[0])): row[1] for row in result.all()}
 
+
+@router.get("/provenance")
+async def data_provenance(db: AsyncSession = Depends(get_db)):
+    """Explain where admissions data comes from for demo/audit purposes."""
+    source_result = await db.execute(
+        select(Lead.source, func.count()).group_by(Lead.source)
+    )
+    total_result = await db.execute(select(func.count()).select_from(Lead))
+    latest_result = await db.execute(select(func.max(Lead.created_at)))
+    latest_created_at = latest_result.scalar()
+
+    source_counts = {
+        getattr(row[0], "value", str(row[0])): row[1]
+        for row in source_result.all()
+    }
+
+    return {
+        "dataset": "admissions.leads",
+        "storage": "PostgreSQL",
+        "api": "/api/admissions/leads",
+        "total_records": total_result.scalar() or 0,
+        "source_mix": source_counts,
+        "latest_record_at": latest_created_at.isoformat() if latest_created_at else None,
+        "note": "Records are created via Admissions UI/API (and optional test seed script in non-production setups).",
+    }
+
 from app.modules.admissions.scholarship_service import scholarship_service
 from app.modules.admissions.document_service import document_service
 
 @router.post("/leads/{lead_id}/scholarships/match")
 async def match_scholarships_for_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
     matches = await scholarship_service.match_lead_to_scholarships(lead_id, db)
-    return {"lead_id": lead_id, "matches": matches}
+    return {"lead_id": lead_id, "matches": matches, "count": len(matches)}
+
+
+@router.get("/scholarships")
+async def list_scholarships(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Scholarship).order_by(desc(Scholarship.amount_max)))
+    scholarships = result.scalars().all()
+    return [
+        {
+            "id": s.id,
+            "name": s.name,
+            "provider": s.provider,
+            "amount_max": s.amount_max,
+            "criteria_json": s.criteria_json,
+            "deadline": s.deadline.isoformat() if s.deadline else None,
+        }
+        for s in scholarships
+    ]
+
+
+@router.post("/scholarships")
+async def create_scholarship(body: dict, db: AsyncSession = Depends(get_db)):
+    name = (body.get("name") or "").strip()
+    provider = (body.get("provider") or "").strip()
+    if not name or not provider:
+        raise HTTPException(status_code=400, detail="name and provider are required")
+
+    scholarship = Scholarship(
+        name=name,
+        provider=provider,
+        amount_max=float(body.get("amount_max") or 0),
+        criteria_json=body.get("criteria_json") or {},
+    )
+    db.add(scholarship)
+    await db.commit()
+    await db.refresh(scholarship)
+    return {
+        "id": scholarship.id,
+        "name": scholarship.name,
+        "provider": scholarship.provider,
+        "amount_max": scholarship.amount_max,
+        "criteria_json": scholarship.criteria_json,
+    }
+
+
+@router.get("/leads/{lead_id}/documents")
+async def list_lead_documents(lead_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(LeadDocument)
+        .where(LeadDocument.lead_id == lead_id)
+        .order_by(desc(LeadDocument.uploaded_at))
+    )
+    docs = result.scalars().all()
+    return [
+        {
+            "id": d.id,
+            "lead_id": d.lead_id,
+            "doc_type": d.doc_type,
+            "file_path": d.file_path,
+            "verified": d.verified,
+            "ai_extracted": d.ai_extracted or {},
+            "uploaded_at": d.uploaded_at.isoformat() if d.uploaded_at else None,
+        }
+        for d in docs
+    ]
 
 @router.post("/documents/{doc_id}/verify")
 async def verify_document_endpoint(doc_id: int, db: AsyncSession = Depends(get_db)):
     from app.models.admissions import LeadDocument
     import os
+    import mimetypes
     result = await db.execute(select(LeadDocument).where(LeadDocument.id == doc_id))
     doc = result.scalar_one_or_none()
     if not doc:
@@ -197,8 +288,11 @@ async def verify_document_endpoint(doc_id: int, db: AsyncSession = Depends(get_d
     try:
         with open(doc.file_path, "rb") as f:
             file_bytes = f.read()
-            mime_type = "application/pdf" if doc.file_path.endswith(".pdf") else "image/jpeg"
+            guessed_mime, _ = mimetypes.guess_type(doc.file_path)
+            mime_type = guessed_mime or ("application/pdf" if doc.file_path.endswith(".pdf") else "application/octet-stream")
             res = await document_service.verify_document(doc_id, file_bytes, mime_type, db)
+            if not res:
+                raise HTTPException(status_code=500, detail="Document verification returned empty response")
             return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

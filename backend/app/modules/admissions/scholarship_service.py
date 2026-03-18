@@ -1,6 +1,6 @@
 import json
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from app.models.admissions import Lead, Scholarship, ScholarshipMatch
 from app.services.ai.gemini import gemini_client
 from app.services.ai.groq_service import groq_client
@@ -70,59 +70,83 @@ class ScholarshipService:
         scholarships = await self._ensure_default_scholarships(db)
 
         ai_client = self._get_text_client()
+
+        existing_result = await db.execute(
+            select(ScholarshipMatch).where(ScholarshipMatch.lead_id == lead.id)
+        )
+        existing_by_scholarship = {
+            m.scholarship_id: m for m in existing_result.scalars().all()
+        }
+
         matches = []
         for s in scholarships:
+            match_score = 0.0
+            reason = ""
+            matched_by = "rule-engine"
+
             if ai_client is None:
                 match_score, reason = self._rule_based_match(lead, s)
-                if match_score > 50:
-                    sm = ScholarshipMatch(
-                        lead_id=lead.id,
-                        scholarship_id=s.id,
-                        match_score=match_score,
-                        match_reasons={"rule_reasoning": reason},
-                    )
-                    db.add(sm)
-                    matches.append({"name": s.name, "score": match_score})
-                continue
+            else:
+                prompt = f"""
+                Determine if this student matches the scholarship criteria.
+                Return ONLY a JSON dictionary: {{"match_score": 0-100, "reason": "brief reason"}}
 
-            prompt = f"""
-            Determine if this student matches the scholarship criteria.
-            Return ONLY a JSON dictionary: {{"match_score": 0-100, "reason": "brief reason"}}
-            
-            Student Profile:
-            Programme: {lead.programme_interest}
-            Score: {lead.score}
-            Data: {json.dumps(data)}
-            
-            Scholarship Criteria:
-            Name: {s.name}
-            Provider: {s.provider}
-            Criteria: {json.dumps(s.criteria_json)}
-            """
-            
-            try:
-                response = await ai_client.generate_text(prompt, temperature=0.1)
-                raw = response.strip()
-                if raw.startswith("```json"): raw = raw[7:]
-                if raw.startswith("```"): raw = raw[3:]
-                if raw.endswith("```"): raw = raw[:-3]
-                res_data = json.loads(raw.strip())
-                
-                match_score = float(res_data.get("match_score", 0))
-                if match_score > 50:
-                    match_reasons = {"ai_reasoning": res_data.get("reason", "")}
-                    sm = ScholarshipMatch(
-                        lead_id=lead.id,
-                        scholarship_id=s.id,
-                        match_score=match_score,
-                        match_reasons=match_reasons
+                Student Profile:
+                Programme: {lead.programme_interest}
+                Score: {lead.score}
+                Data: {json.dumps(data)}
+
+                Scholarship Criteria:
+                Name: {s.name}
+                Provider: {s.provider}
+                Criteria: {json.dumps(s.criteria_json)}
+                """
+
+                try:
+                    response = await ai_client.generate_text(prompt, temperature=0.1)
+                    raw = response.strip()
+                    if raw.startswith("```json"): raw = raw[7:]
+                    if raw.startswith("```"): raw = raw[3:]
+                    if raw.endswith("```"): raw = raw[:-3]
+                    res_data = json.loads(raw.strip())
+                    match_score = float(res_data.get("match_score", 0))
+                    reason = str(res_data.get("reason", ""))
+                    matched_by = "ai"
+                except Exception:
+                    match_score, reason = self._rule_based_match(lead, s)
+                    matched_by = "rule-fallback"
+
+            if match_score >= 40:
+                existing = existing_by_scholarship.get(s.id)
+                reasons = {"reason": reason, "matched_by": matched_by}
+
+                if existing:
+                    existing.match_score = match_score
+                    existing.match_reasons = reasons
+                else:
+                    db.add(
+                        ScholarshipMatch(
+                            lead_id=lead.id,
+                            scholarship_id=s.id,
+                            match_score=match_score,
+                            match_reasons=reasons,
+                        )
                     )
-                    db.add(sm)
-                    matches.append({"name": s.name, "score": match_score})
-            except Exception as e:
-                print(f"Error matching scholarship {s.name}: {e}")
+
+                matches.append(
+                    {
+                        "scholarship_id": s.id,
+                        "name": s.name,
+                        "provider": s.provider,
+                        "amount_max": s.amount_max,
+                        "score": round(match_score, 2),
+                        "reason": reason,
+                        "matched_by": matched_by,
+                    }
+                )
                 
         await db.commit()
+        matches.sort(key=lambda m: m["score"], reverse=True)
         return matches
 
 scholarship_service = ScholarshipService()
