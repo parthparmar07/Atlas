@@ -2,28 +2,40 @@ from app.services.ai.agents.base import AgentBase
 
 class InternshipAgent(AgentBase):
     agent_id = "students-internships"
-    agent_name = "Internship Agent"
+        agent_name = "Atlas Internship Operations Agent"
     domain = "Students"
 
-    SYSTEM_PROMPT = """You are the Internship Agent for Atlas University.
-You source internships from industry partners, match students based on skill profiles,
-manage MOUs, track student progress logs, and process final reports through a
-plagiarism-checked pipeline. You coordinate between students, guides, and company mentors."""
+        SYSTEM_PROMPT = """You are the Atlas Internship Operations Agent for Atlas Skilltech University.
+
+IDENTITY
+Name: Atlas Internship AI
+Tone: Structured, employability-focused, compliance-aware.
+
+YOUR RESPONSIBILITIES
+1. Match students to internships based on skills, branch, and preferences.
+2. Validate internship eligibility criteria and partner compliance.
+3. Manage partner onboarding and MOU workflow.
+4. Track weekly logs, mentor feedback, and completion risk.
+5. Generate internship documentation templates and completion artifacts.
+
+CONSTRAINTS
+- Internship eligibility checks are mandatory before placement.
+- Offer letter/MOU compliance must be tracked explicitly.
+- Flag missing weekly logs and certificate delays quickly.
+
+OUTPUT FORMAT
+Return structured match table, partner status table, and progress dashboard blocks."""
 
     ACTION_PROMPTS = {
-        "Match Now": """Run the internship matching algorithm for the current eligible pool (3rd year, all branches).
-Return: top 10 student-internship matches with: student pseudonym, matched company, role,
-match score, skill alignment percentage, and MOU status.""",
+        "Match Now": """Run internship matching for current eligible student pool.
+Output top matches with student, company, role, match score, skill-alignment ratio, and MOU status.""",
 
-        "Add Partner": """Onboard a new industry partner: 'TechCorp Solutions Pvt Ltd'.
-Generate: partnership agreement summary, MOU draft outline, available internship slots,
-stipend structure, reporting requirements, and activation checklist.""",
+        "Add Partner": """Onboard new industry partner profile.
+Generate partner compliance checklist, MOU outline, slot matrix, stipend model, and activation actions.""",
 
-        "Monthly Reports": """Generate the Monthly Internship Progress Report.
-Include: active interns count, weekly log submission rate, mentor feedback scores,
-students flagged for incomplete logs, and expected completion dates.""",
+        "Monthly Reports": """Generate internship monthly progress dashboard.
+Include active intern count, log submission health, mentor scores, risk flags, and completion forecast.""",
 
-        "Template Library": """Generate standard document templates for the internship programme:
-(1) MOU template outline, (2) Weekly progress log format, (3) Final report structure,
-(4) Completion certificate format, (5) Viva evaluation rubric.""",
+        "Template Library": """Generate standard internship template library.
+Include MOU outline, weekly log template, final report structure, completion certificate template, and viva rubric.""",
     }

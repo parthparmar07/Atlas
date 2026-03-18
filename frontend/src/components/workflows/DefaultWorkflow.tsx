@@ -6,11 +6,12 @@ import { AgentConfig } from "@/components/agents/AgentPageTemplate";
 
 interface DefaultWorkflowProps {
   config: AgentConfig;
+  contracts?: Record<string, { handler?: string; required_inputs?: string[] }>;
   onExecute: (action: string, context: string) => Promise<void>;
   isExecuting: boolean;
 }
 
-export default function DefaultWorkflow({ config, onExecute, isExecuting }: DefaultWorkflowProps) {
+export default function DefaultWorkflow({ config, contracts, onExecute, isExecuting }: DefaultWorkflowProps) {
   const [selectedAction, setSelectedAction] = useState<string>(config.actions[0]?.label || "");
   const [customContext, setCustomContext] = useState<string>("");
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -35,8 +36,14 @@ export default function DefaultWorkflow({ config, onExecute, isExecuting }: Defa
     const formLines = Object.entries(formData)
       .filter(([_, v]) => v)
       .map(([k, v]) => `${k}: ${v}`);
+
+    const selectedContract = contracts?.[selectedAction];
+    const contractHeader = selectedContract
+      ? [`handler: ${selectedContract.handler || "unknown"}`, `required_inputs: ${(selectedContract.required_inputs || []).join(", ")}`]
+      : [];
     
     const fullContext = [
+      ...contractHeader,
       ...formLines,
       customContext
     ].filter(Boolean).join("\n");
@@ -47,76 +54,32 @@ export default function DefaultWorkflow({ config, onExecute, isExecuting }: Defa
   const renderDomainFields = () => {
     const commonClass = "w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold";
     const labelClass = "text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]";
+    const selectedContract = contracts?.[selectedAction];
+    const requiredInputs = selectedContract?.required_inputs || [];
 
-    switch (config.domain) {
-      case "Admissions & Leads":
-        return (
-          <>
-            <div className="space-y-2">
-              <label className={labelClass}>Batch/Cohort</label>
-              <input type="text" placeholder="e.g. 2026-A" className={commonClass} onChange={(e) => handleInputChange("Batch", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <label className={labelClass}>Program Level</label>
-              <select className={commonClass} onChange={(e) => handleInputChange("Program Level", e.target.value)}>
-                <option value="">Select Level</option>
-                <option value="Undergraduate">Undergraduate</option>
-                <option value="Postgraduate">Postgraduate</option>
-                <option value="Doctoral">Doctoral</option>
-              </select>
-            </div>
-          </>
-        );
-      case "HR & Faculty":
-        return (
-          <>
-            <div className="space-y-2">
-              <label className={labelClass}>Department</label>
-              <input type="text" placeholder="e.g. Computer Science" className={commonClass} onChange={(e) => handleInputChange("Department", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <label className={labelClass}>Employee/Faculty ID</label>
-              <input type="text" placeholder="e.g. AT-1024" className={commonClass} onChange={(e) => handleInputChange("Entity ID", e.target.value)} />
-            </div>
-          </>
-        );
-      case "Academics":
-        return (
-          <>
-            <div className="space-y-2">
-              <label className={labelClass}>Semester</label>
-              <select className={commonClass} onChange={(e) => handleInputChange("Semester", e.target.value)}>
-                <option value="">Select Sem</option>
-                {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>Sem {n}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className={labelClass}>Course Code</label>
-              <input type="text" placeholder="e.g. CS301" className={commonClass} onChange={(e) => handleInputChange("Course Code", e.target.value)} />
-            </div>
-          </>
-        );
-      case "Finance":
-        return (
-          <>
-            <div className="space-y-2">
-              <label className={labelClass}>Financial Year</label>
-              <input type="text" placeholder="e.g. FY 2026-27" className={commonClass} onChange={(e) => handleInputChange("FY", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <label className={labelClass}>Budget Category</label>
-              <select className={commonClass} onChange={(e) => handleInputChange("Budget Category", e.target.value)}>
-                <option value="">Select Category</option>
-                <option value="Operational">Operational</option>
-                <option value="Capital">Capital</option>
-                <option value="Grants">Grants</option>
-              </select>
-            </div>
-          </>
-        );
-      default:
-        return null;
+    if (!requiredInputs.length) {
+      return (
+        <div className="col-span-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
+          No required input contract published for this action yet.
+        </div>
+      );
     }
+
+    return requiredInputs.map((inputKey) => {
+      const normalized = inputKey.replace(/\[\]/g, "").replace(/\./g, "_");
+      return (
+        <div key={inputKey} className="space-y-2">
+          <label className={labelClass}>{inputKey}</label>
+          <input
+            type="text"
+            placeholder={`Enter ${inputKey}`}
+            className={commonClass}
+            value={formData[normalized] || ""}
+            onChange={(e) => handleInputChange(normalized, e.target.value)}
+          />
+        </div>
+      );
+    });
   };
 
   return (
@@ -142,6 +105,13 @@ export default function DefaultWorkflow({ config, onExecute, isExecuting }: Defa
             ))}
           </select>
         </div>
+
+        {contracts?.[selectedAction] && (
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-800">
+            <div className="font-bold">Handler: {contracts[selectedAction].handler || "unknown"}</div>
+            <div className="mt-1">Required inputs: {(contracts[selectedAction].required_inputs || []).join(", ") || "none"}</div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-6">
           {renderDomainFields()}

@@ -8,28 +8,6 @@ import {
   PlayCircle, Loader2, CheckCircle, AlertCircle, X, Copy, ChevronDown
 } from "lucide-react";
 
-// Workflow Components
-import AdmissionsScoringWorkflow from "@/components/workflows/AdmissionsScoringWorkflow";
-import HRBotWorkflow from "@/components/workflows/HRBotWorkflow";
-import FacultyLoadBalancerWorkflow from "@/components/workflows/FacultyLoadBalancerWorkflow";
-import AppraisalWorkflow from "@/components/workflows/AppraisalWorkflow";
-import RecruitmentWorkflow from "@/components/workflows/RecruitmentWorkflow";
-import SubstitutionWorkflow from "@/components/workflows/SubstitutionWorkflow";
-import CurriculumWorkflow from "@/components/workflows/CurriculumWorkflow";
-import CalendarWorkflow from "@/components/workflows/CalendarWorkflow";
-import PlacementIntelligenceWorkflow from "@/components/workflows/PlacementIntelligenceWorkflow";
-import InterviewPrepWorkflow from "@/components/workflows/InterviewPrepWorkflow";
-import AlumniWorkflow from "@/components/workflows/AlumniWorkflow";
-import ResumeWorkflow from "@/components/workflows/ResumeWorkflow";
-import ProjectTrackerWorkflow from "@/components/workflows/ProjectTrackerWorkflow";
-import DropoutWorkflow from "@/components/workflows/DropoutWorkflow";
-import InternshipWorkflow from "@/components/workflows/InternshipWorkflow";
-import GrievanceWorkflow from "@/components/workflows/GrievanceWorkflow";
-import FeeCollectionWorkflow from "@/components/workflows/FeeCollectionWorkflow";
-import ProcurementWorkflow from "@/components/workflows/ProcurementWorkflow";
-import AccreditationWorkflow from "@/components/workflows/AccreditationWorkflow";
-import TimetableWorkflow from "@/components/workflows/TimetableWorkflow";
-import BudgetWorkflow from "@/components/workflows/BudgetWorkflow";
 import DefaultWorkflow from "@/components/workflows/DefaultWorkflow";
 
 export interface AgentConfig {
@@ -160,28 +138,37 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
   const [drawerResult, setDrawerResult] = useState<DrawerProps["result"]>(null);
   const [error, setError] = useState<string | null>(null);
   const [realActions, setRealActions] = useState<Array<{ label: string; desc: string }>>(config.actions);
+  const [contracts, setContracts] = useState<Record<string, { handler?: string; required_inputs?: string[] }>>({});
 
   // Sync with backend on mount
   useEffect(() => {
-    const fetchRealActions = async () => {
+    const fetchRealMetadata = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agent-exec/agents/${config.agentId}`);
-        if (res.ok) {
-          const data = await res.json();
+        const [agentRes, contractRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agent-exec/agents/${config.agentId}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agent-exec/agents/${config.agentId}/contracts`),
+        ]);
+
+        if (agentRes.ok) {
+          const data = await agentRes.json();
           if (data.actions && data.actions.length > 0) {
-            // Map the string actions from backend to the { label, desc } format the UI expects
             const mapped = data.actions.map((a: string) => ({
               label: a,
-              desc: `Execute the ${a} action on this agent.`
+              desc: `Execute the ${a} action on this agent.`,
             }));
             setRealActions(mapped);
           }
         }
+
+        if (contractRes.ok) {
+          const c = await contractRes.json();
+          setContracts(c.contracts || {});
+        }
       } catch (err) {
-        console.error("Failed to sync agent actions:", err);
+        console.error("Failed to sync agent metadata:", err);
       }
     };
-    fetchRealActions();
+    fetchRealMetadata();
   }, [config.agentId]);
 
   // Use the realActions in the effective config
@@ -257,52 +244,7 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
   };
 
   const renderWorkflow = () => {
-    switch (config.agentId) {
-      case "admissions-intelligence":
-        return <AdmissionsScoringWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "hr-bot":
-        return <HRBotWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "hr-load-balancer":
-        return <FacultyLoadBalancerWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "hr-appraisal":
-        return <AppraisalWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "hr-recruitment":
-        return <RecruitmentWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "finance-accreditation":
-        return <AccreditationWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "academics-timetable":
-        return <TimetableWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "academics-substitution":
-        return <SubstitutionWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "academics-curriculum":
-        return <CurriculumWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "academics-calendar":
-        return <CalendarWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "placement-intelligence":
-        return <PlacementIntelligenceWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "placement-interview":
-        return <InterviewPrepWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "placement-alumni":
-        return <AlumniWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "placement-resume":
-        return <ResumeWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "students-projects":
-        return <ProjectTrackerWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "students-dropout":
-        return <DropoutWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "students-internships":
-        return <InternshipWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "students-grievance":
-        return <GrievanceWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "finance-fees":
-        return <FeeCollectionWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "finance-procurement":
-        return <ProcurementWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      case "finance-budget":
-        return <BudgetWorkflow agentId={config.agentId} onExecute={executeAction} isExecuting={!!runningAction} />;
-      default:
-        return <DefaultWorkflow config={effectiveConfig} onExecute={executeAction} isExecuting={!!runningAction} />;
-    }
+    return <DefaultWorkflow config={effectiveConfig} contracts={contracts} onExecute={executeAction} isExecuting={!!runningAction} />;
   }
 
   return (
