@@ -209,6 +209,18 @@ class AgentBase(AgenticPipeline):
                 return json.dumps({"handler": handler, "analysis": self._compute_table_stats(rows)}, indent=2)
             return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
 
+        if handler == "students_events":
+            if rows:
+                return json.dumps(
+                    {
+                        "handler": handler,
+                        "event_ops_summary": self._compute_table_stats(rows),
+                        "required_outputs": ["runbook", "risk_matrix", "kpi_report"],
+                    },
+                    indent=2,
+                )
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
         if handler == "finance_fee":
             if rows:
                 return json.dumps({"handler": handler, "fee_overview": self._compute_table_stats(rows), "tiered_reminder_policy": ["T+0", "T+7", "T+15", "T+30"]}, indent=2)
@@ -227,6 +239,30 @@ class AgentBase(AgenticPipeline):
         if handler == "research_assistant":
             query = payload.get("raw", "").strip() or "research topic not provided"
             return json.dumps({"handler": handler, "research_query": query[:240], "workflow": ["keywording", "source ranking", "gap extraction", "draft outline"]}, indent=2)
+
+        if handler == "research_grant":
+            if rows:
+                return json.dumps(
+                    {
+                        "handler": handler,
+                        "grant_portfolio_summary": self._compute_table_stats(rows),
+                        "required_outputs": ["deadline_alerts", "utilization_variance", "pi_next_actions"],
+                    },
+                    indent=2,
+                )
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "research_publication":
+            if rows:
+                return json.dumps(
+                    {
+                        "handler": handler,
+                        "publication_pipeline_summary": self._compute_table_stats(rows),
+                        "required_outputs": ["journal_fit", "submission_readiness", "review_response_plan"],
+                    },
+                    indent=2,
+                )
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
 
         if handler == "wellbeing_support":
             return json.dumps({"handler": handler, "support_path": ["triage", "counselor assignment", "follow-up", "risk escalation"]}, indent=2)

@@ -10,6 +10,22 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Match Scholarships": {"handler": "admissions_scholarship", "required_inputs": ["lead.score", "lead.category(optional)", "lead.annual_income(optional)"]},
         "Brief Counsellors": {"handler": "admissions_brief", "required_inputs": ["lead.name", "lead.programme", "lead.score", "lead.stage"]},
     },
+    "admissions-leads": {
+        "Qualify Leads": {"handler": "admissions_qualify", "required_inputs": ["leads[].name", "leads[].programme_interest", "leads[].source", "leads[].score(optional)"]},
+        "Parse Documents": {"handler": "admissions_parse_documents", "required_inputs": ["documents[].text|parsed", "documents[].doc_type"]},
+        "Track Funnel": {"handler": "admissions_funnel", "required_inputs": ["leads[].stage", "leads[].last_activity_at"]},
+        "Generate Follow-Up Messages": {"handler": "admissions_followup", "required_inputs": ["lead.name", "lead.programme", "channel", "context"]},
+        "Match Scholarships": {"handler": "admissions_scholarship", "required_inputs": ["lead.score", "lead.category(optional)", "lead.annual_income(optional)"]},
+        "Brief Counsellors": {"handler": "admissions_brief", "required_inputs": ["lead.name", "lead.programme", "lead.score", "lead.stage"]},
+    },
+    "admissions-documents": {
+        "Qualify Leads": {"handler": "admissions_qualify", "required_inputs": ["leads[].name", "leads[].programme_interest", "leads[].source", "leads[].score(optional)"]},
+        "Parse Documents": {"handler": "admissions_parse_documents", "required_inputs": ["documents[].text|parsed", "documents[].doc_type"]},
+        "Track Funnel": {"handler": "admissions_funnel", "required_inputs": ["leads[].stage", "leads[].last_activity_at"]},
+        "Generate Follow-Up Messages": {"handler": "admissions_followup", "required_inputs": ["lead.name", "lead.programme", "channel", "context"]},
+        "Match Scholarships": {"handler": "admissions_scholarship", "required_inputs": ["lead.score", "lead.category(optional)", "lead.annual_income(optional)"]},
+        "Brief Counsellors": {"handler": "admissions_brief", "required_inputs": ["lead.name", "lead.programme", "lead.score", "lead.stage"]},
+    },
     "admissions-scholarship": {
         "Match Now": {"handler": "admissions_scholarship", "required_inputs": ["candidates[]"]},
         "Update Database": {"handler": "finance_compliance_calendar", "required_inputs": ["scheme_updates[]"]},
@@ -17,6 +33,14 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Track Applications": {"handler": "admissions_funnel", "required_inputs": ["applications[].status", "applications[].deadline"]},
     },
     "hr-leave-manager": {
+        "Process Leave Requests": {"handler": "hr_leave", "required_inputs": ["leave_requests[].name", "leave_requests[].leave_days", "leave_requests[].leave_balance"]},
+        "Analyse Faculty Load": {"handler": "hr_load", "required_inputs": ["faculty[].teaching_hours"]},
+        "Run Appraisals": {"handler": "hr_appraisal", "required_inputs": ["faculty[].teaching_feedback", "faculty[].research_output"]},
+        "Screen Recruitment": {"handler": "hr_recruitment", "required_inputs": ["candidates[].name", "candidates[].experience_years", "candidates[].phd|net"]},
+        "Generate Onboarding": {"handler": "hr_onboarding", "required_inputs": ["employees[].name", "employees[].role", "employees[].department"]},
+        "HR Policy Lookup": {"handler": "hr_policy", "required_inputs": ["query"]},
+    },
+    "hr-bot": {
         "Process Leave Requests": {"handler": "hr_leave", "required_inputs": ["leave_requests[].name", "leave_requests[].leave_days", "leave_requests[].leave_balance"]},
         "Analyse Faculty Load": {"handler": "hr_load", "required_inputs": ["faculty[].teaching_hours"]},
         "Run Appraisals": {"handler": "hr_appraisal", "required_inputs": ["faculty[].teaching_feedback", "faculty[].research_output"]},
@@ -57,6 +81,11 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Check for Clashes": {"handler": "academics_conflicts", "required_inputs": ["exam_slots[]"]},
         "Optimize Schedule": {"handler": "academics_exams", "required_inputs": ["exam_slots[]"]},
     },
+    "academics-calendar": {
+        "Schedule Exams": {"handler": "academics_exams", "required_inputs": ["courses[]", "halls[]"]},
+        "Check for Clashes": {"handler": "academics_conflicts", "required_inputs": ["exam_slots[]"]},
+        "Optimize Schedule": {"handler": "academics_exams", "required_inputs": ["exam_slots[]"]},
+    },
     "placement-intelligence": {
         "Analyse Job Descriptions": {"handler": "placement_jd", "required_inputs": ["jds[]"]},
         "Match Students to Jobs": {"handler": "placement_match", "required_inputs": ["students[]", "jobs[]"]},
@@ -64,6 +93,19 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Review Resumes": {"handler": "placement_resume", "required_inputs": ["resume_text", "target_jd"]},
         "Prepare for Interviews": {"handler": "placement_interview", "required_inputs": ["student_profile", "target_role", "round_type"]},
         "Manage Company Pipeline": {"handler": "placement_pipeline", "required_inputs": ["companies[]"]},
+    },
+    "placement-resume": {
+        "Analyse Job Descriptions": {"handler": "placement_jd", "required_inputs": ["jds[]"]},
+        "Match Students to Jobs": {"handler": "placement_match", "required_inputs": ["students[]", "jobs[]"]},
+        "Analyse Batch Skill Gaps": {"handler": "placement_skill_gap", "required_inputs": ["batch_skills[]", "jd_skills[]"]},
+        "Review Resumes": {"handler": "placement_resume", "required_inputs": ["resume_text", "target_jd"]},
+        "Prepare for Interviews": {"handler": "placement_interview", "required_inputs": ["student_profile", "target_role", "round_type"]},
+        "Manage Company Pipeline": {"handler": "placement_pipeline", "required_inputs": ["companies[]"]},
+    },
+    "placement-interview-prep": {
+        "Generate Questions": {"handler": "placement_interview", "required_inputs": ["student_profile", "target_role"]},
+        "Review Answers": {"handler": "placement_interview", "required_inputs": ["answers[]", "questions[]"]},
+        "Provide Tips": {"handler": "placement_interview", "required_inputs": ["target_company", "role"]},
     },
     "placement-interview": {
         "Generate Questions": {"handler": "placement_interview", "required_inputs": ["student_profile", "target_role"]},
@@ -101,7 +143,18 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Monthly Reports": {"handler": "students_internships", "required_inputs": ["internships[]"]},
         "Template Library": {"handler": "students_internships", "required_inputs": ["template_type"]},
     },
+    "students-events": {
+        "Plan Event": {"handler": "students_events", "required_inputs": ["event.name", "event.date", "event.venue", "event.budget"]},
+        "Promote Event": {"handler": "students_events", "required_inputs": ["event.name", "audience_segments[]", "channels[]"]},
+        "Risk & Logistics Check": {"handler": "students_events", "required_inputs": ["event.venue", "event.checklist[]", "event.contacts[]"]},
+        "Generate Report": {"handler": "students_events", "required_inputs": ["attendance[]", "feedback[]", "budget.actual"]},
+    },
     "students-course-builder": {
+        "Design Course Outline": {"handler": "academics_curriculum", "required_inputs": ["course", "outcomes"]},
+        "Find Learning Resources": {"handler": "academics_curriculum", "required_inputs": ["course", "topic"]},
+        "Create Assessment": {"handler": "academics_curriculum", "required_inputs": ["course", "topics[]"]},
+    },
+    "academics-curriculum": {
         "Design Course Outline": {"handler": "academics_curriculum", "required_inputs": ["course", "outcomes"]},
         "Find Learning Resources": {"handler": "academics_curriculum", "required_inputs": ["course", "topic"]},
         "Create Assessment": {"handler": "academics_curriculum", "required_inputs": ["course", "topics[]"]},
@@ -142,6 +195,18 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Find Literature": {"handler": "research_assistant", "required_inputs": ["topic"]},
         "Analyze Data": {"handler": "research_assistant", "required_inputs": ["dataset_summary"]},
         "Prepare Manuscript": {"handler": "research_assistant", "required_inputs": ["findings"]},
+    },
+    "research-grant": {
+        "Track Grant Portfolio": {"handler": "research_grant", "required_inputs": ["grants[]"]},
+        "Generate Utilization Report": {"handler": "research_grant", "required_inputs": ["grants[]", "expenses[]"]},
+        "Deadline Alerts": {"handler": "research_grant", "required_inputs": ["grants[].deadline", "grants[].owner"]},
+        "Draft PI Updates": {"handler": "research_grant", "required_inputs": ["grants[]", "risk_flags[]"]},
+    },
+    "research-publication": {
+        "Screen Journal Fit": {"handler": "research_publication", "required_inputs": ["manuscript.abstract", "manuscript.keywords[]", "target_journals[]"]},
+        "Submission Readiness": {"handler": "research_publication", "required_inputs": ["manuscript.sections[]", "journal.guidelines"]},
+        "Track Submission": {"handler": "research_publication", "required_inputs": ["submissions[]"]},
+        "Draft Reviewer Response": {"handler": "research_publication", "required_inputs": ["reviewer_comments[]", "revision_notes[]"]},
     },
 }
 

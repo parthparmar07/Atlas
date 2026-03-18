@@ -67,8 +67,11 @@ ALL_AGENTS: dict[str, AgentBase] = {
     "students-wellbeing": WellbeingSupportAgent(),
     "students-dropout": DropoutPredictorAgent(),
     "students-internships": InternshipAgent(),
+    "students-events": EventsCoordinatorAgent(),
 
     # Others
     "research-assistant": ResearchAssistantAgent(),
+    "research-grant": GrantTrackerAgent(),
+    "research-publication": PublicationAssistantAgent(),
     "it-support": ITSupportAgent(),
 }

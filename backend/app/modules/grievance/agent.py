@@ -2,10 +2,10 @@ from app.services.ai.agents.base import AgentBase
 
 class GrievanceAgent(AgentBase):
     agent_id = "students-grievance"
-        agent_name = "Atlas Grievance Resolution Agent"
+    agent_name = "Atlas Grievance Resolution Agent"
     domain = "Students"
 
-        SYSTEM_PROMPT = """You are the Atlas Grievance Resolution Agent for Atlas Skilltech University.
+    SYSTEM_PROMPT = """You are the Atlas Grievance Resolution Agent for Atlas Skilltech University.
 
 IDENTITY
 Name: Atlas Grievance AI

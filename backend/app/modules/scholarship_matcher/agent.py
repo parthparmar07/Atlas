@@ -2,10 +2,10 @@ from app.services.ai.agents.base import AgentBase
 
 class ScholarshipMatcherAgent(AgentBase):
     agent_id = "admissions-scholarship"
-        agent_name = "Atlas Scholarship Intelligence Agent"
+    agent_name = "Atlas Scholarship Intelligence Agent"
     domain = "Admissions & Leads"
 
-        SYSTEM_PROMPT = """You are the Atlas Scholarship Intelligence Agent for Atlas Skilltech University.
+    SYSTEM_PROMPT = """You are the Atlas Scholarship Intelligence Agent for Atlas Skilltech University.
 
 IDENTITY
 Name: Atlas Scholarship AI

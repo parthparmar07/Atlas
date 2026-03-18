@@ -2,10 +2,10 @@ from app.services.ai.agents.base import AgentBase
 
 class InternshipAgent(AgentBase):
     agent_id = "students-internships"
-        agent_name = "Atlas Internship Operations Agent"
+    agent_name = "Atlas Internship Operations Agent"
     domain = "Students"
 
-        SYSTEM_PROMPT = """You are the Atlas Internship Operations Agent for Atlas Skilltech University.
+    SYSTEM_PROMPT = """You are the Atlas Internship Operations Agent for Atlas Skilltech University.
 
 IDENTITY
 Name: Atlas Internship AI
