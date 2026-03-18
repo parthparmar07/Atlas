@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 const METRICS = [
-  { label: "ACTIVE AGENTS", value: "24", subValue: "+4 new", icon: Cpu, color: "text-indigo-500", bg: "bg-indigo-50", badgeColor: "text-indigo-600 bg-indigo-50" },
+  { label: "ACTIVE AGENTS", value: "27", subValue: "+7 new", icon: Cpu, color: "text-indigo-500", bg: "bg-indigo-50", badgeColor: "text-indigo-600 bg-indigo-50" },
   { label: "AUTOMATIONS", value: "142", subValue: "Live", icon: RefreshCw, color: "text-purple-500", bg: "bg-purple-50", badgeColor: "text-purple-600 bg-purple-50", iconUp: true },
   { label: "PROJECTS", value: "8", subValue: "2 Due Soon", icon: Target, color: "text-orange-500", bg: "bg-orange-50", badgeColor: "text-orange-600 bg-orange-50" },
   { label: "UPTIME", value: "99.9%", subValue: "Excellent", icon: Shield, color: "text-emerald-500", bg: "bg-emerald-50", badgeColor: "text-emerald-600 bg-emerald-50" },
@@ -66,7 +66,16 @@ const DOMAINS = [
       { href: "/students/projects",    name: "Project Tracker",   badge: "Hot",    badgeColor: "bg-rose-100 text-rose-600", desc: "Guide students from synopsis to complete submission." },
       { href: "/students/dropout",     name: "Dropout Predictor", badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Predict risk 6 weeks early � intervene proactively." },
       { href: "/students/internships", name: "Internship Agent",  badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Matching the right skill to the right project." },
+      { href: "/students/events",      name: "Events Coordinator", badge: "API",    badgeColor: "bg-sky-100 text-sky-600", desc: "Run campus events with runbooks, risk checks, and KPI reporting." },
       { href: "/students/grievance",   name: "Grievance Agent",   badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Anonymous reporting, transparent fast resolution." },
+    ],
+  },
+  {
+    key: "research", label: "Research", color: "text-cyan-600", bg: "bg-cyan-50", border: "border-cyan-200", href: "/research",
+    agents: [
+      { href: "/research/assistant",   name: "Research Assistant",  badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Find sources, analyze evidence, and build publishable outlines." },
+      { href: "/research/grant",       name: "Grant Tracker",       badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Track utilization, deadlines, and PI escalations across grants." },
+      { href: "/research/publication", name: "Publication Ops",     badge: "API",    badgeColor: "bg-sky-100 text-sky-600", desc: "Move manuscripts from draft to submission with revision discipline." },
     ],
   },
   {

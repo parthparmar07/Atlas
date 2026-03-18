@@ -209,7 +209,5 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Draft Reviewer Response": {"handler": "research_publication", "required_inputs": ["reviewer_comments[]", "revision_notes[]"]},
     },
 }
-
-
 def get_action_contract(agent_id: str, action: str) -> Dict[str, Any] | None:
     return AGENT_ACTION_CONTRACTS.get(agent_id, {}).get(action)

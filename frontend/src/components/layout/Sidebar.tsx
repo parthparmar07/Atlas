@@ -70,7 +70,16 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
         { title: "Dropout Predictor", href: "/students/dropout" },
         { title: "Grievance", href: "/students/grievance" },
         { title: "Internships", href: "/students/internships" },
+        { title: "Events Coordinator", href: "/students/events" },
         { title: "Projects", href: "/students/projects" }
+      ]
+    },
+    {
+      title: "Research & Innovation", icon: BarChart3, href: "/research", color: "text-cyan-400",
+      subItems: [
+        { title: "Research Assistant", href: "/research/assistant" },
+        { title: "Grant Tracker", href: "/research/grant" },
+        { title: "Publication Ops", href: "/research/publication" }
       ]
     },
     { 
