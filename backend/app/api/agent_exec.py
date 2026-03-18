@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.ai.agents.all_agents import ALL_AGENTS as AGENT_REGISTRY
 from app.core.database import get_db
 from app.models.audit import AuditLog
+from app.services.ai.agents.action_contracts import AGENT_ACTION_CONTRACTS
 
 router = APIRouter(prefix="/agent-exec", tags=["agent-exec"])
 
@@ -62,6 +63,16 @@ async def run_agent(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Agent '{body.agent_id}' not found. Available: {list(AGENT_REGISTRY.keys())}",
+        )
+
+    available_actions = list(agent.get_action_prompts().keys())
+    if body.action not in available_actions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": f"Action '{body.action}' is not registered for agent '{body.agent_id}'.",
+                "available_actions": available_actions,
+            },
         )
 
     if body.dry_run:
@@ -123,4 +134,19 @@ async def get_agent(agent_id: str):
         "agent_name": agent.agent_name,
         "domain": agent.domain,
         "actions": list(agent.get_action_prompts().keys()),
+    }
+
+
+@router.get("/agents/{agent_id}/contracts")
+async def get_agent_contracts(agent_id: str):
+    """Get action contracts (handler + required inputs) for a specific agent."""
+    agent = _resolve_agent(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found.")
+
+    contracts = AGENT_ACTION_CONTRACTS.get(agent.agent_id, {})
+    return {
+        "agent_id": agent.agent_id,
+        "agent_name": agent.agent_name,
+        "contracts": contracts,
     }

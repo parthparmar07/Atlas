@@ -12,6 +12,7 @@ from app.services.ai.groq_service import groq_client
 from app.services.ai.agentic.pipeline import AgenticPipeline, AgentState
 from app.services.ai.agentic.memory import AgentMemory
 from app.services.ai.agentic.event_bus import agent_bus, AgentEvent
+from app.services.ai.agents.action_contracts import get_action_contract
 
 class AgentBase(AgenticPipeline):
     """
@@ -44,6 +45,193 @@ class AgentBase(AgenticPipeline):
     async def on_domain_event(self, event: AgentEvent):
         # Store in episodic memory
         self.memory.episodic.add_episode(event.payload.get("goal", ""), "Event Received", True)
+
+    def _resolve_action_contract(self, goal: str) -> Dict[str, Any] | None:
+        return get_action_contract(self.agent_id, goal)
+
+    def _contract_driven_output(self, contract: Dict[str, Any], payload: Dict[str, Any], rows: list[dict], goal: str, step: str) -> str:
+        handler = str(contract.get("handler") or "")
+        required = contract.get("required_inputs") or []
+
+        if handler == "admissions_qualify":
+            if rows:
+                scored = []
+                for idx, row in enumerate(rows[:200], start=1):
+                    acad = float(row.get("academic_score") or row.get("class_12_percent") or row.get("score") or 0)
+                    fit = float(row.get("programme_fit") or 65)
+                    engagement = float(row.get("engagement") or row.get("engagement_events") or 40)
+                    location = float(row.get("location_score") or 50)
+                    source_raw = str(row.get("source") or "web_form").lower()
+                    source = 100 if source_raw == "referral" else 90 if source_raw == "walk_in" else 70 if source_raw == "web_form" else 60
+
+                    total = round((acad * 0.35) + (fit * 0.25) + (engagement * 0.20) + (location * 0.10) + (source * 0.10), 2)
+                    tier = "Hot" if total >= 75 else "Warm" if total >= 45 else "Cold"
+                    flags = []
+                    if acad < 55:
+                        flags.append("academic_gap")
+                    if fit < 50:
+                        flags.append("programme_fit_risk")
+                    if not row.get("email") or not row.get("phone"):
+                        flags.append("incomplete_data")
+
+                    scored.append({
+                        "lead_index": idx,
+                        "name": row.get("name") or f"Lead {idx}",
+                        "score": total,
+                        "tier": tier,
+                        "risk_flags": flags,
+                        "recommended_next_action": "Immediate counselor call" if tier == "Hot" else "Targeted nurture + call" if tier == "Warm" else "Drip nurture",
+                    })
+                scored.sort(key=lambda x: x["score"], reverse=True)
+                return json.dumps({"qualified_leads": scored, "count": len(scored)}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required, "message": "Provide leads[] for qualification."}, indent=2)
+
+        if handler in {"admissions_parse_documents", "academics_constraints"}:
+            raw = payload.get("raw", "")
+            parsed = self._parse_constraints(raw)
+            return json.dumps({"handler": handler, "parsed": parsed}, indent=2)
+
+        if handler == "admissions_funnel":
+            if rows:
+                stage_counts: Dict[str, int] = {}
+                for r in rows:
+                    st = str(r.get("stage") or "new").lower()
+                    stage_counts[st] = stage_counts.get(st, 0) + 1
+                return json.dumps({"stage_counts": stage_counts, "total": len(rows)}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required, "message": "Provide leads[] with stage."}, indent=2)
+
+        if handler == "admissions_followup":
+            raw = payload.get("raw", "")
+            return json.dumps(
+                {
+                    "handler": handler,
+                    "generated_message": {
+                        "whatsapp": "Hi, this is Atlas Admissions. Quick follow-up on your program interest. Reply with a convenient time for a 10-minute counselling call.",
+                        "email_subject": "Next step for your Atlas application",
+                        "email_body": "Hello, thank you for your interest in Atlas Skilltech University. Based on your profile, we would like to guide you on the next step in the admission process. Please reply with your availability for a quick counselling call.",
+                    },
+                    "context_excerpt": raw[:180],
+                },
+                indent=2,
+            )
+
+        if handler == "admissions_scholarship":
+            sample = rows[:20]
+            matches = []
+            for idx, row in enumerate(sample, start=1):
+                score = float(row.get("score") or row.get("class_12_percent") or 0)
+                income = float(row.get("annual_income") or 0)
+                category = str(row.get("category") or "general")
+                schemes = []
+                if score >= 85:
+                    schemes.append("Institution Merit Scholarship")
+                if income and income <= 800000:
+                    schemes.append("EBC / Need-based Scheme")
+                if category.lower() in {"sc", "st", "obc", "minority"}:
+                    schemes.append("State Social Category Scheme")
+                matches.append({"candidate_index": idx, "eligible_schemes": schemes, "scheme_count": len(schemes)})
+            return json.dumps({"handler": handler, "matches": matches, "count": len(matches)}, indent=2)
+
+        if handler == "admissions_brief":
+            return json.dumps(
+                {
+                    "handler": handler,
+                    "brief_template": {
+                        "academic_strength": "Summarize strongest academic marker",
+                        "programme_fit": "Summarize fit with target program",
+                        "likely_objections": ["fees", "location", "brand"],
+                        "talking_points": ["ROI", "outcomes", "scholarship options"],
+                        "red_flags": ["incomplete docs", "engagement drop"],
+                    },
+                },
+                indent=2,
+            )
+
+        if handler == "hr_leave":
+            return json.dumps(self._leave_decisions(rows) if rows else {"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "hr_load":
+            if rows:
+                data = []
+                for idx, row in enumerate(rows[:200], start=1):
+                    hours = float(row.get("teaching_hours") or 0)
+                    flag = "overloaded" if hours > 20 else "underloaded" if hours < 8 else "balanced"
+                    data.append({"faculty_index": idx, "name": row.get("name") or f"Faculty {idx}", "teaching_hours": hours, "flag": flag})
+                return json.dumps({"load_analysis": data, "count": len(data)}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "hr_policy":
+            return json.dumps({"handler": handler, "response": "Please verify with the HR office. Applicable rule depends on institution policy overlays on Maharashtra/UGC baseline."}, indent=2)
+
+        if handler in {"hr_appraisal", "hr_recruitment"}:
+            return json.dumps(self._candidate_screening(rows) if rows else {"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "hr_onboarding":
+            return json.dumps({"handler": handler, "checklist": ["Document verification", "System access", "Department induction", "Week 1/2/4 milestones"]}, indent=2)
+
+        if handler in {"academics_conflicts", "academics_substitution", "academics_curriculum", "academics_calendar", "academics_exams"}:
+            if rows:
+                return json.dumps({"handler": handler, "analysis": self._compute_table_stats(rows), "next": "Pending HOD and Principal approval"}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "placement_jd":
+            return json.dumps({"handler": handler, "required_outputs": ["skills", "qualifications", "critical_criteria_top5", "curriculum_coverage_score"]}, indent=2)
+
+        if handler == "placement_match":
+            if rows:
+                return json.dumps({"handler": handler, "match_summary": self._compute_table_stats(rows)}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "placement_skill_gap":
+            return json.dumps({"handler": handler, "required_outputs": ["top_5_gaps", "gap_percentages", "recommended_interventions"]}, indent=2)
+
+        if handler == "placement_resume":
+            return json.dumps({"handler": handler, "rubric": {"Impact": 25, "Relevance": 25, "Clarity": 20, "Keywords": 20, "Format": 10}}, indent=2)
+
+        if handler == "placement_interview":
+            target = payload.get("raw", "")[:200]
+            return json.dumps({"handler": handler, "target_context": target, "interview_pack": {"hr_questions": 10, "technical_questions": 5, "coaching_focus": ["STAR", "metrics", "JD alignment"]}}, indent=2)
+
+        if handler in {"placement_pipeline", "placement_alumni"}:
+            return json.dumps({"handler": handler, "required_outputs": ["tiering", "outreach_strategy", "next_actions"]}, indent=2)
+
+        if handler == "students_projects":
+            return json.dumps({"handler": handler, "required_outputs": ["milestone_status", "delay_flags", "escalation_actions"]}, indent=2)
+
+        if handler == "students_dropout":
+            return json.dumps(self._student_risk(rows) if rows else {"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "students_grievance":
+            return json.dumps(self._grievance_routing(rows) if rows else {"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler in {"students_internships", "students_support_qa", "students_attendance"}:
+            if rows:
+                return json.dumps({"handler": handler, "analysis": self._compute_table_stats(rows)}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "finance_fee":
+            if rows:
+                return json.dumps({"handler": handler, "fee_overview": self._compute_table_stats(rows), "tiered_reminder_policy": ["T+0", "T+7", "T+15", "T+30"]}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler in {"finance_naac", "finance_budget", "finance_grants", "finance_audit", "finance_compliance_calendar", "finance_procurement"}:
+            if handler == "finance_procurement":
+                return json.dumps(self._procurement_status(rows) if rows else {"handler": handler, "required_inputs": required}, indent=2)
+            if rows:
+                return json.dumps({"handler": handler, "analysis": self._compute_table_stats(rows)}, indent=2)
+            return json.dumps({"handler": handler, "required_inputs": required}, indent=2)
+
+        if handler == "it_support":
+            return json.dumps(self._incident_triage(rows, payload.get("raw", "")), indent=2)
+
+        if handler == "research_assistant":
+            query = payload.get("raw", "").strip() or "research topic not provided"
+            return json.dumps({"handler": handler, "research_query": query[:240], "workflow": ["keywording", "source ranking", "gap extraction", "draft outline"]}, indent=2)
+
+        if handler == "wellbeing_support":
+            return json.dumps({"handler": handler, "support_path": ["triage", "counselor assignment", "follow-up", "risk escalation"]}, indent=2)
+
+        return json.dumps({"handler": handler, "required_inputs": required, "message": "Contract found but no deterministic implementation branch."}, indent=2)
 
     def _parse_context_payload(self, context: str) -> Dict[str, Any]:
         raw = (context or "").strip()
@@ -371,6 +559,10 @@ class AgentBase(AgenticPipeline):
         low = f"{goal} {step}".lower()
         payload = self._parse_context_payload(context)
         rows = self._extract_primary_rows(payload)
+
+        contract = self._resolve_action_contract(goal)
+        if contract:
+            return self._contract_driven_output(contract, payload, rows, goal, step)
 
         if any(k in low for k in ["parse", "constraint"]) and any(k in low for k in ["timetable", "schedule", "calendar"]):
             parsed = self._parse_constraints(payload.get("raw", ""))
