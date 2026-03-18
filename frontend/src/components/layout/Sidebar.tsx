@@ -30,6 +30,7 @@ const ICON_MAP: Record<string, any> = {
 
 const DEFAULT_PLATFORM_CORE = [
   { title: "Command Center", href: "/", icon: "layout-dashboard", color: "text-indigo-400" },
+  { title: "Agent Catalog", href: "/ai/agents", icon: "activity", color: "text-slate-300" },
   { title: "Active Directory", href: "/admin/users", icon: "users", color: "text-slate-300" },
   { title: "Administrator", href: "/settings", icon: "settings", color: "text-slate-300" },
   { title: "Audit Logs", href: "/admin/audit", icon: "activity", color: "text-slate-300" },
@@ -71,6 +72,7 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
         { title: "Grievance", href: "/students/grievance" },
         { title: "Internships", href: "/students/internships" },
         { title: "Events Coordinator", href: "/students/events" },
+        { title: "Wellbeing Support", href: "/ai/agents/students-wellbeing" },
         { title: "Projects", href: "/students/projects" }
       ]
     },
@@ -80,6 +82,12 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
         { title: "Research Assistant", href: "/research/assistant" },
         { title: "Grant Tracker", href: "/research/grant" },
         { title: "Publication Ops", href: "/research/publication" }
+      ]
+    },
+    {
+      title: "IT & Services", icon: Activity, href: "/ai/agents/it-support", color: "text-teal-400",
+      subItems: [
+        { title: "IT Support", href: "/ai/agents/it-support" }
       ]
     },
     { 

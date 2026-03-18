@@ -1,18 +1,24 @@
 from app.modules.admissions_chat.agent import AdmissionsChatAgent
+from app.modules.lead_nurture.agent import LeadNurtureAgent
+from app.modules.document_verifier.agent import DocumentVerifierAgent
 from app.modules.scholarship_matcher.agent import ScholarshipMatcherAgent
 from app.modules.career_advisor.agent import CareerAdvisorAgent
+from app.modules.resume_intelligence.agent import ResumeIntelligenceAgent
 from app.modules.alumni_network.agent import AlumniNetworkAgent
 from app.modules.recruiter_comms.agent import RecruiterCommsAgent
 from app.modules.interview_prep.agent import InterviewPrepAgent
 from app.modules.timetable_ai.agent import TimetableAIAgent
 from app.modules.substitution.agent import SubstitutionAgent
 from app.modules.exam_scheduler.agent import ExamSchedulerAgent
+from app.modules.calendar_generator.agent import CalendarGeneratorAgent
+from app.modules.curriculum_auditor.agent import CurriculumAuditorAgent
 from app.modules.procurement.agent import ProcurementAgent
 from app.modules.budget_monitor.agent import BudgetMonitorAgent
 from app.modules.accreditation.agent import AccreditationAgent
 from app.modules.faculty_load_balancer.agent import FacultyLoadBalancerAgent
 from app.modules.appraisal.agent import AppraisalAgent
 from app.modules.leave_manager.agent import LeaveManagerAgent
+from app.modules.hr_bot.agent import HROperationsBotAgent
 from app.modules.research_assistant.agent import ResearchAssistantAgent
 from app.modules.grant_tracker.agent import GrantTrackerAgent
 from app.modules.publication_assistant.agent import PublicationAssistantAgent
@@ -32,22 +38,23 @@ from app.services.ai.agents.base import AgentBase
 ALL_AGENTS: dict[str, AgentBase] = {
     # Admissions
     "admissions-intelligence": AdmissionsChatAgent(),
-    "admissions-leads": AdmissionsChatAgent(),
+    "admissions-leads": LeadNurtureAgent(),
     "admissions-scholarship": ScholarshipMatcherAgent(),
-    "admissions-documents": AdmissionsChatAgent(),
+    "admissions-documents": DocumentVerifierAgent(),
 
     # Placement
     "placement-alumni": AlumniNetworkAgent(),
     "placement-interview-prep": InterviewPrepAgent(),
     "placement-interview": InterviewPrepAgent(),
     "placement-intelligence": CareerAdvisorAgent(),
-    "placement-resume": CareerAdvisorAgent(),
+    "placement-resume": ResumeIntelligenceAgent(),
 
     # Academics
     "academics-timetable": TimetableAIAgent(),
     "academics-substitution": SubstitutionAgent(),
-    "academics-calendar": ExamSchedulerAgent(),
-    "academics-curriculum": CourseBuilderAgent(),
+    "academics-exams": ExamSchedulerAgent(),
+    "academics-calendar": CalendarGeneratorAgent(),
+    "academics-curriculum": CurriculumAuditorAgent(),
 
     # Finance
     "finance-procurement": ProcurementAgent(),
@@ -59,10 +66,12 @@ ALL_AGENTS: dict[str, AgentBase] = {
     "hr-load-balancer": FacultyLoadBalancerAgent(),
     "hr-appraisal": AppraisalAgent(),
     "hr-recruitment": RecruiterCommsAgent(),
-    "hr-bot": LeaveManagerAgent(),
+    "hr-bot": HROperationsBotAgent(),
+    "hr-leave-manager": LeaveManagerAgent(),
 
     # Students
     "students-projects": ProjectTrackerAgent(),
+    "students-course-builder": CourseBuilderAgent(),
     "students-grievance": GrievanceAgent(),
     "students-wellbeing": WellbeingSupportAgent(),
     "students-dropout": DropoutPredictorAgent(),
