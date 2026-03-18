@@ -87,7 +87,7 @@ def get_chat_tools() -> List[content.Tool]:
             properties={
                 "agent_id": content.Schema(
                     type=content.Type.STRING,
-                    description="The ID/Slug of the agent (e.g., 'admissions/intelligence')"
+                    description="The ID/Slug of the agent (e.g., 'admissions-intelligence'). Use hyphens, not slashes."
                 )
             },
             required=["agent_id"]
@@ -102,7 +102,7 @@ def get_chat_tools() -> List[content.Tool]:
             properties={
                 "agent_id": content.Schema(
                     type=content.Type.STRING,
-                    description="The ID/Slug of the agent (e.g., 'admissions-intelligence', 'hr-bot')"
+                    description="The ID/Slug of the agent (e.g., 'admissions-intelligence', 'hr-bot'). Use hyphens, not slashes."
                 ),
                 "action": content.Schema(
                     type=content.Type.STRING,

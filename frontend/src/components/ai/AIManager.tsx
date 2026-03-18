@@ -24,6 +24,23 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Load from local storage
+  useEffect(() => {
+    const saved = localStorage.getItem("atlas_ai_chat_history");
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse chat history");
+      }
+    }
+  }, []);
+
+  // Save to local storage
+  useEffect(() => {
+    localStorage.setItem("atlas_ai_chat_history", JSON.stringify(messages));
+  }, [messages]);
+
   // Auto-fill and send initial prompt
   useEffect(() => {
     if (isOpen && initialPrompt) {
@@ -87,6 +104,11 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
     }
   };
 
+  const clearHistory = () => {
+    setMessages([]);
+    localStorage.removeItem("atlas_ai_chat_history");
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -98,8 +120,7 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
           <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg"
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg"
               style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
             >
               🤖
@@ -108,18 +129,26 @@ export default function AIManager({ isOpen, onClose, initialPrompt }: AIManagerP
               <h2 className="text-sm font-bold text-white tracking-wide uppercase">AI Command Manager</h2>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <p style={{ color: "var(--text-muted)", fontSize: 10 }}>GEMINI POWERED • LOGGED IN</p>
+                <p style={{ color: "var(--text-muted)", fontSize: 10 }}>GROQ POWERED • LOGGED IN</p>
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={clearHistory}
+              className="text-[11px] px-3 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+            >
+              Clear
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Chat Area */}

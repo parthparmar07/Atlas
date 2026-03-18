@@ -1,130 +1,80 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import AIManager from "@/components/ai/AIManager";
-import { Search, Bell, Bot, ChevronDown } from "lucide-react";
+import { Bell, Search, Moon, ChevronDown, Zap } from "lucide-react";
+import { useState } from "react";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export default function Header() {
-  const [showAIManager, setShowAIManager] = useState(false);
-  const [initialPrompt, setInitialPrompt] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    const handleOpenAIManager = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail?.prompt) {
-        setInitialPrompt(customEvent.detail.prompt);
-      } else {
-        setInitialPrompt(undefined);
-      }
-      setShowAIManager(true);
-    };
-
-    window.addEventListener("open-ai-manager", handleOpenAIManager);
-    return () => window.removeEventListener("open-ai-manager", handleOpenAIManager);
-  }, []);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   return (
-    <>
-      <header
-        className="flex items-center justify-between shrink-0 bg-white z-20"
-        style={{
-          height: 64,
-          padding: "0 28px",
-          borderBottom: "1px solid var(--border)",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-        }}
-      >
-        {/* Search */}
-        <div className="flex-1 flex items-center" style={{ maxWidth: 460 }}>
-          <div className="relative w-full">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-              <Search className="w-4 h-4" />
-            </span>
-            <input
-              type="search"
-              placeholder="Search agents, students, or system logs..."
-              className="w-full transition-all focus:ring-2 focus:ring-purple-500/20"
-              style={{
-                paddingLeft: 40,
-                paddingRight: 16,
-                paddingTop: 10,
-                paddingBottom: 10,
-                border: "1px solid #e2e8f0",
-                borderRadius: "999px",
-                background: "#f8fafc",
-                color: "var(--text-primary)",
-                fontSize: 14,
-                outline: "none",
-              }}
-            />
+    <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200 z-20 shrink-0 sticky top-0 shadow-sm">
+      
+      {/* Search & Actions Bar */}
+      <div className="flex items-center gap-4 flex-1">
+        <div className={cn(
+          "relative flex items-center transition-all duration-300 rounded-full overflow-hidden border max-w-xl flex-1 bg-slate-50",
+          isSearchFocused ? "border-indigo-300 shadow-[0_0_0_2px_rgba(99,102,241,0.1)] bg-white" : "border-slate-200 hover:border-slate-300"
+        )}>
+          <div className="pl-4 pr-2 text-slate-400 flex shrink-0">
+            <Search className="w-4 h-4" />
           </div>
+          <input 
+            type="text" 
+            placeholder="Search agents, students, or system logs..." 
+            className="w-full bg-transparent border-none py-2.5 px-2 text-sm outline-none placeholder:text-slate-400 text-slate-800"
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+          />
+          <button className="flex items-center gap-2 m-1 px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-xs font-bold rounded-full mr-1 tracking-wide shadow-sm">
+            <Zap className="w-3.5 h-3.5" /> AI MANAGER
+          </button>
         </div>
 
-        {/* Right side controls */}
-        <div className="flex items-center gap-5">
-          {/* AI Manager Button */}
-          <button
-            onClick={() => setShowAIManager(true)}
-            className="flex items-center gap-2 rounded-lg font-bold transition-all hover:scale-105 active:scale-95"
-            style={{
-              height: 40,
-              padding: "0 18px",
-              background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 14,
-              boxShadow: "0 4px 12px rgba(124,58,237,0.25)",
-              letterSpacing: "0.02em",
-            }}
-          >
-            <Bot className="w-4 h-4 text-white" />
-            <span>AI Manager</span>
-          </button>
-
-          {/* Live system status */}
-          <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-            <span className="text-slate-600 text-sm font-medium">System: Optimal</span>
-          </div>
-
-          {/* Notifications */}
-          <button
-            className="relative flex items-center justify-center rounded-full transition-colors hover:bg-slate-100"
-            style={{
-              width: 40,
-              height: 40,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
-          >
-            <Bell className="w-[18px] h-[18px]" />
-            <span
-              className="absolute top-2 right-2.5 w-2 h-2 rounded-full"
-              style={{ background: "#ef4444", border: "2px solid white" }}
-            />
-          </button>
-
-          {/* Avatar Area */}
-          <div className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1.5 pr-2 rounded-full transition-colors border border-transparent hover:border-slate-200">
-            <div
-              className="flex items-center justify-center rounded-full font-bold text-sm"
-              style={{
-                width: 36,
-                height: 36,
-                background: "#1e293b",
-                color: "white",
-                flexShrink: 0,
-              }}
-            >
-              A
-            </div>
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          </div>
+        {/* Status indicator */}
+        <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold tracking-wide upppercase uppercase">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          SYSTEM OPTIMAL
         </div>
-      </header>
+      </div>
 
-      <AIManager isOpen={showAIManager} onClose={() => setShowAIManager(false)} initialPrompt={initialPrompt} />
-    </>
+      <div className="flex items-center gap-6 ml-4">
+        
+        {/* Action icons */}
+        <div className="flex items-center gap-3 text-slate-400">
+          <button className="p-2 rounded-full hover:text-indigo-600 hover:bg-slate-100 transition-colors">
+            <Moon className="w-5 h-5" />
+          </button>
+          <button className="relative p-2 rounded-full hover:text-indigo-600 hover:bg-slate-100 transition-colors">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+          </button>
+        </div>
+
+        {/* Separation line */}
+        <div className="h-8 w-px bg-slate-200"></div>
+
+        {/* User profile */}
+        <button className="flex items-center gap-3 hover:bg-slate-50 p-1.5 pr-3 rounded-full transition-colors">
+          <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center font-bold text-white text-sm shrink-0">
+            AD
+          </div>
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-sm font-bold text-slate-800">Admin User</span>
+            <span className="text-[10px] font-bold text-slate-400 tracking-wider">SUPER USER</span>
+          </div>
+          <ChevronDown className="w-4 h-4 text-slate-400 ml-1" />
+        </button>
+
+      </div>
+    </header>
   );
 }

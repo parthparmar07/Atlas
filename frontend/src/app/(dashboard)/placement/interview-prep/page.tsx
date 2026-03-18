@@ -2,7 +2,7 @@ import AgentPageTemplate, { AgentConfig } from "@/components/agents/AgentPageTem
 
 const config: AgentConfig = {
   name: "Interview Prep Agent",
-  agentId: "placement-interview-prep",
+  agentId: "placement-interview",
   badge: "unique",
   domain: "Placement",
   domainHref: "/placement",

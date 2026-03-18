@@ -31,6 +31,25 @@ class TelemetryBroadcast:
 broadcast = TelemetryBroadcast()
 
 
+@router.get("/stats")
+async def get_dashboard_stats():
+    """Get summarized dashboard statistics."""
+    # In a real app, these would come from the DB
+    return {
+        "active_agents": 24,
+        "automations_today": 142,
+        "active_projects": 8,
+        "system_health": 99.9,
+        "throughput": 12.4,
+        "events": [
+            { "id": 1, "agent": "Admissions Intel", "task": "Scoring 42 apps", "status": "Running", "color": "emerald", "time": "Just now" },
+            { "id": 2, "agent": "Faculty Balancer", "task": "Generating Report", "status": "Completed", "color": "blue", "time": "2m ago" },
+            { "id": 3, "agent": "Lead Nurture", "task": "Drip Campaign #12", "status": "Active", "color": "amber", "time": "5m ago" },
+            { "id": 4, "agent": "Placement Intel", "task": "Syncing Job Boards", "status": "Syncing", "color": "indigo", "time": "12m ago" },
+        ]
+    }
+
+
 @router.websocket("/live")
 async def telemetry_live(websocket: WebSocket):
     await broadcast.connect(websocket)

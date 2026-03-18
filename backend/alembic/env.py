@@ -11,7 +11,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-sync_url = settings.database_url.replace("+asyncpg", "").replace("postgresql+asyncpg", "postgresql")
+sync_url = settings.database_url.replace("+asyncpg", "").replace("postgresql+asyncpg", "postgresql").replace("+aiosqlite", "")
 target_metadata = Base.metadata
 
 

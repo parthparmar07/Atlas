@@ -18,18 +18,33 @@ depends_on = None
 def upgrade():
     # Create initial admin user (password: admin123)
     # Use bcrypt hash for password "admin123"
-    op.execute("""
-        INSERT INTO users (email, hashed_password, role, status, is_active, created_at)
-        VALUES (
-            'admin@atlasuniversity.edu.in',
-            '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzS8lhCHSm',
-            'ADMIN',
-            'APPROVED',
-            true,
-            NOW()
-        )
-        ON CONFLICT (email) DO NOTHING;
-    """)
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.execute("""
+            INSERT INTO users (email, hashed_password, role, status, is_active, created_at)
+            VALUES (
+                'admin@atlasuniversity.edu.in',
+                '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzS8lhCHSm',
+                'ADMIN',
+                'APPROVED',
+                true,
+                NOW()
+            )
+            ON CONFLICT (email) DO NOTHING;
+        """)
+    else:
+        # SQLite
+        op.execute("""
+            INSERT OR IGNORE INTO users (email, hashed_password, role, status, is_active, created_at)
+            VALUES (
+                'admin@atlasuniversity.edu.in',
+                '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzS8lhCHSm',
+                'ADMIN',
+                'APPROVED',
+                true,
+                CURRENT_TIMESTAMP
+            );
+        """)
 
 
 def downgrade():

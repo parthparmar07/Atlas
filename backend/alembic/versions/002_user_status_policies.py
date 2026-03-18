@@ -17,8 +17,10 @@ depends_on = None
 
 def upgrade():
     # Add status column to users table
-    op.execute("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'ADMIN'")
-    op.execute("CREATE TYPE userstatus AS ENUM ('PENDING', 'APPROVED', 'REJECTED')")
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.execute("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'ADMIN'")
+        op.execute("CREATE TYPE userstatus AS ENUM ('PENDING', 'APPROVED', 'REJECTED')")
     
     op.add_column('users', sa.Column('status', sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='userstatus'), nullable=False, server_default='PENDING'))
     op.add_column('users', sa.Column('approved_at', sa.DateTime(timezone=True), nullable=True))
@@ -53,6 +55,8 @@ def downgrade():
     op.drop_column('users', 'approved_at')
     op.drop_column('users', 'status')
     
-    op.execute('DROP TYPE IF EXISTS userstatus')
-    op.execute('DROP TYPE IF EXISTS policytype')
-    op.execute('DROP TYPE IF EXISTS policystatus')
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.execute('DROP TYPE IF EXISTS userstatus')
+        op.execute('DROP TYPE IF EXISTS policytype')
+        op.execute('DROP TYPE IF EXISTS policystatus')

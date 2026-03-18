@@ -1,380 +1,431 @@
-"use client";
-
-import Link from "next/link";
+﻿import type { Metadata } from "next";
 import { 
-  Monitor, RefreshCw, FileText, CheckCircle2, 
-  ChevronRight, Activity, BellRing, Target, AlertTriangle
+  ArrowUpRight, Cpu, RefreshCw, Target, Shield, Zap, 
+  Activity, RefreshCcw, Search, GraduationCap, Server, MessageSquare, Briefcase, FileText
 } from "lucide-react";
+import Link from "next/link";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
-// ── Data ────────────────────────────────────────────────────────────────────
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export const metadata: Metadata = {
+  title: "Dashboard | Atlas Ecosystem",
+};
+
+const METRICS = [
+  { label: "ACTIVE AGENTS", value: "24", subValue: "+4 new", icon: Cpu, color: "text-indigo-500", bg: "bg-indigo-50", badgeColor: "text-indigo-600 bg-indigo-50" },
+  { label: "AUTOMATIONS", value: "142", subValue: "Live", icon: RefreshCw, color: "text-purple-500", bg: "bg-purple-50", badgeColor: "text-purple-600 bg-purple-50", iconUp: true },
+  { label: "PROJECTS", value: "8", subValue: "2 Due Soon", icon: Target, color: "text-orange-500", bg: "bg-orange-50", badgeColor: "text-orange-600 bg-orange-50" },
+  { label: "UPTIME", value: "99.9%", subValue: "Excellent", icon: Shield, color: "text-emerald-500", bg: "bg-emerald-50", badgeColor: "text-emerald-600 bg-emerald-50" },
+  { label: "THROUGHPUT", value: "12.4 T/s", subValue: "Groq LPU", icon: Zap, color: "text-indigo-500", bg: "bg-indigo-50", badgeColor: "text-indigo-600 bg-indigo-50", iconUp: true }
+];
 
 const DOMAINS = [
   {
-    key: "admissions", label: "Admissions & Leads", color: "#f97316",
-    href: "/admissions",
+    key: "admissions", label: "Admissions & Leads", color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-200", href: "/admissions",
     agents: [
-      { href: "/admissions/intelligence", name: "Admissions Intelligence", badge: "hot",    desc: "From raw lead to ranked applicant — in seconds, not days." },
-      { href: "/admissions/leads",        name: "Lead Nurture",            badge: "unique", desc: "Every lead gets the right message automatically." },
-      { href: "/admissions/scholarship",  name: "Scholarship Matcher",     badge: "api",    desc: "Match students to 200+ government & private schemes." },
-      { href: "/admissions/documents",    name: "Document Verifier",       badge: "core",   desc: "Zero document errors reach the counsellor's desk." },
+      { href: "/admissions/intelligence", name: "Admissions Intelligence", badge: "Hot",    badgeColor: "bg-rose-100 text-rose-600", desc: "From raw lead to ranked applicant � in seconds, not days." },
+      { href: "/admissions/leads",        name: "Lead Nurture",            badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Every lead gets the right message automatically." },
+      { href: "/admissions/scholarship",  name: "Scholarship Matcher",     badge: "API",    badgeColor: "bg-sky-100 text-sky-600", desc: "Match students to 200+ government & private schemes." },
+      { href: "/admissions/documents",    name: "Document Verifier",       badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Zero document errors reach the counsellor's desk." },
     ],
   },
   {
-    key: "hr", label: "HR & Faculty", color: "#8b5cf6",
-    href: "/hr",
+    key: "hr", label: "HR & Faculty", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", href: "/hr",
     agents: [
-      { href: "/hr/bot",           name: "HR Operations Bot",     badge: "core",   desc: "HR queries resolved in seconds, not email threads." },
-      { href: "/hr/load-balancer", name: "Faculty Load Balancer", badge: "unique", desc: "Equitable workloads — detected automatically." },
-      { href: "/hr/appraisal",     name: "Appraisal Agent",       badge: "unique", desc: "Annual KPI reports generated from data instantly." },
-      { href: "/hr/recruitment",   name: "Recruitment Pipeline",  badge: "api",    desc: "Faculty hiring runs itself — from posting to interview." },
+      { href: "/hr/bot",           name: "HR Operations Bot",     badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "HR queries resolved in seconds, not email threads." },
+      { href: "/hr/load-balancer", name: "Faculty Load Balancer", badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Equitable workloads � detected automatically." },
+      { href: "/hr/appraisal",     name: "Appraisal Agent",       badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Annual KPI reports generated from data instantly." },
+      { href: "/hr/recruitment",   name: "Recruitment Pipeline",  badge: "API",    badgeColor: "bg-sky-100 text-sky-600", desc: "Faculty hiring runs itself � from posting to interview." },
     ],
   },
   {
-    key: "academics", label: "Academics", color: "#0ea5e9",
-    href: "/academics",
+    key: "academics", label: "Academics", color: "text-sky-500", bg: "bg-sky-50", border: "border-sky-200", href: "/academics",
     agents: [
-      { href: "/academics/timetable",    name: "Timetable AI",       badge: "hot",    desc: "Clash-free timetables generated in minutes." },
-      { href: "/academics/substitution", name: "Substitution Agent", badge: "core",   desc: "No class left uncovered — sub found in under 2 mins." },
-      { href: "/academics/curriculum",   name: "Curriculum Auditor", badge: "unique", desc: "Know what exams actually test vs what is taught." },
-      { href: "/academics/calendar",     name: "Calendar Generator", badge: "core",   desc: "One source of truth for every date in the year." },
+      { href: "/academics/timetable",    name: "Timetable AI",       badge: "Hot",    badgeColor: "bg-rose-100 text-rose-600", desc: "Clash-free timetables generated in minutes." },
+      { href: "/academics/substitution", name: "Substitution Agent", badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "No class left uncovered � sub found in under 2 mins." },
+      { href: "/academics/curriculum",   name: "Curriculum Auditor", badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Know what exams actually test vs what is taught." },
+      { href: "/academics/calendar",     name: "Calendar Generator", badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "One source of truth for every date in the year." },
     ],
   },
   {
-    key: "placement", label: "Placement", color: "#10b981",
-    href: "/placement",
+    key: "placement", label: "Placement", color: "text-indigo-500", bg: "bg-indigo-50", border: "border-indigo-200", href: "/placement",
     agents: [
-      { href: "/placement/intelligence",   name: "Placement Intel",     badge: "hot",    desc: "Your entire placement pipeline on autopilot." },
-      { href: "/placement/interview-prep", name: "Interview Prep",      badge: "unique", desc: "Practice against the exact role you're targeting." },
-      { href: "/placement/alumni",         name: "Alumni Network",      badge: "api",    desc: "Turn your past students into your strongest pipeline." },
-      { href: "/placement/resume",         name: "Resume Tracking",     badge: "core",   desc: "Every student's resume, optimized for ATS passes." },
+      { href: "/placement/intelligence",   name: "Placement Intel",     badge: "Hot",    badgeColor: "bg-rose-100 text-rose-600", desc: "Your entire placement pipeline on autopilot." },
+      { href: "/placement/interview-prep", name: "Interview Prep",      badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Practice against the exact role you're targeting." },
+      { href: "/placement/alumni",         name: "Alumni Network",      badge: "API",    badgeColor: "bg-sky-100 text-sky-600", desc: "Turn your past students into your strongest pipeline." },
+      { href: "/placement/resume",         name: "Resume Tracking",     badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Every student's resume, optimized for ATS passes." },
     ],
   },
   {
-    key: "students", label: "Students", color: "#f59e0b",
-    href: "/students",
+    key: "students", label: "Students", color: "text-pink-500", bg: "bg-pink-50", border: "border-pink-200", href: "/students",
     agents: [
-      { href: "/students/projects",    name: "Project Tracker",   badge: "hot",    desc: "Guide students from synopsis to complete submission." },
-      { href: "/students/dropout",     name: "Dropout Predictor", badge: "unique", desc: "Predict risk 6 weeks early — intervene proactively." },
-      { href: "/students/internships", name: "Internship Agent",  badge: "core",   desc: "Matching the right skill to the right project." },
-      { href: "/students/grievance",   name: "Grievance Agent",   badge: "core",   desc: "Anonymous reporting, transparent fast resolution." },
+      { href: "/students/projects",    name: "Project Tracker",   badge: "Hot",    badgeColor: "bg-rose-100 text-rose-600", desc: "Guide students from synopsis to complete submission." },
+      { href: "/students/dropout",     name: "Dropout Predictor", badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Predict risk 6 weeks early � intervene proactively." },
+      { href: "/students/internships", name: "Internship Agent",  badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Matching the right skill to the right project." },
+      { href: "/students/grievance",   name: "Grievance Agent",   badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Anonymous reporting, transparent fast resolution." },
     ],
   },
   {
-    key: "finance", label: "Finance", color: "#ef4444",
-    href: "/finance",
+    key: "finance", label: "Finance", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-200", href: "/finance",
     agents: [
-      { href: "/finance/fees",          name: "Fee Collection",        badge: "core",   desc: "Maximise recovery, minimise awkward calls." },
-      { href: "/finance/accreditation", name: "Accreditation Agent",   badge: "unique", desc: "365-day tracking for NAAC, NBA, and NIRF scores." },
-      { href: "/finance/budget",        name: "Budget Monitor",        badge: "api",    desc: "Total visibility into every department's spend limit." },
-      { href: "/finance/procurement",   name: "Procurement Agent",     badge: "unique", desc: "Smart purchasing, decentralized tracking flow." },
+      { href: "/finance/fees",          name: "Fee Collection",        badge: "Core",   badgeColor: "bg-emerald-100 text-emerald-600", desc: "Maximise recovery, minimise awkward calls." },
+      { href: "/finance/accreditation", name: "Accreditation Agent",   badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "365-day tracking for NAAC, NBA, and NIRF scores." },
+      { href: "/finance/budget",        name: "Budget Monitor",        badge: "API",    badgeColor: "bg-sky-100 text-sky-600", desc: "Total visibility into every department's spend limit." },
+      { href: "/finance/procurement",   name: "Procurement Agent",     badge: "Unique", badgeColor: "bg-violet-100 text-violet-600", desc: "Smart purchasing, decentralized tracking flow." },
     ],
   },
 ];
 
-const BADGE_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
-  hot:    { label: "Hot",    bg: "var(--hot-bg)",    color: "var(--hot-text)",    border: "var(--hot-border)" },
-  unique: { label: "Unique", bg: "var(--unique-bg)", color: "var(--unique-text)", border: "var(--unique-border)" },
-  core:   { label: "Core",   bg: "var(--core-bg)",   color: "var(--core-text)",   border: "var(--core-border)" },
-  api:    { label: "API",    bg: "var(--api-bg)",    color: "var(--api-text)",    border: "var(--api-border)" },
-};
-
-// ── Page ─────────────────────────────────────────────────────────────────────
-export default function CommandCenterPage() {
+export default function DashboardPage() {
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 1400, margin: "0 auto", color: "var(--text-primary)" }}>
-
-      {/* ── Header Area ── */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#111827" }}>
-            Command Center Overview
-          </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 15, marginTop: 4 }}>
-            Real-time status of Atlas University's agentic ecosystem.
-          </p>
-        </div>
-        <button 
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
-        >
-          <span>+</span>
-          New Agent
-        </button>
-      </div>
-
-      {/* ── Top Stat Cards (Premium Light Theme) ── */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
+    <div className="flex-1 p-8 overflow-y-auto w-full bg-[#f8fafc]">
+      <div className="max-w-[1600px] mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
         
-        {/* Active AI Agents */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-start justify-between">
-            <div>
-               <p className="text-slate-500 text-[13px] font-medium mb-1">Active AI Agents</p>
-               <h3 className="text-3xl font-bold text-slate-800 tracking-tight">24</h3>
+        {/* Header Section */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-[10px] font-bold tracking-wider rounded-full bg-indigo-600 text-white uppercase shadow-sm shadow-indigo-500/30">
+                Production Node
+              </span>
+              <span className="px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider rounded-full bg-slate-200/80 text-slate-600 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> System Stable
+              </span>
+              <span className="px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider rounded-full bg-orange-100/80 text-orange-600 uppercase border border-orange-200">
+                <Cpu className="w-3 h-3" /> Groq LLaMA-3.3 Powered
+              </span>
             </div>
-            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-              <Monitor className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-[11px] font-bold rounded">
-              +4 new
-            </span>
-          </div>
-        </div>
 
-        {/* Running Automations */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-start justify-between">
-            <div>
-               <p className="text-slate-500 text-[13px] font-medium mb-1">Running Automations</p>
-               <h3 className="text-3xl font-bold text-slate-800 tracking-tight">142</h3>
-            </div>
-            <div className="p-2.5 bg-purple-50 text-purple-600 rounded-lg">
-              <RefreshCw className="w-5 h-5" />
-            </div>
+            <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-900">
+              Command <span className="text-indigo-600">Center</span>
+            </h1>
+            
+            <p className="text-lg md:text-xl text-slate-500 font-medium leading-relaxed">
+              Managing Atlas University's high-frequency agentic ecosystem. Real-time telemetry, autonomous decision-making, and multi-domain orchestration.
+            </p>
           </div>
-          <div className="mt-4">
-            <span className="inline-block px-2 py-0.5 bg-purple-100 text-purple-700 text-[11px] font-bold rounded">
-              Stable
-            </span>
-          </div>
-        </div>
 
-        {/* Total Projects */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-start justify-between">
-            <div>
-               <p className="text-slate-500 text-[13px] font-medium mb-1">Total Projects</p>
-               <h3 className="text-3xl font-bold text-slate-800 tracking-tight">8</h3>
-            </div>
-            <div className="p-2.5 bg-orange-50 text-orange-500 rounded-lg">
-              <FileText className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 text-[11px] font-bold rounded">
-              2 Due
-            </span>
+          <div className="flex items-center gap-3 shrink-0">
+            <button className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-[1rem] transition-colors font-bold shadow-sm text-sm">
+              <RefreshCcw className="w-4 h-4" />
+              Hot Refresh
+            </button>
+            <button className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1rem] transition-colors font-bold shadow-lg shadow-indigo-600/30 text-sm">
+              <Zap className="w-4 h-4" />
+              Deploy Agent
+            </button>
           </div>
         </div>
 
-        {/* System Health */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-start justify-between">
-            <div>
-               <p className="text-slate-500 text-[13px] font-medium mb-1">System Health</p>
-               <h3 className="text-3xl font-bold text-slate-800 tracking-tight">99.9%</h3>
-            </div>
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded">
-              Excellent
-            </span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── Live Activity Area ── */}
-      <div className="grid grid-cols-2 gap-6 mb-10">
-        
-        {/* Live Agent Activity View */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-slate-800">Live Agent Activity</h3>
-            <span className="text-indigo-600 text-sm font-semibold cursor-pointer hover:underline text-[13px]">View All</span>
-          </div>
-          <div className="space-y-6">
-            <div className="flex items-start justify-between">
-              <div className="flex gap-3">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800 mb-0.5">Admissions Intelligence</p>
-                  <p className="text-[13px] text-slate-500">Scoring 42 new applications for B.Tech batch</p>
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+          {METRICS.map((metric, i) => (
+            <div key={i} className="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[180px]">
+              <div className="flex justify-between items-start">
+                <div className={cn("p-3 rounded-2xl", metric.bg, metric.color)}>
+                  <metric.icon className="w-6 h-6 stroke-[2.5]" />
                 </div>
+                {metric.iconUp && <ArrowUpRight className="w-5 h-5 text-emerald-500" />}
               </div>
-              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] uppercase font-bold tracking-wider rounded border border-emerald-100">Running</span>
-            </div>
-
-            <div className="flex items-start justify-between">
-              <div className="flex gap-3">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800 mb-0.5">Faculty Load Balancer</p>
-                  <p className="text-[13px] text-slate-500">Equity report generated for CSE department</p>
-                </div>
+              
+              <div className="mt-8">
+                <p className="text-[11px] font-bold tracking-widest text-slate-400 uppercase mb-1">{metric.label}</p>
+                <h3 className="text-4xl font-black tracking-tight text-slate-900">{metric.value}</h3>
               </div>
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] uppercase font-bold tracking-wider rounded border border-blue-100">Completed</span>
-            </div>
 
-            <div className="flex items-start justify-between">
-              <div className="flex gap-3">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800 mb-0.5">Lead Nurture Agent</p>
-                  <p className="text-[13px] text-slate-500">Dispatching WhatsApp drip sequence: 128 leads</p>
-                </div>
-              </div>
-              <span className="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] uppercase font-bold tracking-wider rounded border border-amber-100">Active</span>
-            </div>
-
-            <div className="flex items-start justify-between">
-              <div className="flex gap-3">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-indigo-500" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800 mb-0.5">Placement Intel</p>
-                  <p className="text-[13px] text-slate-500">Scraping career portals: TCS, Infosys, Wipro</p>
-                </div>
-              </div>
-              <span className="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] uppercase font-bold tracking-wider rounded border border-indigo-100">Syncing</span>
-            </div>
-          </div>
-        </div>
-
-        {/* System Activity */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-slate-800">System Activity</h3>
-          </div>
-          <div className="space-y-6">
-            <div className="flex items-start justify-between">
-              <div className="flex gap-3">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800 mb-0.5">Automation Triggered</p>
-                  <p className="text-[13px] text-slate-500">2 min ago</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start justify-between">
-              <div className="flex gap-3">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-purple-500" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800 mb-0.5">Knowledge Base Updated</p>
-                  <p className="text-[13px] text-slate-500">15 min ago</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start justify-between">
-              <div className="flex gap-3">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-orange-500" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800 mb-0.5">Warning Alert</p>
-                  <p className="text-[13px] text-slate-500">1 hour ago</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── Agent Grids ── */}
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: "#111827", marginBottom: 24 }}>Agent Ecosystem</h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
-        {DOMAINS.map((domain) => (
-          <section key={domain.key}>
-            {/* Domain header */}
-            <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
-              <div className="flex items-center gap-3">
-                <span 
-                  className="flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-full"
-                >
-                  <span className="w-2 h-2 rounded-full" style={{ background: domain.color }} />
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{domain.label}</span>
-                </span>
-                <span className="text-sm font-semibold text-slate-400">
-                  {domain.agents.length} Agents Assigned
+              <div className="absolute bottom-6 right-6">
+                <span className={cn("px-2.5 py-1 text-[10px] font-bold rounded-full", metric.badgeColor)}>
+                  {metric.subValue}
                 </span>
               </div>
-              <Link
-                href={domain.href}
-                className="text-[13px] text-slate-500 font-semibold flex items-center gap-1 hover:text-indigo-600 transition-colors"
-                style={{ textDecoration: "none" }}
-              >
-                Explore Domain
-                <ChevronRight className="w-4 h-4" />
-              </Link>
             </div>
+          ))}
+        </div>
 
-            {/* Agent cards */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 16,
-              }}
-            >
-              {domain.agents.map((agent) => {
-                const badge = BADGE_CONFIG[agent.badge];
-                return (
-                  <Link
-                    key={agent.href}
-                    href={agent.href}
-                    style={{ textDecoration: "none", display: "block" }}
-                  >
-                    <div
-                      className="bg-white border rounded-xl transition-all h-full flex flex-col justify-between shadow-sm hover:shadow-md"
-                      style={{
-                        padding: "20px 24px",
-                        cursor: "pointer",
-                        borderLeft: `3px solid ${domain.color}`,
-                        borderColor: "var(--border)",
-                        borderLeftColor: domain.color
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = `${domain.color}80`;
-                        (e.currentTarget as HTMLElement).style.borderLeftColor = domain.color;
-                        (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-                        (e.currentTarget as HTMLElement).style.borderLeftColor = domain.color;
-                        (e.currentTarget as HTMLElement).style.transform = "none";
-                      }}
-                    >
-                      <div>
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                          <h3 style={{ color: "#1e293b", fontSize: 16, fontWeight: 700, lineHeight: 1.2, letterSpacing: "-0.01em" }}>
-                            {agent.name}
-                          </h3>
-                          <span
-                            className="badge shrink-0"
-                            style={{
-                              background: badge.bg,
-                              color: badge.color,
-                              borderColor: badge.border,
-                            }}
-                          >
-                            {badge.label}
-                          </span>
-                        </div>
-                        <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5 }}>
-                          {agent.desc}
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 mt-5 font-semibold text-[13px] transition-colors hover:text-indigo-600" style={{ color: domain.color }}>
-                        Open Agent
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
+        {/* Dashboard Split layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Main Activity Column */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Agent Activity Matrix */}
+            <div className="bg-white rounded-[1.5rem] p-8 shadow-sm border border-slate-100 flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-indigo-100 text-indigo-600 rounded-2xl">
+                    <Activity className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Agent Activity Matrix</h2>
+                    <p className="text-xs font-bold tracking-wider text-slate-400 uppercase mt-1">Real-time command stream</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-8 h-2 rounded-full bg-indigo-600" />
+                  <div className="w-12 h-2 rounded-full bg-slate-200" />
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col gap-3">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-white rounded-xl shadow-sm text-xl">??</div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">Admissions Intel</h4>
+                      <p className="text-sm text-slate-500 font-medium">Scoring 42 apps</p>
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Just Now</p>
+                      <p className="text-xs font-bold text-emerald-500">Encrypted</p>
+                    </div>
+                    <span className="px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold tracking-wider">RUNNING</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-white rounded-xl shadow-sm text-xl">??</div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">Faculty Balancer</h4>
+                      <p className="text-sm text-slate-500 font-medium">Generating Report</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">2m Ago</p>
+                      <p className="text-xs font-bold text-emerald-500">Encrypted</p>
+                    </div>
+                    <span className="px-4 py-1.5 rounded-full bg-slate-200 text-slate-700 text-xs font-bold tracking-wider">COMPLETED</span>
+                  </div>
+                </div>
 
-      {/* ── Footer ── */}
-      <div className="mt-16 pt-8 border-t border-slate-200 text-slate-400 text-sm font-medium text-center">
-        Atlas AI Command Center • Production Mode • 24 Live Agents
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-white rounded-xl shadow-sm text-xl">??</div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">Lead Nurture</h4>
+                      <p className="text-sm text-slate-500 font-medium">Drip Campaign #12</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">5m Ago</p>
+                      <p className="text-xs font-bold text-emerald-500">Encrypted</p>
+                    </div>
+                    <span className="px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold tracking-wider">ACTIVE</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-white rounded-xl shadow-sm text-xl">??</div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">Placement Intel</h4>
+                      <p className="text-sm text-slate-500 font-medium">Syncing Job Boards</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">12m Ago</p>
+                      <p className="text-xs font-bold text-emerald-500">Encrypted</p>
+                    </div>
+                    <span className="px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 text-xs font-bold tracking-wider">SYNCING</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Terminal Live */}
+            <div className="bg-[#0f172a] rounded-[1.5rem] p-6 shadow-xl border border-slate-800 font-mono text-sm">
+              <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                </div>
+                <div className="text-xs text-slate-500 font-bold tracking-widest uppercase">Terminal Live</div>
+              </div>
+              <div className="space-y-2 text-slate-300">
+                <div className="flex">
+                  <span className="text-emerald-400 mr-2">root@atlas:~$</span>
+                  <span className="text-white">exec --agent admissions-intel --target pool-B</span>
+                </div>
+                <div className="pl-4 py-2 text-slate-400">Processing vector embeddings for candidate_ID_882...</div>
+                <div className="pl-4 text-emerald-400 pb-2">[OK] Score 94.2 generated in 12ms (via Groq Llama-3.3)</div>
+                <div className="flex">
+                  <span className="text-emerald-400 mr-2">root@atlas:~$</span>
+                  <span className="w-2 h-4 bg-slate-400 animate-pulse"></span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Sidebar Column */}
+          <div className="space-y-6">
+            
+            {/* Quick Domain Links */}
+            <div className="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100">
+              <div className="space-y-4">
+                {/* admissions quick link */}
+                <div className="p-4 rounded-2xl bg-orange-50 border border-orange-100">
+                  <h3 className="font-bold text-orange-800 mb-2">Admissions & Leads</h3>
+                  <div className="space-y-1.5 mb-3">
+                    <p className="text-xs font-semibold text-orange-600/80">Admissions Intelligence</p>
+                    <p className="text-xs font-semibold text-orange-600/80">Lead Nurture</p>
+                    <p className="text-xs font-semibold text-orange-600/80">Scholarship Matcher</p>
+                  </div>
+                  <Link href="/admissions" className="text-xs font-bold text-orange-700 flex items-center gap-1 hover:gap-2 transition-all">
+                    Explore All 4 Agents &rarr;
+                  </Link>
+                </div>
+                
+                {/* hr quick link */}
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+                  <h3 className="font-bold text-emerald-800 mb-2">HR & Faculty</h3>
+                  <div className="space-y-1.5 mb-3">
+                    <p className="text-xs font-semibold text-emerald-600/80">HR Operations Bot</p>
+                    <p className="text-xs font-semibold text-emerald-600/80">Faculty Load Balancer</p>
+                    <p className="text-xs font-semibold text-emerald-600/80">Appraisal Agent</p>
+                  </div>
+                  <Link href="/hr" className="text-xs font-bold text-emerald-700 flex items-center gap-1 hover:gap-2 transition-all">
+                    Explore All 4 Agents &rarr;
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Core */}
+            <div className="bg-[#111827] rounded-[1.5rem] p-6 shadow-xl text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6 opacity-[0.03]">
+                <Shield className="w-32 h-32" />
+              </div>
+              <div className="relative z-10 space-y-6">
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-indigo-400" />
+                  <h2 className="text-lg font-bold tracking-wide">Security Core</h2>
+                </div>
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Encryption</span>
+                      <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">Active</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 w-[95%]"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Neural Traffic</span>
+                      <span className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase">Normal</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 w-[60%]"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Audit Logs */}
+            <div className="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 mb-4">Audit Logs</h2>
+              <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-4">Scheduled</p>
+              
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="text-xs font-bold text-slate-400 pt-0.5">14:00</div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Fee Recovery Batch</p>
+                    <p className="text-xs text-slate-500 font-medium">Financial</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="text-xs font-bold text-slate-400 pt-0.5">16:30</div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Backup Sync</p>
+                    <p className="text-xs text-slate-500 font-medium">Core</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="text-xs font-bold text-slate-400 pt-0.5">18:00</div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Alumni Drip</p>
+                    <p className="text-xs text-slate-500 font-medium">Leads</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Global Alert */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start sm:items-center gap-4 text-amber-800 mb-10 shadow-sm shadow-amber-100/50">
+          <Activity className="w-6 h-6 shrink-0 text-amber-600" />
+          <div>
+            <h4 className="font-bold text-amber-900">Notice</h4>
+            <p className="text-sm font-medium opacity-90">Llama-3.3-70B throughput is currently peaking. Secondary agents might experience 200ms extra latency.</p>
+          </div>
+        </div>
+
+        {/* --- Agent Ecosystem (The huge domain list) --- */}
+        <div className="pt-6 border-t-[3px] border-slate-200 border-dashed">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Agent Ecosystem</h2>
+              <p className="text-slate-500 font-medium mt-1 text-lg">Distributed intelligence across 6 core domains</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl shadow-sm">Filter</button>
+              <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl shadow-sm">Sort</button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {DOMAINS.map((domain) => (
+              <div key={domain.key} className="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                {/* Domain Header */}
+                <div className={cn("p-5 border-b flex items-center justify-between", domain.bg, domain.border)}>
+                  <h3 className={cn("text-lg font-black tracking-tight", domain.color)}>{domain.label}</h3>
+                  <Server className={cn("w-5 h-5 opacity-50", domain.color)} />
+                </div>
+                
+                {/* Agents List */}
+                <div className="p-5 space-y-5 flex-1">
+                  {domain.agents.map((agent, i) => (
+                    <div key={i} className="group">
+                      <div className="flex items-start justify-between mb-1">
+                        <Link href={agent.href} className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                          {agent.name}
+                        </Link>
+                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider", agent.badgeColor)}>
+                          {agent.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium leading-relaxed">{agent.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 mt-auto">
+                  <Link href={domain.href} className="w-full py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 flex items-center justify-center gap-2 transition-all shadow-sm">
+                    Domain Hub &rarr;
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );

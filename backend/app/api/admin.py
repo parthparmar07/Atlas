@@ -93,29 +93,26 @@ async def get_audit_logs(
     db: AsyncSession = Depends(get_db),
 ):
     """Get audit logs."""
-    result = await db.execute(
-        select(AuditLog)
+    logs = await db.execute(
+        select(AuditLog, User.email.label("user_email"))
+        .outerjoin(User, AuditLog.user_id == User.id)
         .order_by(desc(AuditLog.timestamp))
         .limit(limit)
         .offset(offset)
     )
-    logs = result.scalars().all()
-
-    return {
-        "logs": [
-            {
-                "id": log.id,
-                "user_id": log.user_id,
-                "action": log.action,
-                "ip_address": log.ip_address,
-                "details": log.details,
-                "timestamp": log.timestamp.isoformat(),
-            }
-            for log in logs
-        ],
-        "limit": limit,
-        "offset": offset,
-    }
+    
+    result = []
+    for log, user_email in logs:
+        result.append({
+            "id": log.id,
+            "user_email": user_email or "system",
+            "action": log.action,
+            "resource": log.details or "-",
+            "status": "SUCCESS" if "failed" not in log.action.lower() else "ERROR",
+            "ip_address": log.ip_address or "-",
+            "created_at": log.timestamp.isoformat() if log.timestamp else datetime.now().isoformat()
+        })
+    return result
 
 
 @router.get("/audit/export")

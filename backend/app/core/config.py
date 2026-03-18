@@ -6,6 +6,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     app_name: str = "Atlas AI Command Center"
@@ -23,6 +24,9 @@ class Settings(BaseSettings):
     
     gemini_api_key: str = ""
     ai_model: str = "gemini-2.0-flash-exp"
+    
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
     
     approved_email_domains: str = "atlasuniversity.edu.in"
     

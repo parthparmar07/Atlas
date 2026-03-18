@@ -1,1 +1,3 @@
-# Example: HR Automation backend
+from .agent import HROperationsBotAgent
+
+__all__ = ["HROperationsBotAgent"]

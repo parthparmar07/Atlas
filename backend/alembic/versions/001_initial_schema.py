@@ -79,6 +79,9 @@ def downgrade() -> None:
     op.drop_table("agents")
     op.drop_index(op.f("ix_users_email"), table_name="users")
     op.drop_table("users")
-    op.execute("DROP TYPE IF EXISTS taskstatus")
-    op.execute("DROP TYPE IF EXISTS agentstatus")
-    op.execute("DROP TYPE IF EXISTS userrole")
+    
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        op.execute("DROP TYPE IF EXISTS taskstatus")
+        op.execute("DROP TYPE IF EXISTS agentstatus")
+        op.execute("DROP TYPE IF EXISTS userrole")

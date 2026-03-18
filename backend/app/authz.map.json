@@ -61,5 +61,25 @@
   },
   "/api/ai/chat": {
     "POST": ["ADMIN", "DEVELOPER", "USER"]
+  },
+  "/api/admissions/leads": {
+    "GET": ["ADMIN", "DEVELOPER"],
+    "POST": ["ADMIN", "DEVELOPER", "USER"]
+  },
+  "/api/admissions/leads/{id}": {
+    "GET": ["ADMIN", "DEVELOPER"],
+    "PUT": ["ADMIN", "DEVELOPER"]
+  },
+  "/api/admissions/leads/{id}/documents": {
+    "POST": ["ADMIN", "DEVELOPER", "USER"]
+  },
+  "/api/admissions/leads/{id}/profile": {
+    "GET": ["ADMIN", "DEVELOPER"]
+  },
+  "/api/admissions/leads/{id}/message": {
+    "POST": ["ADMIN", "DEVELOPER"]
+  },
+  "/api/admissions/funnel": {
+    "GET": ["ADMIN", "DEVELOPER"]
   }
 }

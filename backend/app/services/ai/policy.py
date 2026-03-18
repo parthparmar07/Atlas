@@ -1,5 +1,6 @@
 from typing import Dict, Any
 from app.services.ai.gemini import gemini_client
+from app.services.ai.groq_service import groq_client
 
 
 class PolicyService:
@@ -24,11 +25,17 @@ Respond with ONLY the DSL, no explanation."""
 
     async def translate_policy(self, natural_language: str) -> str:
         """Translate natural language policy to DSL."""
-        if not gemini_client.is_available():
-            return "# Set GEMINI_API_KEY for natural-language translation. Fallback:\nuser.role == 'ADMIN'"
+        ai_client = None
+        if groq_client.is_available():
+            ai_client = groq_client
+        elif gemini_client.is_available():
+            ai_client = gemini_client
+
+        if not ai_client:
+            return "# Set GROQ_API_KEY or GEMINI_API_KEY for natural-language translation. Fallback:\nuser.role == 'ADMIN'"
 
         prompt = self.TRANSLATION_PROMPT.format(policy=natural_language)
-        dsl = await gemini_client.generate_text(
+        dsl = await ai_client.generate_text(
             prompt=prompt,
             temperature=0.2,
         )

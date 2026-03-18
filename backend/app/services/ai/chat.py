@@ -1,6 +1,10 @@
 from typing import List, Dict, Any, Optional
+from sqlalchemy.future import select
 from app.services.ai.gemini import gemini_client
+from app.services.ai.groq_service import groq_client
 from app.services.ai.tools import get_chat_tools, execute_tool
+from app.core.database import async_session_maker
+from app.models.policy import Policy
 
 
 class ChatService:
@@ -23,7 +27,24 @@ Current context:
 - User: {user_email} ({user_role})
 - Page: {current_page}
 
+Knowledge Base (Policies):
+{knowledge_base}
+
 Be helpful, concise, and proactive. Use available tools when needed. If you don't have enough information, ask clarifying questions."""
+
+    async def _get_knowledge_base(self) -> str:
+        try:
+            async with async_session_maker() as session:
+                result = await session.execute(select(Policy).limit(10))
+                policies = result.scalars().all()
+                if not policies:
+                    return "No policies found."
+                kb = ""
+                for p in policies:
+                    kb += f"- {p.name}: {p.description} (Type: {p.policy_type})\n"
+                return kb
+        except Exception:
+            return "Knowledge base unavailable."
 
     async def chat(
         self,
@@ -34,22 +55,32 @@ Be helpful, concise, and proactive. Use available tools when needed. If you don'
     ) -> Dict[str, Any]:
         """Process a chat message and return response."""
         
-        if not gemini_client.is_available():
+        # Priority: Groq -> Gemini
+        ai_client = None
+        if groq_client.is_available():
+            ai_client = groq_client
+        elif gemini_client.is_available():
+            ai_client = gemini_client
+
+        if not ai_client:
             return {
                 "role": "assistant",
-                "content": "AI Manager is currently unavailable. Please configure the GEMINI_API_KEY to enable AI features.",
+                "content": "AI Manager is currently unavailable. Please configure Groq or Gemini API keys to enable AI features.",
                 "tool_calls": []
             }
+
+        kb_context = await self._get_knowledge_base()
 
         system_instruction = self.SYSTEM_INSTRUCTION.format(
             user_email=user_email,
             user_role=user_role,
             current_page=current_page,
+            knowledge_base=kb_context,
         )
 
         try:
             tools = get_chat_tools()
-            response = await gemini_client.chat(
+            response = await ai_client.chat(
                 messages=messages,
                 system_instruction=system_instruction,
                 tools=tools,

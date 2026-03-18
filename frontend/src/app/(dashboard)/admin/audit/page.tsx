@@ -2,31 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
+import { Search, Filter, ShieldAlert, CheckCircle, Clock } from "lucide-react";
 
 interface AuditLog {
   id: number;
-  user_id: number | null;
+  user_email: string;
   action: string;
-  ip_address: string | null;
-  details: string;
-  timestamp: string;
+  resource: string;
+  status: string;
+  ip_address: string;
+  created_at: string;
 }
 
-export default function AdminAuditPage() {
+export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [limit, setLimit] = useState(50);
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    loadLogs();
-  }, [limit]);
+  useEffect(() => { loadLogs(); }, []);
 
   const loadLogs = async () => {
     try {
-      const response = await fetchWithAuth(`/api/admin/audit?limit=${limit}`);
+      const response = await fetchWithAuth("/api/admin/audit");
       if (!response.ok) throw new Error("Failed to load audit logs");
       const data = await response.json();
-      setLogs(data.logs);
+      setLogs(data);
     } catch (error) {
       console.error("Failed to load audit logs:", error);
     } finally {
@@ -34,90 +34,94 @@ export default function AdminAuditPage() {
     }
   };
 
-  const handleExport = async () => {
-    try {
-      const response = await fetchWithAuth("/api/admin/audit/export");
-      if (!response.ok) throw new Error("Failed to export logs");
-      const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `audit-logs-${new Date().toISOString()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      alert("Failed to export logs");
-      console.error(error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-slate-600">Loading audit logs...</p>
-      </div>
-    );
-  }
+  const filteredLogs = logs.filter(log => 
+    log.user_email.toLowerCase().includes(search.toLowerCase()) ||
+    log.action.toLowerCase().includes(search.toLowerCase()) ||
+    log.resource.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Audit Logs</h1>
-          <p className="text-slate-600 mt-1">System activity and security events</p>
+    <div className="max-w-6xl mx-auto space-y-8 p-8">
+      <div>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Audit Logs</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">System-wide immutable execution trail</p>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Search logs by email, action, or resource..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-slate-500 text-slate-900 dark:text-white"
+            />
+          </div>
+          <button className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300 font-bold">
+            <Filter className="w-5 h-5" /> Filter
+          </button>
         </div>
-        <button onClick={handleExport} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-          Export Logs
-        </button>
-      </div>
 
-      <div className="flex gap-4 items-center">
-        <label className="text-sm font-medium text-slate-700">Show:</label>
-        <select
-          value={limit}
-          onChange={(e) => setLimit(Number(e.target.value))}
-          className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value={25}>25 logs</option>
-          <option value={50}>50 logs</option>
-          <option value={100}>100 logs</option>
-          <option value={500}>500 logs</option>
-        </select>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase">Timestamp</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase">Action</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase">User ID</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase">IP Address</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase">Details</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                <th className="px-6 py-4 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Timestamp</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">User</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Action</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Resource</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
-              {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 text-sm text-slate-900 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex px-2 py-1 text-xs font-mono rounded bg-slate-100 text-slate-800">{log.action}</span>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                    <Clock className="w-8 h-8 animate-spin mx-auto mb-4 text-slate-400" />
+                    Loading secure logs...
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{log.user_id || "-"}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-mono">{log.ip_address || "-"}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 max-w-md truncate" title={log.details}>{log.details}</td>
+                </tr>
+              ) : filteredLogs.map((log) => (
+                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    {new Date(log.created_at).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">
+                    {log.user_email}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-wider">
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-mono text-slate-500 dark:text-slate-400">
+                    {log.resource}
+                  </td>
+                  <td className="px-6 py-4">
+                    {log.status === 'SUCCESS' ? (
+                      <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+                        <CheckCircle className="w-4 h-4" /> SUCCESS
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 text-sm font-bold">
+                        <ShieldAlert className="w-4 h-4" /> {log.status}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
+              {!loading && filteredLogs.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
+                    No logs found matching your criteria.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-        {logs.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-slate-600">No audit logs found</p>
-          </div>
-        )}
       </div>
     </div>
   );

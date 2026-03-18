@@ -38,3 +38,10 @@ npm-debug.log*
 
 # Generated / data
 digest.txt
+
+# Local DB and Outputs
+backend/atlas_db.sqlite
+backend/outputs/
+backend/app/uploads/
+backend/migrations.db
+*.sqlite3

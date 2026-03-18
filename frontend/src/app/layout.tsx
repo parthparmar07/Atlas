@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Atlas AI Command Center",
+  title: "Atlas Ecosystem",
   description: "Atlas Skilltech University Command Center",
 };
 
@@ -13,7 +13,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">{children}</body>
+      <head>
+        <link id="app-favicon" rel="icon" href="/favicon.svg" />
+      </head>
+      <body className="min-h-screen antialiased dark:bg-slate-900 dark:text-white">{children}</body>
     </html>
   );
 }

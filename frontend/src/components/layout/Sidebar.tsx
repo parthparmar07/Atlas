@@ -1,280 +1,267 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  BarChart, Users, LayoutDashboard, FileText, Settings, 
-  ShieldCheck, BrainCircuit, Activity, ChevronRight, 
-  Briefcase, GraduationCap, Coins, Users2
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+import {
+  BarChart3, Users, Settings, BookOpen, GraduationCap,
+  Briefcase, Target, Shield, LayoutDashboard, ChevronLeft, Menu, Activity, ChevronDown
 } from "lucide-react";
 
-const DOMAINS_FOR_SIDEBAR = [
-  {
-    key: "admissions",
-    label: "Admissions & Leads",
-    color: "#f97316",
-    icon: <Users className="w-4 h-4" />,
-    agents: [
-      { href: "/admissions/intelligence", label: "Admissions Intelligence", badge: "hot" },
-      { href: "/admissions/leads",         label: "Lead Nurture",            badge: "unique" },
-      { href: "/admissions/scholarship",   label: "Scholarship Matcher",     badge: "api" },
-      { href: "/admissions/documents",     label: "Document Verifier",       badge: "core" },
-    ],
-  },
-  {
-    key: "hr",
-    label: "HR & Faculty",
-    color: "#8b5cf6",
-    icon: <Users2 className="w-4 h-4" />,
-    agents: [
-      { href: "/hr/bot",           label: "HR Operations Bot",      badge: "core" },
-      { href: "/hr/load-balancer", label: "Faculty Load Balancer",  badge: "unique" },
-      { href: "/hr/appraisal",     label: "Appraisal Agent",        badge: "unique" },
-      { href: "/hr/recruitment",   label: "Recruitment Pipeline",   badge: "api" },
-    ],
-  },
-  {
-    key: "academics",
-    label: "Academics",
-    color: "#06b6d4",
-    icon: <BarChart className="w-4 h-4" />,
-    agents: [
-      { href: "/academics/timetable",    label: "Timetable AI",        badge: "hot" },
-      { href: "/academics/substitution", label: "Substitution Agent",  badge: "core" },
-      { href: "/academics/curriculum",   label: "Curriculum Auditor",  badge: "unique" },
-      { href: "/academics/calendar",     label: "Calendar Generator",  badge: "core" },
-    ],
-  },
-  {
-    key: "placement",
-    label: "Placement",
-    color: "#10b981",
-    icon: <Briefcase className="w-4 h-4" />,
-    agents: [
-      { href: "/placement/intelligence",   label: "Placement Intel",     badge: "hot" },
-      { href: "/placement/interview-prep", label: "Interview Prep",      badge: "unique" },
-      { href: "/placement/alumni",         label: "Alumni Network",      badge: "api" },
-      { href: "/placement/resume",         label: "Resume Tracking",     badge: "core" },
-    ],
-  },
-  {
-    key: "students",
-    label: "Students",
-    color: "#f59e0b",
-    icon: <GraduationCap className="w-4 h-4" />,
-    agents: [
-      { href: "/students/projects",    label: "Project Tracker",    badge: "hot" },
-      { href: "/students/dropout",     label: "Dropout Predictor",  badge: "unique" },
-      { href: "/students/internships", label: "Internship Agent",   badge: "core" },
-      { href: "/students/grievance",   label: "Grievance Agent",    badge: "core" },
-    ],
-  },
-  {
-    key: "finance",
-    label: "Finance",
-    color: "#ef4444",
-    icon: <Coins className="w-4 h-4" />,
-    agents: [
-      { href: "/finance/fees",          label: "Fee Collection",        badge: "core" },
-      { href: "/finance/accreditation", label: "Accreditation Agent",   badge: "unique" },
-      { href: "/finance/budget",        label: "Budget Monitor",        badge: "api" },
-      { href: "/finance/procurement",   label: "Procurement Agent",     badge: "unique" },
-    ],
-  },
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+const MENU_ITEMS = [
+  { group: "Platform Core", items: [
+    { title: "Command Center", icon: LayoutDashboard, href: "/", color: "text-indigo-400" },
+    { title: "Active Directory", icon: Users, href: "/admin/users", color: "text-slate-300" },
+    { title: "Administrator", icon: Settings, href: "/settings", color: "text-slate-300" },
+    { title: "Audit Logs", icon: Activity, href: "/admin/audit", color: "text-slate-300" },
+    { title: "Security Core", icon: Shield, href: "/ai/policies", color: "text-slate-300" },
+  ]},
+  { group: "Platform Domains", items: [
+    { 
+      title: "Admissions & Leads", icon: Users, href: "/admissions", color: "text-indigo-400",
+      subItems: [
+        { title: "Lead Nurture", href: "/admissions/leads" },
+        { title: "Admissions Intel", href: "/admissions/intelligence" },
+        { title: "Scholarship", href: "/admissions/scholarship" },
+        { title: "Documents", href: "/admissions/documents" }
+      ]
+    },
+    { 
+      title: "Academics", icon: BookOpen, href: "/academics", color: "text-sky-400",
+      subItems: [
+        { title: "Calendar", href: "/academics/calendar" },
+        { title: "Timetable", href: "/academics/timetable" },
+        { title: "Curriculum", href: "/academics/curriculum" },
+        { title: "Substitution", href: "/academics/substitution" }
+      ]
+    },
+    { 
+      title: "HR & Faculty", icon: Target, href: "/hr", color: "text-emerald-400",
+      subItems: [
+        { title: "HR Bot", href: "/hr/bot" },
+        { title: "Recruitment", href: "/hr/recruitment" },
+        { title: "Appraisal", href: "/hr/appraisal" },
+        { title: "Faculty Load Balancer", href: "/hr/load-balancer" }
+      ]
+    },
+    { 
+      title: "Student Lifecycle", icon: GraduationCap, href: "/students", color: "text-pink-400",
+      subItems: [
+        { title: "Dropout Predictor", href: "/students/dropout" },
+        { title: "Grievance", href: "/students/grievance" },
+        { title: "Internships", href: "/students/internships" },
+        { title: "Projects", href: "/students/projects" }
+      ]
+    },
+    { 
+      title: "Placement & Industry", icon: Briefcase, href: "/placement", color: "text-orange-400",
+      subItems: [
+        { title: "Placement Intel", href: "/placement/intelligence" },
+        { title: "Interview Prep", href: "/placement/interview-prep" },
+        { title: "Resume Review", href: "/placement/resume" },
+        { title: "Alumni Network", href: "/placement/alumni" }
+      ]
+    },
+    { 
+      title: "Finance & Compliance", icon: LayoutDashboard, href: "/finance", color: "text-amber-400",
+      subItems: [
+        { title: "Budget Monitor", href: "/finance/budget" },
+        { title: "Procurement", href: "/finance/procurement" },
+        { title: "Fee Collection", href: "/finance/fees" },
+        { title: "Accreditation", href: "/finance/accreditation" }
+      ]
+    }
+  ]}
 ];
 
-const PLATFORM_ITEMS = [
-  { href: "/", label: "Dashboard",   icon: <LayoutDashboard className="w-4 h-4" /> },
-  { href: "/admin/users", label: "User Management", icon: <Users2 className="w-4 h-4" /> },
-  { href: "/admin/audit", label: "Audit Logs",      icon: <FileText className="w-4 h-4" /> },
-  { href: "/ai/policies", label: "AI Policies",     icon: <ShieldCheck className="w-4 h-4" /> },
-  { href: "/ai/insights", label: "AI Insights",     icon: <BrainCircuit className="w-4 h-4" /> },
-  { href: "/settings",    label: "Settings",        icon: <Settings className="w-4 h-4" /> },
-];
+function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean, pathname: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const isParentActive = pathname.startsWith(item.href) && (item.href !== "/" || pathname === "/");
+  
+  const hasSubItems = item.subItems && item.subItems.length > 0;
 
-const BADGE_DOT: Record<string, string> = {
-  hot:    "#ef4444",
-  unique: "#a78bfa",
-  core:   "#94a3b8",
-  api:    "#22d3ee",
-};
+  return (
+    <div className="flex flex-col">
+      <div
+        className={cn(
+          "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative cursor-pointer",
+          isParentActive ? "bg-indigo-600/10 border border-indigo-500/20 text-white" : "hover:bg-white/5 text-slate-400 hover:text-slate-200"
+        )}
+        onClick={() => {
+          if (hasSubItems && !collapsed) {
+            setIsOpen(!isOpen);
+          } else if (hasSubItems && collapsed) {
+            // Just act as a link or expand sidebar, for simplicity we won't auto-expand here, Next Link doesn't wrap entirely
+          }
+        }}
+      >
+        <Link href={hasSubItems ? "#" : item.href} className="flex items-center gap-3 flex-1 overflow-hidden pointer-events-auto">
+          <item.icon className={cn("w-5 h-5 shrink-0 transition-colors", isParentActive ? "text-indigo-400" : item.color)} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className="font-medium text-sm whitespace-nowrap overflow-hidden flex-1"
+              >
+                {item.title}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
+
+        {!collapsed && hasSubItems && (
+          <ChevronDown
+            className={cn(
+              "w-4 h-4 transition-transform duration-200 text-slate-500",
+              isOpen ? "rotate-180 text-indigo-400" : ""
+            )}
+          />
+        )}
+        
+        {!collapsed && isParentActive && !hasSubItems && (
+          <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+        )}
+      </div>
+
+      <AnimatePresence>
+        {isOpen && !collapsed && hasSubItems && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-1 pb-2 pl-10 pr-3 flex flex-col gap-1 flex-1 relative">
+              {/* Connection Line */}
+              <div className="absolute left-[22px] top-0 bottom-3 w-[1px] bg-[#2d2859] rounded-full" />
+              
+              {item.subItems.map((sub: any, i: number) => {
+                const isChildActive = pathname === sub.href;
+                return (
+                  <Link
+                    key={i}
+                    href={sub.href}
+                    className={cn(
+                      "text-[13px] py-2 px-3 rounded-lg transition-colors relative",
+                      isChildActive 
+                        ? "text-indigo-400 bg-indigo-500/10 font-medium" 
+                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                    )}
+                  >
+                    <div className={cn(
+                      "absolute -left-[14px] top-1/2 -translate-y-1/2 w-3 h-[1px]",
+                      isChildActive ? "bg-indigo-500" : "bg-[#2d2859]"
+                    )} />
+                    <span className="relative z-10">{sub.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [openDomains, setOpenDomains] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    // Open all by default initially
-    const initial: Record<string, boolean> = {};
-    DOMAINS_FOR_SIDEBAR.forEach((d) => { initial[d.key] = true; });
-    setOpenDomains(initial);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  const toggleDomain = (key: string) => {
-    setOpenDomains(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+  if (!mounted) return <div className="w-[280px] bg-[#1a163a] shrink-0" />;
 
   return (
-    <aside
-      className="flex flex-col transition-all duration-300 ease-in-out shrink-0 text-white"
-      style={{
-        width: collapsed ? 64 : 260,
-        background: "var(--sidebar-bg)",
-        borderRight: "1px solid var(--sidebar-border)",
-        height: "100vh",
-      }}
+    <motion.aside
+      initial={false}
+      animate={{ width: collapsed ? 80 : 280 }}
+      className="h-screen bg-[#1a163a] text-slate-300 flex flex-col shrink-0 relative z-30 transition-shadow sidebar-scrollbar overflow-y-auto overflow-x-hidden border-r border-[#2d2859]"
     >
-      {/* Brand Header */}
-      <div className="flex items-center px-4" style={{ height: 64, borderBottom: "1px solid var(--sidebar-border)" }}>
-         <Link href="/" className="flex items-center gap-3 overflow-hidden w-full">
-            <div className="flex items-center justify-center shrink-0">
-               {/* Atlas custom logo visual from screenshot */}
-              <div className="relative w-6 h-6 flex items-center justify-center mr-1">
-                <div className="absolute w-4 h-4 border-2 border-indigo-400 rounded-sm left-0 top-0 opacity-80 mix-blend-screen" />
-                <div className="absolute w-4 h-4 border-2 border-purple-400 rounded-sm right-0 bottom-0 opacity-80 mix-blend-screen" />
-              </div>
-            </div>
+      {/* Header / Logo */}
+      <div className="h-16 flex items-center px-5 shrink-0 justify-between">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0">
+            <span className="text-indigo-400 font-bold text-lg leading-none">A</span>
+          </div>
+          <AnimatePresence>
             {!collapsed && (
-              <div className="flex-1 flex items-center justify-between">
-                <p className="font-bold text-sm tracking-wide text-white font-sans uppercase">ATLAS SKILLTECH</p>
-                <button 
-                  onClick={(e) => { e.preventDefault(); setCollapsed(true); }}
-                  className="p-1 hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4 rotate-180 text-white/50" />
-                </button>
-              </div>
-            )}
-         </Link>
-      </div>
-
-      {collapsed && (
-        <button 
-          onClick={() => setCollapsed(false)}
-          className="mx-auto mt-4 p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/10"
-        >
-          <ChevronRight className="w-4 h-4 text-white" />
-        </button>
-      )}
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-6 sidebar-scrollbar">
-        
-        {/* Core Platform Links matching screenshot */}
-        <div className="space-y-1 mb-6">
-          {PLATFORM_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center justify-between px-3 py-2.5 rounded-lg transition-all group"
-                style={{ 
-                  background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                }}
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex flex-col whitespace-nowrap"
               >
-                <div className="flex items-center gap-3">
-                  <span className={`${isActive ? "text-white" : "text-purple-300"} group-hover:text-white transition-colors`}>
-                    {item.icon}
-                  </span>
-                  {!collapsed && (
-                    <span className={`text-[13px] font-medium tracking-wide ${isActive ? "text-white" : "text-purple-200"} group-hover:text-white transition-colors`}>
-                      {item.label}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            )
-          })}
+                <span className="font-bold text-white text-base tracking-wide leading-tight">ATLAS</span>
+                <span className="text-[10px] text-indigo-300 tracking-wider font-semibold">SKILLTECH</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="h-px w-full bg-white/10 my-4" />
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-1.5 rounded-lg hover:bg-white/5 transition-colors absolute right-4 text-slate-400 hover:text-white"
+        >
+          {collapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+      </div>
 
-        {/* Dynamic Agents List */}
-        {!collapsed && (
-          <p className="px-3 mb-3 text-[10px] font-bold tracking-widest text-purple-400 uppercase">
-            Platform Agents
-          </p>
-        )}
+      {/* Navigation */}
+      <nav className="flex-1 py-4 flex flex-col gap-6 w-full">
+        {MENU_ITEMS.map((group, idx) => (
+          <div key={idx} className="flex flex-col w-full">
+            <AnimatePresence>
+              {!collapsed && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="px-6 mb-2 text-[10px] font-bold text-indigo-400/50 uppercase tracking-widest whitespace-nowrap"
+                >
+                  {group.group}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-        {DOMAINS_FOR_SIDEBAR.map((domain) => (
-          <div key={domain.key} className="mb-4">
-            {!collapsed && (
-              <button 
-                onClick={() => toggleDomain(domain.key)}
-                className="w-full flex items-center justify-between px-3 py-2 mb-1 rounded-lg hover:bg-white/5 transition-colors group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-purple-300 group-hover:text-white transition-colors">{domain.icon}</span>
-                  <span className="text-[12px] font-semibold text-purple-200 group-hover:text-white transition-colors">
-                    {domain.label}
-                  </span>
-                </div>
-                <ChevronRight 
-                  className={`w-3.5 h-3.5 text-purple-400 transition-transform ${openDomains[domain.key] ? "rotate-90" : ""}`} 
-                />
-              </button>
-            )}
-
-            {(openDomains[domain.key] || collapsed) && (
-              <div className="space-y-0.5 mt-1 relative">
-                {/* Visual guideline */}
-                {!collapsed && (
-                  <div className="absolute left-[22px] top-1 bottom-1 w-px bg-white/10" />
-                )}
-                
-                {domain.agents.map((agent) => {
-                  const isActive = pathname === agent.href || pathname.startsWith(agent.href + "/");
-                  return (
-                    <Link
-                      key={agent.href}
-                      href={agent.href}
-                      className="flex items-center gap-3 py-2 rounded-lg transition-all relative group"
-                      style={{
-                        paddingLeft: collapsed ? "12px" : "38px",
-                        paddingRight: "12px",
-                      }}
-                      title={collapsed ? agent.label : ""}
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0 shadow-sm" style={{ background: BADGE_DOT[agent.badge] }} />
-                      {!collapsed && (
-                        <span className={`text-[12px] truncate transition-colors ${isActive ? "text-white font-medium" : "text-purple-200/80 group-hover:text-white"}`}>
-                          {agent.label}
-                        </span>
-                      )}
-                      
-                      {collapsed && (
-                        <div className="absolute left-14 px-3 py-1.5 rounded-md bg-white text-slate-900 text-[11px] font-medium shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap">
-                          {agent.label}
-                        </div>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
+            <div className="flex flex-col gap-1 px-3">
+              {group.items.map((item, itemIdx) => (
+                <NavItem key={itemIdx} item={item} collapsed={collapsed} pathname={pathname} />
+              ))}
+            </div>
           </div>
         ))}
       </nav>
 
-      {/* Footer System Credits */}
-      {!collapsed && (
-        <div 
-          className="p-5" 
-          style={{ borderTop: "1px solid var(--sidebar-border)" }}
-        >
-          <div className="mb-2 flex justify-between items-end">
-            <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">System Credits</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
-          </div>
-          <div className="w-full h-1.5 bg-black/20 rounded-full overflow-hidden mt-2">
-             <div className="h-full bg-emerald-400" style={{ width: "75%" }} />
-          </div>
-          <p className="text-[10px] font-medium text-purple-300 mt-2">75% Usage Reached</p>
+      {/* Footer Profile / Actions */}
+      <div className="p-4 border-t border-[#2d2859] shrink-0">
+        <div className="flex items-center gap-3 w-full">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 block shrink-0" />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex flex-col overflow-hidden whitespace-nowrap"
+              >
+                <span className="text-sm font-semibold text-white truncate">Administrator</span>
+                <span className="text-xs text-slate-400 truncate">System Access</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      )}
-    </aside>
+      </div>
+    </motion.aside>
   );
 }

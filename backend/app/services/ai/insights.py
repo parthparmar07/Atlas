@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from datetime import datetime, timezone
 from app.services.ai.gemini import gemini_client
+from app.services.ai.groq_service import groq_client
 
 
 class InsightsService:
@@ -34,7 +35,13 @@ Respond with ONLY valid JSON, no markdown or explanation."""
 
     async def generate_insights(self, system_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Generate insights based on system data."""
-        if not gemini_client.is_available():
+        ai_client = None
+        if groq_client.is_available():
+            ai_client = groq_client
+        elif gemini_client.is_available():
+            ai_client = gemini_client
+
+        if not ai_client:
             return self._get_demo_insights()
 
         import json
@@ -43,7 +50,7 @@ Respond with ONLY valid JSON, no markdown or explanation."""
         prompt = self.INSIGHTS_PROMPT.format(data=data_summary)
         
         try:
-            response = await gemini_client.generate_text(
+            response = await ai_client.generate_text(
                 prompt=prompt,
                 temperature=0.3,
             )
