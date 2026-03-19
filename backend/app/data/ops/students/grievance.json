@@ -1,0 +1,97 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "AC not working in hostel B",
+      "status": "open",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "category": "Infrastructure",
+        "anonymous": true
+      },
+      "created_at": "2026-03-19T09:13:14.211825+00:00",
+      "updated_at": "2026-03-19T09:13:14.211825+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Library fine dispute",
+      "status": "resolved",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "category": "Finance",
+        "anonymous": false
+      },
+      "created_at": "2026-03-19T09:13:14.279193+00:00",
+      "updated_at": "2026-03-19T09:13:14.279193+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Warden response delay",
+      "status": "escalated",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "category": "Hostel",
+        "anonymous": false
+      },
+      "created_at": "2026-03-19T09:13:14.333293+00:00",
+      "updated_at": "2026-03-19T09:13:14.333293+00:00"
+    },
+    {
+      "id": 4,
+      "title": "AC not working in hostel B",
+      "status": "open",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "category": "Infrastructure",
+        "anonymous": true
+      },
+      "created_at": "2026-03-19T09:13:14.391751+00:00",
+      "updated_at": "2026-03-19T09:13:14.391751+00:00"
+    },
+    {
+      "id": 5,
+      "title": "Library fine dispute",
+      "status": "resolved",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "category": "Finance",
+        "anonymous": false
+      },
+      "created_at": "2026-03-19T09:13:14.441257+00:00",
+      "updated_at": "2026-03-19T09:13:14.441257+00:00"
+    },
+    {
+      "id": 6,
+      "title": "Warden response delay",
+      "status": "escalated",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "category": "Hostel",
+        "anonymous": false
+      },
+      "created_at": "2026-03-19T09:13:14.509995+00:00",
+      "updated_at": "2026-03-19T09:13:14.509995+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T09:13:14.211798+00:00"
+}

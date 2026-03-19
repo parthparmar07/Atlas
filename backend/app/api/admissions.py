@@ -168,7 +168,114 @@ async def generate_message(lead_id: int, body: dict,
     msg = await admissions_service.generate_followup_message(
         lead.name, lead.programme_interest,
         body.get("channel", "whatsapp"), body.get("context", ""))
+
+    interaction = LeadInteraction(
+        lead_id=lead_id,
+        counsellor_id=body.get("counsellor_id"),
+        interaction_type=f"message_{body.get('channel', 'whatsapp')}",
+        notes=msg,
+        next_action=body.get("next_action"),
+    )
+    db.add(interaction)
+    await db.commit()
+
     return {"message": msg}
+
+
+@router.patch("/leads/{lead_id}")
+async def update_lead(lead_id: int, body: dict, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    if "name" in body and body["name"] is not None:
+        lead.name = body["name"]
+    if "email" in body and body["email"] is not None:
+        lead.email = body["email"]
+    if "phone" in body and body["phone"] is not None:
+        lead.phone = body["phone"]
+    if "programme_interest" in body and body["programme_interest"] is not None:
+        lead.programme_interest = body["programme_interest"]
+    if "score" in body and body["score"] is not None:
+        lead.score = float(body["score"])
+
+    if "source" in body and body["source"] is not None:
+        lead.source = _normalize_source(body["source"])
+
+    if "stage" in body and body["stage"] is not None:
+        stage_value = str(body["stage"]).strip().lower()
+        stage_map = {s.value: s for s in LeadStage}
+        if stage_value in stage_map:
+            lead.stage = stage_map[stage_value]
+
+    lead.last_activity_at = func.now()
+    await db.commit()
+    await db.refresh(lead)
+    return _serialize_lead(lead)
+
+
+@router.delete("/leads/{lead_id}")
+async def delete_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    await db.delete(lead)
+    await db.commit()
+    return {"message": "Lead deleted successfully"}
+
+
+@router.get("/leads/{lead_id}/interactions")
+async def list_lead_interactions(lead_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(LeadInteraction)
+        .where(LeadInteraction.lead_id == lead_id)
+        .order_by(desc(LeadInteraction.created_at))
+    )
+    items = result.scalars().all()
+    return [
+        {
+            "id": item.id,
+            "lead_id": item.lead_id,
+            "counsellor_id": item.counsellor_id,
+            "interaction_type": item.interaction_type,
+            "notes": item.notes,
+            "next_action": item.next_action,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+        }
+        for item in items
+    ]
+
+
+@router.post("/leads/{lead_id}/interactions")
+async def create_lead_interaction(lead_id: int, body: dict, db: AsyncSession = Depends(get_db)):
+    lead_result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = lead_result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    interaction = LeadInteraction(
+        lead_id=lead_id,
+        counsellor_id=body.get("counsellor_id"),
+        interaction_type=body.get("interaction_type", "note"),
+        notes=body.get("notes"),
+        next_action=body.get("next_action"),
+    )
+    db.add(interaction)
+    lead.last_activity_at = func.now()
+    await db.commit()
+    await db.refresh(interaction)
+
+    return {
+        "id": interaction.id,
+        "lead_id": interaction.lead_id,
+        "interaction_type": interaction.interaction_type,
+        "notes": interaction.notes,
+        "next_action": interaction.next_action,
+        "created_at": interaction.created_at.isoformat() if interaction.created_at else None,
+    }
 
 @router.get("/funnel")
 async def funnel_stats(db: AsyncSession = Depends(get_db)):

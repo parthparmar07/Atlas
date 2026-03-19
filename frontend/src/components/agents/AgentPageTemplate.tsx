@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ChevronRight, Brain, Zap, Activity, CheckCircle2,
   ArrowUpRight, ArrowDownRight, Settings, TerminalSquare,
-  PlayCircle, Loader2, CheckCircle, AlertCircle, X, Copy, ChevronDown
+  PlayCircle, Loader2, CheckCircle, AlertCircle, X, Copy, ChevronDown, Trash2, Mail, Phone
 } from "lucide-react";
 
 import DefaultWorkflow from "@/components/workflows/DefaultWorkflow";
@@ -32,6 +32,8 @@ const BADGE_CONFIG: Record<string, { label: string; bg: string; color: string; b
   core:   { label: "Core",   bg: "var(--core-bg)",   color: "var(--core-text)",   border: "var(--core-border)" },
   api:    { label: "API",    bg: "var(--api-bg)",    color: "var(--api-text)",    border: "var(--api-border)" },
 };
+
+const toSlug = (value: string) => value.toLowerCase().replace(/[^a-z0-9\-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
 
 // ── Result Drawer ─────────────────────────────────────────────────────────────
 interface DrawerProps {
@@ -134,19 +136,60 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
 // ── Main Template ─────────────────────────────────────────────────────────────
 export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
   const badge = BADGE_CONFIG[config.badge];
+  const backendBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const domainSlug = toSlug(config.domain);
+  const moduleSlug = config.agentId.startsWith(`${domainSlug}-`) ? toSlug(config.agentId.slice(domainSlug.length + 1)) : toSlug(config.agentId);
+
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [drawerResult, setDrawerResult] = useState<DrawerProps["result"]>(null);
   const [error, setError] = useState<string | null>(null);
+  const [opsMode, setOpsMode] = useState(false);
+
   const [realActions, setRealActions] = useState<Array<{ label: string; desc: string }>>(config.actions);
   const [contracts, setContracts] = useState<Record<string, { handler?: string; required_inputs?: string[] }>>({});
+
+  const [opsLoading, setOpsLoading] = useState(true);
+  const [opsRecords, setOpsRecords] = useState<Array<{ id: number; title: string; status: string; source: string; updated_at?: string }>>([]);
+  const [opsCount, setOpsCount] = useState(0);
+  const [provenance, setProvenance] = useState<{ total_records: number; source_mix: Record<string, number>; latest_activity_at?: string } | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [newSource, setNewSource] = useState("manual");
+  const [channel, setChannel] = useState("email");
+  const [recipient, setRecipient] = useState("");
+  const [message, setMessage] = useState("");
+
+  const loadOpsData = async () => {
+    setOpsLoading(true);
+    try {
+      const [recordsRes, provRes] = await Promise.all([
+        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`),
+        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/provenance`),
+      ]);
+
+      if (recordsRes.ok) {
+        const recordsData = await recordsRes.json();
+        setOpsRecords(recordsData.records || []);
+        setOpsCount(recordsData.count || 0);
+      }
+
+      if (provRes.ok) {
+        const provData = await provRes.json();
+        setProvenance(provData);
+      }
+    } catch {
+      // keep UI usable even if ops endpoint is unavailable
+    } finally {
+      setOpsLoading(false);
+    }
+  };
 
   // Sync with backend on mount
   useEffect(() => {
     const fetchRealMetadata = async () => {
       try {
         const [agentRes, contractRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agent-exec/agents/${config.agentId}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agent-exec/agents/${config.agentId}/contracts`),
+          fetch(`${backendBase}/api/agent-exec/agents/${config.agentId}`),
+          fetch(`${backendBase}/api/agent-exec/agents/${config.agentId}/contracts`),
         ]);
 
         if (agentRes.ok) {
@@ -158,18 +201,24 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
             }));
             setRealActions(mapped);
           }
+        } else {
+          setOpsMode(true);
         }
 
         if (contractRes.ok) {
           const c = await contractRes.json();
           setContracts(c.contracts || {});
+        } else {
+          setOpsMode(true);
         }
       } catch (err) {
-        console.error("Failed to sync agent metadata:", err);
+        setOpsMode(true);
       }
+
+      await loadOpsData();
     };
     fetchRealMetadata();
-  }, [config.agentId]);
+  }, [config.agentId, backendBase, domainSlug, moduleSlug]);
 
   // Use the realActions in the effective config
   const effectiveConfig = { ...config, actions: realActions };
@@ -221,25 +270,91 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
     setDrawerResult(null);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agent-exec/run`, {
+      if (!opsMode) {
+        const res = await fetch(`${backendBase}/api/agent-exec/run`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agent_id: config.agentId,
+            action,
+            context: context || `Running from Atlas Command Center — ${config.domain}`,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setDrawerResult({ action, status: data.status, result: data.result, timestamp: data.timestamp, telemetry: data.telemetry });
+          return;
+        }
+        setOpsMode(true);
+      }
+
+      const fallbackRes = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/actions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agent_id: config.agentId,
-          action,
-          context: context || `Running from Atlas Command Center — ${config.domain}`,
-        }),
+        body: JSON.stringify({ action, context }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${res.status}`);
+      if (!fallbackRes.ok) {
+        const txt = await fallbackRes.text();
+        throw new Error(txt || `HTTP ${fallbackRes.status}`);
       }
-      const data = await res.json();
-      setDrawerResult({ action, status: data.status, result: data.result, timestamp: data.timestamp, telemetry: data.telemetry });
+      const fallback = await fallbackRes.json();
+      setDrawerResult({
+        action,
+        status: fallback.status || "SUCCESS",
+        result: fallback.result || `${action} executed via operations fallback`,
+        timestamp: fallback.created_at || new Date().toISOString(),
+      });
+      await loadOpsData();
     } catch (e: any) {
       setError(`Execution failed: ${e.message}`);
     } finally {
       setRunningAction(null);
+    }
+  };
+
+  const createRecord = async () => {
+    if (!newTitle.trim()) return;
+    setError(null);
+    try {
+      const res = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle, source: newSource, status: "new" }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setNewTitle("");
+      setNewSource("manual");
+      await loadOpsData();
+    } catch (e: any) {
+      setError(`Create failed: ${e.message}`);
+    }
+  };
+
+  const removeRecord = async (id: number) => {
+    setError(null);
+    try {
+      const res = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(await res.text());
+      await loadOpsData();
+    } catch (e: any) {
+      setError(`Delete failed: ${e.message}`);
+    }
+  };
+
+  const sendCommunication = async () => {
+    if (!recipient.trim() || !message.trim()) return;
+    setError(null);
+    try {
+      const res = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/communications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel, recipient, message }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setMessage("");
+      await loadOpsData();
+    } catch (e: any) {
+      setError(`Communication failed: ${e.message}`);
     }
   };
 
@@ -336,6 +451,74 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
 
         {/* Right Col: Activity & Capabilities */}
         <div className="col-span-4 space-y-8">
+          <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Live Workbench</h3>
+              <span className="text-[10px] px-2 py-1 rounded-full border font-bold uppercase tracking-wider text-slate-500 bg-slate-50">
+                {opsMode ? "Ops Mode" : "Agent Mode"}
+              </span>
+            </div>
+
+            <div className="text-xs text-slate-500 mb-4">
+              Records: <span className="font-bold text-slate-700">{opsCount}</span>
+              {provenance?.latest_activity_at ? ` • Last: ${new Date(provenance.latest_activity_at).toLocaleString()}` : ""}
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <input
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Add a new operational item"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <select value={newSource} onChange={(e) => setNewSource(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
+                  <option value="manual">Manual</option>
+                  <option value="api">API</option>
+                  <option value="import">Import</option>
+                  <option value="webhook">Webhook</option>
+                </select>
+                <button onClick={createRecord} className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700">Create</button>
+              </div>
+            </div>
+
+            <div className="space-y-2 max-h-44 overflow-y-auto pr-1 mb-5">
+              {opsLoading ? (
+                <div className="text-sm text-slate-500">Loading records...</div>
+              ) : opsRecords.length === 0 ? (
+                <div className="text-sm text-slate-500">No records yet.</div>
+              ) : (
+                opsRecords.slice(0, 6).map((record) => (
+                  <div key={record.id} className="flex items-start justify-between gap-2 p-3 rounded-xl border border-slate-100 bg-white">
+                    <div>
+                      <div className="text-sm font-bold text-slate-800">{record.title}</div>
+                      <div className="text-[11px] text-slate-500">{record.status} • {record.source}</div>
+                    </div>
+                    <button onClick={() => removeRecord(record.id)} className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 pt-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <select value={channel} onChange={(e) => setChannel(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
+                  <option value="email">Email</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="sms">SMS</option>
+                  <option value="call">Call</option>
+                </select>
+                <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Recipient" className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Follow-up message" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm min-h-20" />
+              <button onClick={sendCommunication} className="w-full px-3 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-700 inline-flex items-center justify-center gap-2">
+                {channel === "email" ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />} Send {channel}
+              </button>
+            </div>
+          </div>
+
           {/* Quick Actions List */}
           <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30">
             <div className="flex items-center gap-3 mb-6">

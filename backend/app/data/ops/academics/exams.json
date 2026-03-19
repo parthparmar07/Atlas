@@ -1,0 +1,109 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Mathematics 101",
+      "status": "scheduled",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "date": "May 10",
+        "time": "Morning",
+        "conflict": false,
+        "proctors": 4
+      },
+      "created_at": "2026-03-19T08:36:31.035596+00:00",
+      "updated_at": "2026-03-19T08:36:31.035596+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Physics 2A",
+      "status": "conflict",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "date": "May 10",
+        "time": "Afternoon",
+        "conflict": true,
+        "proctors": 2
+      },
+      "created_at": "2026-03-19T08:36:31.110854+00:00",
+      "updated_at": "2026-03-19T08:36:31.110854+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Computer Science",
+      "status": "scheduled",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "date": "May 11",
+        "time": "Morning",
+        "conflict": false,
+        "proctors": 5
+      },
+      "created_at": "2026-03-19T08:36:31.166817+00:00",
+      "updated_at": "2026-03-19T08:36:31.166817+00:00"
+    },
+    {
+      "id": 4,
+      "title": "Mathematics 101",
+      "status": "scheduled",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "date": "May 10",
+        "time": "Morning",
+        "conflict": false,
+        "proctors": 4
+      },
+      "created_at": "2026-03-19T08:36:31.238163+00:00",
+      "updated_at": "2026-03-19T08:36:31.238163+00:00"
+    },
+    {
+      "id": 5,
+      "title": "Physics 2A",
+      "status": "conflict",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "date": "May 10",
+        "time": "Afternoon",
+        "conflict": true,
+        "proctors": 2
+      },
+      "created_at": "2026-03-19T08:36:31.296404+00:00",
+      "updated_at": "2026-03-19T08:36:31.296404+00:00"
+    },
+    {
+      "id": 6,
+      "title": "Computer Science",
+      "status": "scheduled",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "date": "May 11",
+        "time": "Morning",
+        "conflict": false,
+        "proctors": 5
+      },
+      "created_at": "2026-03-19T08:36:31.360291+00:00",
+      "updated_at": "2026-03-19T08:36:31.360291+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T08:36:31.035568+00:00"
+}

@@ -1,0 +1,70 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Untitled Record",
+      "status": "In Progress",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "ticket": "Network outage in Block A",
+          "queue": "Infra",
+          "severity": "P2",
+          "responseMins": 8,
+          "status": "In Progress",
+          "id": "a2a04416-bf52-4e7d-8583-32c5764d25ef"
+        }
+      },
+      "created_at": "2026-03-19T10:17:03.368438+00:00",
+      "updated_at": "2026-03-19T10:17:03.368438+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Untitled Record",
+      "status": "Open",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "ticket": "Faculty VPN access issue",
+          "queue": "Access",
+          "severity": "P2",
+          "responseMins": 11,
+          "status": "Open",
+          "id": "9a1b3720-f9c4-4a28-9b2a-7e4ff020c865"
+        }
+      },
+      "created_at": "2026-03-19T10:17:03.562139+00:00",
+      "updated_at": "2026-03-19T10:17:03.562139+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Untitled Record",
+      "status": "Resolved",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "ticket": "Laptop replacement request",
+          "queue": "Assets",
+          "severity": "P3",
+          "responseMins": 24,
+          "status": "Resolved",
+          "id": "94ee48d3-c9f8-4ef2-b442-6f740871aeb0"
+        }
+      },
+      "created_at": "2026-03-19T10:17:03.617100+00:00",
+      "updated_at": "2026-03-19T10:17:03.617100+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T10:17:03.367794+00:00"
+}

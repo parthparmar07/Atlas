@@ -1,0 +1,70 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Aryan Kumar",
+      "status": "Completed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "student": "Aryan Kumar",
+          "targetRole": "SDE",
+          "company": "Amazon",
+          "score": 74,
+          "status": "Completed",
+          "id": "9541a0c3-e9e5-4b69-a1d6-076ef616d605"
+        }
+      },
+      "created_at": "2026-03-19T09:52:10.499683+00:00",
+      "updated_at": "2026-03-19T09:52:10.499683+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Divya Nair",
+      "status": "Completed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "student": "Divya Nair",
+          "targetRole": "Digital",
+          "company": "TCS",
+          "score": 90,
+          "status": "Completed",
+          "id": "9a668673-4169-462f-adf6-a098e10deb75"
+        }
+      },
+      "created_at": "2026-03-19T09:52:10.600300+00:00",
+      "updated_at": "2026-03-19T09:52:10.600300+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Pranav S",
+      "status": "Scheduled",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "student": "Pranav S",
+          "targetRole": "Data Analyst",
+          "company": "Goldman Sachs",
+          "score": 0,
+          "status": "Scheduled",
+          "id": "55246467-b83f-4bd8-91da-b7cd53d25699"
+        }
+      },
+      "created_at": "2026-03-19T09:52:10.652112+00:00",
+      "updated_at": "2026-03-19T09:52:10.652112+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T09:52:10.499650+00:00"
+}

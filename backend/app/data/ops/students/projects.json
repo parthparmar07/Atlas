@@ -1,0 +1,136 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Blockchain for Credentialing",
+      "status": "active",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "team": "Team 42",
+        "guide": "Dr. Gupta",
+        "progress": 65
+      },
+      "created_at": "2026-03-19T09:14:10.953082+00:00",
+      "updated_at": "2026-03-19T09:14:10.953082+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Campus EV Routing",
+      "status": "review",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "team": "Team 11",
+        "guide": "Prof. Rao",
+        "progress": 90
+      },
+      "created_at": "2026-03-19T09:14:12.812082+00:00",
+      "updated_at": "2026-03-19T09:14:12.812082+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Smart Library Bot",
+      "status": "risk",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "team": "Team 07",
+        "guide": "Dr. Shreya",
+        "progress": 40
+      },
+      "created_at": "2026-03-19T09:14:12.971091+00:00",
+      "updated_at": "2026-03-19T09:14:12.971091+00:00"
+    },
+    {
+      "id": 4,
+      "title": "Blockchain for Credentialing",
+      "status": "active",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "team": "Team 42",
+        "guide": "Dr. Gupta",
+        "progress": 65
+      },
+      "created_at": "2026-03-19T09:14:13.085310+00:00",
+      "updated_at": "2026-03-19T09:14:13.085310+00:00"
+    },
+    {
+      "id": 5,
+      "title": "Campus EV Routing",
+      "status": "review",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "team": "Team 11",
+        "guide": "Prof. Rao",
+        "progress": 90
+      },
+      "created_at": "2026-03-19T09:14:13.160132+00:00",
+      "updated_at": "2026-03-19T09:14:13.160132+00:00"
+    },
+    {
+      "id": 6,
+      "title": "Smart Library Bot",
+      "status": "completed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "seed",
+      "notes": "",
+      "metadata": {
+        "team": "Team 07",
+        "guide": "Dr. Shreya",
+        "progress": 40
+      },
+      "created_at": "2026-03-19T09:14:13.269318+00:00",
+      "updated_at": "2026-03-19T10:16:21.715917+00:00"
+    }
+  ],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Milestone Tracking",
+      "context": "project_id=6 status=review",
+      "status": "SUCCESS",
+      "result": "Milestone Tracking executed successfully for students/projects",
+      "created_at": "2026-03-19T10:16:18.926528+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Milestone Tracking",
+      "context": "project_id=6 status=review",
+      "status": "SUCCESS",
+      "result": "Milestone Tracking executed successfully for students/projects",
+      "created_at": "2026-03-19T10:16:19.926773+00:00"
+    },
+    {
+      "id": 3,
+      "action": "Milestone Tracking",
+      "context": "project_id=6 status=risk",
+      "status": "SUCCESS",
+      "result": "Milestone Tracking executed successfully for students/projects",
+      "created_at": "2026-03-19T10:16:20.837721+00:00"
+    },
+    {
+      "id": 4,
+      "action": "Milestone Tracking",
+      "context": "project_id=6 status=completed",
+      "status": "SUCCESS",
+      "result": "Milestone Tracking executed successfully for students/projects",
+      "created_at": "2026-03-19T10:16:21.748702+00:00"
+    }
+  ],
+  "communications": [],
+  "created_at": "2026-03-19T09:14:10.953059+00:00"
+}

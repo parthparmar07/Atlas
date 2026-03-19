@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchWithAuth } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Sparkles, RefreshCw, AlertTriangle, ShieldAlert, Lightbulb, Activity } from "lucide-react";
 
 interface Insight {
@@ -13,21 +13,37 @@ interface Insight {
   impact: string;
 }
 
+type TelemetryStats = {
+  active_agents: number;
+  automations_today: number;
+  active_projects: number;
+  system_health: number;
+  throughput: number;
+};
+
 export default function AIInsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [stats, setStats] = useState<TelemetryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(() => { loadInsights(); }, []);
+  useEffect(() => {
+    void loadInsights();
+  }, []);
 
   const loadInsights = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const response = await fetchWithAuth("/api/ai/insights");
-      if (!response.ok) throw new Error("Failed to load insights");
-      const data = await response.json();
-      setInsights(data);
-    } catch (error) {
-      console.error("Failed to load insights:", error);
+      const [insightData, telemetryData] = await Promise.all([
+        api<Insight[]>("/api/ai/insights"),
+        api<TelemetryStats>("/api/telemetry/stats"),
+      ]);
+      setInsights(insightData ?? []);
+      setStats(telemetryData ?? null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load insights.");
     } finally {
       setLoading(false);
     }
@@ -35,13 +51,12 @@ export default function AIInsightsPage() {
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setError("");
     try {
-      const response = await fetchWithAuth("/api/ai/insights/generate", { method: "POST" });
-      if (!response.ok) throw new Error("Failed to generate insights");
+      await api("/api/ai/insights/generate", { method: "POST" });
       await loadInsights();
-    } catch (error) {
-      alert("Failed to generate insights");
-      console.error(error);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to generate insights.");
     } finally {
       setGenerating(false);
     }
@@ -91,22 +106,24 @@ export default function AIInsightsPage() {
         </button>
       </div>
 
+      {error ? <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div> : null}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-center">
            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Active Agents</span>
-           <span className="text-3xl font-black text-slate-900 dark:text-white">24</span>
+          <span className="text-3xl font-black text-slate-900 dark:text-white">{stats?.active_agents ?? "-"}</span>
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-center">
            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Latency</span>
-           <span className="text-3xl font-black text-emerald-500">245ms</span>
+          <span className="text-3xl font-black text-emerald-500">245ms</span>
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-center">
            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Success Rate</span>
-           <span className="text-3xl font-black text-emerald-500">99.2%</span>
+          <span className="text-3xl font-black text-emerald-500">{stats ? `${stats.system_health}%` : "-"}</span>
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-center">
-           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Anomalies Detected</span>
-           <span className="text-3xl font-black text-red-500">2</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Automations Today</span>
+          <span className="text-3xl font-black text-red-500">{stats?.automations_today ?? "-"}</span>
         </div>
       </div>
 

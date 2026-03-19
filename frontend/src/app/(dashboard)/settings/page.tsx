@@ -1,194 +1,230 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
-import { Save, User, Bell, Shield, Key } from "lucide-react";
-import { fetchWithAuth } from "@/lib/api";
-
-type PlatformCoreItem = {
-  title: string;
-  href: string;
-  icon: string;
-  color: string;
-};
+import { 
+  Settings2, Shield, Bell, Key, Database, Globe, 
+  Cpu, Lock, Zap, CheckCircle2, Mail
+} from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("general");
   const [saved, setSaved] = useState(false);
-  const [navSaved, setNavSaved] = useState(false);
-  const [navLoading, setNavLoading] = useState(false);
-  const [platformCoreItems, setPlatformCoreItems] = useState<PlatformCoreItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const loadPlatformCore = async () => {
-      try {
-        const res = await fetchWithAuth("/api/admin/navigation/platform-core");
-        if (!res.ok) return;
-        const data = await res.json();
-        if (Array.isArray(data?.items)) {
-          setPlatformCoreItems(data.items);
-        }
-      } catch {
-        // keep empty on failure
-      }
-    };
-    loadPlatformCore();
-  }, []);
+  // Dynamic state for form fields
+  const [formData, setFormData] = useState({
+    platformName: "Atlas University Ecosystem",
+    adminEmail: "admin@atlas.edu",
+    maxTokens: "1000000",
+    model: "llama-3.3-70b-versatile",
+    dbUrl: "postgresql://user:pass@localhost:5432/atlas",
+    redisUrl: "redis://localhost:6379",
+    mfa: true,
+    sso: false,
+    audit: true,
+    emailAlerts: true,
+    smsAlerts: false,
+    systemLogs: true
+  });
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target;
+    const { name, value } = target;
+    const isCheckbox = target instanceof HTMLInputElement && target.type === "checkbox";
+    setFormData(prev => ({
+      ...prev,
+      [name]: isCheckbox ? target.checked : value
+    }));
   };
 
-  const updatePlatformCoreItem = (index: number, field: keyof PlatformCoreItem, value: string) => {
-    setPlatformCoreItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
-  };
-
-  const savePlatformCoreItems = async () => {
-    setNavLoading(true);
+  const loadSettings = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const res = await fetchWithAuth("/api/admin/navigation/platform-core", {
-        method: "PUT",
-        body: JSON.stringify({ items: platformCoreItems }),
-      });
-      if (!res.ok) throw new Error("Failed to save platform core settings");
-      setNavSaved(true);
-      setTimeout(() => setNavSaved(false), 2000);
-    } catch {
-      // no-op for now
+      const data = await api<{ settings: typeof formData }>("/api/admin/settings");
+      if (data?.settings) {
+        setFormData((prev) => ({ ...prev, ...data.settings }));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load settings.");
     } finally {
-      setNavLoading(false);
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    void loadSettings();
+  }, []);
+
+  const handleSave = async () => {
+    setError("");
+    try {
+      await api("/api/admin/settings", {
+        method: "PUT",
+        body: JSON.stringify(formData),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save settings.");
+    }
+  };
+
+  const tabs = [
+    { id: "general", icon: Settings2, label: "General" },
+    { id: "ai", icon: Cpu, label: "AI & Models" },
+    { id: "security", icon: Shield, label: "Security" },
+    { id: "database", icon: Database, label: "Database" },
+    { id: "notifications", icon: Bell, label: "Notifications" },
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 p-8">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">System Settings</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
-          Manage your Command Center preferences, API keys, and account.
-        </p>
+    <div className="max-w-6xl mx-auto space-y-8 p-8 animate-in fade-in duration-500">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <Settings2 className="w-8 h-8 text-indigo-600" />
+            Platform Settings
+          </h1>
+          <p className="text-slate-500 mt-2 text-lg">Manage global system configuration and connected services dynamically.</p>
+        </div>
+        <button 
+          onClick={handleSave}
+          disabled={loading}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+        >
+          {saved ? <CheckCircle2 className="w-5 h-5 text-emerald-300" /> : <Settings2 className="w-5 h-5" />}
+          {saved ? "Saved Globally" : "Save Changes"}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1 space-y-2">
-          <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 rounded-2xl font-bold flex items-center gap-3">
-            <User className="w-5 h-5" /> Profile
-          </div>
-          <div className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-2xl font-medium flex items-center gap-3 cursor-pointer transition-colors">
-            <Bell className="w-5 h-5" /> Notifications
-          </div>
-          <div className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-2xl font-medium flex items-center gap-3 cursor-pointer transition-colors">
-            <Key className="w-5 h-5" /> API Keys
-          </div>
-          <div className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-2xl font-medium flex items-center gap-3 cursor-pointer transition-colors">
-            <Shield className="w-5 h-5" /> Security
-          </div>
+      {loading ? <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm">Loading platform settings...</div> : null}
+      {error ? <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div> : null}
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="w-full lg:w-64 shrink-0 space-y-2">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${
+                activeTab === tab.id 
+                  ? "bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100" 
+                  : "hover:bg-slate-50 text-slate-600 border border-transparent"
+              }`}
+            >
+              <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? "text-indigo-600" : "text-slate-400"}`} />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <div className="md:col-span-2 space-y-8">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden p-8">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Profile Information</h2>
-            <div className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Display Name</label>
-                <input
-                  type="text"
-                  defaultValue="Dean Henderson"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                />
+        <div className="flex-1">
+          <div className="bg-white border border-slate-200 rounded-[1.5rem] p-8 shadow-sm">
+            {activeTab === "general" && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
+                  <Globe className="w-6 h-6 text-slate-400" />
+                  <h2 className="text-xl font-bold text-slate-800">General Configuration</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Platform Name</label>
+                    <input type="text" name="platformName" value={formData.platformName} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 ring-indigo-500 outline-none" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Admin Contact Email</label>
+                    <input type="email" name="adminEmail" value={formData.adminEmail} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 ring-indigo-500 outline-none" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
-                <input
-                  type="email"
-                  defaultValue="dean.henderson@atlas.edu"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                />
+            )}
+            {activeTab === "ai" && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
+                  <Cpu className="w-6 h-6 text-indigo-500" />
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">AI Inference Settings</h2>
+                    <p className="text-xs text-slate-500 font-medium">Manage LLM routers and rate limits.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Default Model</label>
+                    <select name="model" value={formData.model} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 ring-indigo-500 outline-none">
+                      <option value="llama-3.3-70b-versatile">LLaMA 3.3 70B (Groq)</option>
+                      <option value="llama-3-8b-8192">LLaMA 3 8B (Groq)</option>
+                      <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Global Token Limit (Daily)</label>
+                    <input type="number" name="maxTokens" value={formData.maxTokens} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 ring-indigo-500 outline-none" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden p-8">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Notification Preferences</h2>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 cursor-pointer transition-colors">
-                <div>
-                  <span className="block font-bold text-slate-900 dark:text-white">Email Notifications</span>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">Receive daily summaries</span>
+            )}
+            {activeTab === "security" && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
+                  <Shield className="w-6 h-6 text-rose-500" />
+                  <h2 className="text-xl font-bold text-slate-800">Security & Authentication</h2>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-slate-100 dark:bg-slate-800" />
-              </label>
-              <label className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 cursor-pointer transition-colors">
-                <div>
-                  <span className="block font-bold text-slate-900 dark:text-white">Agent Alerts</span>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">When agents require approval</span>
+                <div className="space-y-4">
+                  <label className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer">
+                    <div><h4 className="font-bold text-slate-800">Require MFA</h4><p className="text-sm text-slate-500">Force multi-factor auth for all administrators.</p></div>
+                    <input type="checkbox" name="mfa" checked={formData.mfa} onChange={handleChange} className="w-5 h-5 accent-indigo-600" />
+                  </label>
+                  <label className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer">
+                    <div><h4 className="font-bold text-slate-800">Strict Audit Logging</h4><p className="text-sm text-slate-500">Log every state change in the AI framework.</p></div>
+                    <input type="checkbox" name="audit" checked={formData.audit} onChange={handleChange} className="w-5 h-5 accent-indigo-600" />
+                  </label>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-slate-100 dark:bg-slate-800" />
-              </label>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden p-8">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Platform Core Navigation</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-              These sidebar items are dynamic. Edit titles/routes/icons and save.
-            </p>
-            <div className="space-y-4">
-              {platformCoreItems.map((item, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                  <input
-                    type="text"
-                    value={item.title}
-                    onChange={(e) => updatePlatformCoreItem(index, "title", e.target.value)}
-                    placeholder="Title"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none"
-                  />
-                  <input
-                    type="text"
-                    value={item.href}
-                    onChange={(e) => updatePlatformCoreItem(index, "href", e.target.value)}
-                    placeholder="Route (e.g. /admin/users)"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none"
-                  />
-                  <input
-                    type="text"
-                    value={item.icon}
-                    onChange={(e) => updatePlatformCoreItem(index, "icon", e.target.value)}
-                    placeholder="Icon key (users, settings, shield...)"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none"
-                  />
+              </div>
+            )}
+            {activeTab === "database" && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
+                  <Database className="w-6 h-6 text-emerald-500" />
+                  <h2 className="text-xl font-bold text-slate-800">Datastore Connections</h2>
                 </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-3 mt-6">
-              <button
-                type="button"
-                onClick={savePlatformCoreItems}
-                disabled={navLoading}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-bold text-sm"
-              >
-                {navLoading ? "Saving..." : "Save Platform Core"}
-              </button>
-              {navSaved && (
-                <span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-4 py-2 rounded-lg">
-                  Platform Core updated
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 pt-4">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
-            >
-              <Save className="w-5 h-5" />
-              Save Preferences
-            </button>
-            {saved && (
-              <span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-4 py-2 rounded-lg animate-in fade-in slide-in-from-left-4">
-                Changes saved successfully
-              </span>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Primary Database URL</label>
+                    <input type="text" name="dbUrl" value={formData.dbUrl} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 ring-indigo-500 outline-none" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Redis Cache URL</label>
+                    <input type="text" name="redisUrl" value={formData.redisUrl} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 ring-indigo-500 outline-none" />
+                  </div>
+                </div>
+              </div>
+            )}
+            {activeTab === "notifications" && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
+                  <Bell className="w-6 h-6 text-amber-500" />
+                  <h2 className="text-xl font-bold text-slate-800">Alerts & Messaging</h2>
+                </div>
+                <div className="space-y-4">
+                  <label className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-slate-400" />
+                      <div><h4 className="font-bold text-slate-800">Email Alerts</h4><p className="text-sm text-slate-500">Send warnings for system anomalies.</p></div>
+                    </div>
+                    <input type="checkbox" name="emailAlerts" checked={formData.emailAlerts} onChange={handleChange} className="w-5 h-5 accent-indigo-600" />
+                  </label>
+                  <label className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <Zap className="w-5 h-5 text-amber-400" />
+                      <div><h4 className="font-bold text-slate-800">SMS / WhatsApp (Twilio)</h4><p className="text-sm text-slate-500">Critical escalations instantly routed to admins.</p></div>
+                    </div>
+                    <input type="checkbox" name="smsAlerts" checked={formData.smsAlerts} onChange={handleChange} className="w-5 h-5 accent-indigo-600" />
+                  </label>
+                </div>
+              </div>
             )}
           </div>
         </div>

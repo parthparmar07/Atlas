@@ -10,7 +10,10 @@ export async function fetchWithAuth(
 ): Promise<Response> {
   const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
   const headers = new Headers(options.headers);
-  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const isFormDataBody = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (!headers.has("Content-Type") && !isFormDataBody) {
+    headers.set("Content-Type", "application/json");
+  }
   return fetch(url, { ...options, headers });
 }
 

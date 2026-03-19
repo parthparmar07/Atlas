@@ -1,0 +1,70 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Untitled Record",
+      "status": "Published",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "program": "S5 ECE",
+          "sections": 12,
+          "generationMins": 4.2,
+          "clashes": 0,
+          "status": "Published",
+          "id": "0d585a30-89ae-4133-8e89-8655f23ae173"
+        }
+      },
+      "created_at": "2026-03-19T09:56:16.621157+00:00",
+      "updated_at": "2026-03-19T09:56:16.621157+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Untitled Record",
+      "status": "Draft",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "program": "S1 Common",
+          "sections": 22,
+          "generationMins": 0,
+          "clashes": 0,
+          "status": "Draft",
+          "id": "8d012042-4a3f-4617-921d-3d21445f4347"
+        }
+      },
+      "created_at": "2026-03-19T09:56:16.786564+00:00",
+      "updated_at": "2026-03-19T09:56:16.786564+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Untitled Record",
+      "status": "Validated",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "program": "S3 CSE",
+          "sections": 18,
+          "generationMins": 5.1,
+          "clashes": 1,
+          "status": "Validated",
+          "id": "1ce7c97e-ea74-481a-9d43-8b9de4b1873f"
+        }
+      },
+      "created_at": "2026-03-19T09:56:16.842118+00:00",
+      "updated_at": "2026-03-19T09:56:16.842118+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T09:56:16.620968+00:00"
+}

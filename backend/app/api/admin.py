@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 from pydantic import BaseModel
+from app.core.security import get_password_hash
+from app.models.user import UserRole
 
 from app.core.database import get_db
 from app.models.user import User, UserStatus
@@ -23,6 +25,21 @@ class PlatformCoreItem(BaseModel):
 
 class PlatformCoreUpdateRequest(BaseModel):
     items: list[PlatformCoreItem]
+
+
+class PlatformSettingsUpdateRequest(BaseModel):
+    platformName: str
+    adminEmail: str
+    maxTokens: str
+    model: str
+    dbUrl: str
+    redisUrl: str
+    mfa: bool
+    sso: bool
+    audit: bool
+    emailAlerts: bool
+    smsAlerts: bool
+    systemLogs: bool
 
 
 DEFAULT_PLATFORM_CORE = [
@@ -60,6 +77,45 @@ def _save_platform_core(items: list[dict]) -> None:
     path.write_text(json.dumps({"items": items}, indent=2), encoding="utf-8")
 
 
+def _platform_settings_file() -> Path:
+    return Path(__file__).resolve().parents[1] / "config" / "platform_settings.json"
+
+
+DEFAULT_PLATFORM_SETTINGS = {
+    "platformName": "Atlas University Ecosystem",
+    "adminEmail": "admin@atlas.edu",
+    "maxTokens": "1000000",
+    "model": "llama-3.3-70b-versatile",
+    "dbUrl": "postgresql://user:pass@localhost:5432/atlas",
+    "redisUrl": "redis://localhost:6379",
+    "mfa": True,
+    "sso": False,
+    "audit": True,
+    "emailAlerts": True,
+    "smsAlerts": False,
+    "systemLogs": True,
+}
+
+
+def _load_platform_settings() -> dict:
+    path = _platform_settings_file()
+    if not path.exists():
+        return DEFAULT_PLATFORM_SETTINGS
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return {**DEFAULT_PLATFORM_SETTINGS, **data}
+    except Exception:
+        return DEFAULT_PLATFORM_SETTINGS
+    return DEFAULT_PLATFORM_SETTINGS
+
+
+def _save_platform_settings(settings_data: dict) -> None:
+    path = _platform_settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(settings_data, indent=2), encoding="utf-8")
+
+
 @router.get("/users", response_model=list[UserResponse])
 async def get_all_users(
     db: AsyncSession = Depends(get_db),
@@ -68,6 +124,58 @@ async def get_all_users(
     result = await db.execute(select(User).order_by(desc(User.created_at)))
     users = result.scalars().all()
     return users
+
+
+@router.post("/users", response_model=UserResponse)
+async def create_user(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+):
+    email = (body.get("email") or "").strip().lower()
+    password = body.get("password") or "Atlas@12345"
+    role_raw = (body.get("role") or "USER").strip().upper()
+
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email is required")
+
+    exists_result = await db.execute(select(User).where(User.email == email))
+    existing_user = exists_result.scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
+
+    try:
+        role = UserRole(role_raw)
+    except Exception:
+        role = UserRole.USER
+
+    user = User(
+        email=email,
+        hashed_password=get_password_hash(password),
+        role=role,
+        status=UserStatus.APPROVED,
+        is_active=True,
+        approved_at=datetime.now(timezone.utc),
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    await db.delete(user)
+    await db.commit()
+    return {"message": f"User {user.email} deleted successfully"}
 
 
 @router.get("/users/pending", response_model=list[UserResponse])
@@ -157,6 +265,7 @@ async def get_audit_logs(
             "user_email": user_email or "system",
             "action": log.action,
             "resource": log.details or "-",
+            "details": log.details,
             "status": "SUCCESS" if "failed" not in log.action.lower() else "ERROR",
             "ip_address": log.ip_address or "-",
             "created_at": log.timestamp.isoformat() if log.timestamp else datetime.now().isoformat()
@@ -202,3 +311,17 @@ async def update_platform_core_navigation(body: PlatformCoreUpdateRequest):
     """Update platform core navigation items."""
     _save_platform_core([item.model_dump() for item in body.items])
     return {"message": "Platform core navigation updated", "items": _load_platform_core()}
+
+
+@router.get("/settings")
+async def get_platform_settings():
+    """Get editable platform settings."""
+    return {"settings": _load_platform_settings()}
+
+
+@router.put("/settings")
+async def update_platform_settings(body: PlatformSettingsUpdateRequest):
+    """Update platform settings."""
+    data = body.model_dump()
+    _save_platform_settings(data)
+    return {"message": "Platform settings updated", "settings": _load_platform_settings()}

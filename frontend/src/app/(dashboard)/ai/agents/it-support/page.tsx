@@ -1,45 +1,35 @@
-import AgentPageTemplate, { AgentConfig } from "@/components/agents/AgentPageTemplate";
+"use client";
 
-const config: AgentConfig = {
-  name: "IT Support",
-  agentId: "it-support",
-  badge: "api",
-  domain: "IT",
-  domainHref: "/ai/agents",
-  domainColor: "#14b8a6",
-  tagline: "Incident triage, request routing, and SLA-focused service operations.",
-  description:
-    "Handles IT incidents and service requests with severity tagging, queue assignment, and escalation actions based on risk and SLA drift.",
-  stats: [
-    { label: "Open Tickets", value: "73", change: "Across queues" },
-    { label: "First Response", value: "9m", change: "Median", up: true },
-    { label: "SLA Breach Risk", value: "6", change: "Watchlist" },
-    { label: "Resolved Today", value: "41", change: "Service desk", up: true },
-  ],
-  pipeline: [
-    { title: "Incident Intake", desc: "Capture issue signals and classify severity tier." },
-    { title: "Queue Routing", desc: "Assign to infra, app, or access queue with ownership." },
-    { title: "Action Guidance", desc: "Generate immediate remediation/checklist steps." },
-    { title: "SLA Monitoring", desc: "Track elapsed time and escalation threshold." },
-  ],
-  actions: [
-    { label: "Troubleshoot Issue", desc: "Run incident triage and queue assignment" },
-    { label: "Request Equipment", desc: "Process hardware/service request workflow" },
-    { label: "Access IT Services", desc: "Validate and process access request" },
-  ],
-  activity: [
-    { time: "7 min ago", event: "P2 network incident routed to infra queue", status: "pending" },
-    { time: "26 min ago", event: "Laptop procurement request approved", status: "success" },
-    { time: "1 hr ago", event: "RBAC access checklist generated for new faculty", status: "info" },
-  ],
-  capabilities: [
-    "Incident severity triage",
-    "Queue and ownership routing",
-    "Equipment request processing",
-    "Access workflow validation",
-  ],
-};
+import OpsCrudPage from "@/components/ops/OpsCrudPage";
 
-export default function Page() {
-  return <AgentPageTemplate config={config} />;
+export default function ItSupportPage() {
+  return (
+    <OpsCrudPage
+      title="IT Support"
+      subtitle="Track incident triage, queue routing, and SLA state."
+      endpoint="/api/ops/ai/it-support"
+      listTitle="IT Tickets"
+      createTitle="Create Ticket"
+      fields={[
+        { key: "ticket", label: "Ticket" },
+        { key: "queue", label: "Queue" },
+        { key: "severity", label: "Severity", type: "select", options: ["P1", "P2", "P3"] },
+        { key: "responseMins", label: "Response (mins)", type: "number", min: 0 },
+        { key: "status", label: "Status", type: "select", options: ["Open", "In Progress", "Resolved", "Escalated"] },
+      ]}
+      summary={[
+        { label: "Tickets", kind: "count" },
+        { label: "Open", kind: "countWhere", field: "status", equals: "Open" },
+        { label: "Avg Response", kind: "avg", field: "responseMins", suffix: "m" },
+      ]}
+      statusKey="status"
+      statusOptions={["Open", "In Progress", "Resolved", "Escalated"]}
+      seedData={[
+        { ticket: "Network outage in Block A", queue: "Infra", severity: "P2", responseMins: 8, status: "In Progress" },
+        { ticket: "Laptop replacement request", queue: "Assets", severity: "P3", responseMins: 24, status: "Resolved" },
+        { ticket: "Faculty VPN access issue", queue: "Access", severity: "P2", responseMins: 11, status: "Open" },
+      ]}
+      accentClass="bg-teal-600 hover:bg-teal-700"
+    />
+  );
 }

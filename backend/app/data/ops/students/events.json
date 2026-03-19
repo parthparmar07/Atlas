@@ -1,0 +1,73 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Annual Innovation Summit",
+      "status": "Promoting",
+      "owner": "Student Affairs",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "title": "Annual Innovation Summit",
+          "owner": "Student Affairs",
+          "date": "2025-02-12",
+          "venue": "Main Auditorium",
+          "status": "Promoting",
+          "attendees": 420,
+          "id": "7e404c07-8606-4e0c-ad29-53a691e66aab"
+        }
+      },
+      "created_at": "2026-03-19T09:49:46.685639+00:00",
+      "updated_at": "2026-03-19T09:49:46.685639+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Industry Mock Drive",
+      "status": "Go-Live",
+      "owner": "Placement Cell",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "title": "Industry Mock Drive",
+          "owner": "Placement Cell",
+          "date": "2025-02-18",
+          "venue": "Seminar Hall B",
+          "status": "Go-Live",
+          "attendees": 180,
+          "id": "6b536dde-8e2a-4a70-997d-b1fc76127996"
+        }
+      },
+      "created_at": "2026-03-19T09:49:46.864506+00:00",
+      "updated_at": "2026-03-19T09:49:46.864506+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Open Source Sprint",
+      "status": "Planned",
+      "owner": "CSE Club",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "title": "Open Source Sprint",
+          "owner": "CSE Club",
+          "date": "2025-02-23",
+          "venue": "Lab Block 3",
+          "status": "Planned",
+          "attendees": 96,
+          "id": "ad49d492-824a-4ad1-95da-0c195644488c"
+        }
+      },
+      "created_at": "2026-03-19T09:49:46.922484+00:00",
+      "updated_at": "2026-03-19T09:49:46.922484+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T09:49:46.685616+00:00"
+}

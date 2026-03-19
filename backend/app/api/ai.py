@@ -46,6 +46,7 @@ async def create_policy(
         natural_language=policy_data.natural_language,
         dsl=policy_data.dsl,
         priority=policy_data.priority,
+        created_by=1,
     )
     db.add(policy)
     await db.commit()

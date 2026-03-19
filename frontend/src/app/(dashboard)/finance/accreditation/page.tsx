@@ -1,52 +1,34 @@
-import AgentPageTemplate, { AgentConfig } from "@/components/agents/AgentPageTemplate";
+"use client";
 
-const config: AgentConfig = {
-  name: "Accreditation Agent",
-  agentId: "finance-accreditation",
-  badge: "unique",
-  domain: "Finance",
-  domainHref: "/finance",
-  domainColor: "#ef4444",
-  tagline: "365-day readiness for NAAC, NBA, and NIRF.",
-  description:
-    "Compares your live institutional data against NAAC/NBA criteria in real-time. Flags missing documentation, poor metrics (like faculty-student ratio), and auto-generates draft Self-Study Reports (SSR) with supporting data points.",
-  stats: [
-    { label: "NAAC Est. Score",   value: "3.42",  change: "Target: 3.51 (A++)", up: true },
-    { label: "Criteria Met",      value: "84/104",change: "Metric compliance" },
-    { label: "SSR Readiness",     value: "71%",   change: "Draft auto-complete", up: true },
-    { label: "Quality Flags",     value: "14",    change: "Documentation missing" },
-  ],
-  pipeline: [
-    { title: "Metric Ingestion",   desc: "Faculty stats, library data, research output, and student results auto-fetched." },
-    { title: "Compliance Check",   desc: "Scores live data against the latest NAAC Quantitative Metrics (QnM)." },
-    { title: "Gap Identification", desc: "Flags low-scoring criteria like placement record or budget mismatches." },
-    { title: "SSR Generation",     desc: "Gemini drafts qualitative responses based on institutional achievements." },
-    { title: "Audit Hub",           desc: "Central evidence repository cross-referenced to accreditation criteria." },
-  ],
-  actions: [
-    { label: "NAAC Score",        desc: "Calculate real-time NAAC compliance score estimate" },
-    { label: "Prepare SSR",       desc: "Generate draft content for Self-Study Report criteria" },
-    { label: "NIRF Ranking",      desc: "Audit data submission for NIRF national rankings" },
-    { label: "Gap Analysis",      desc: "Identify specific documentation or metric deficiencies" },
-  ],
-  activity: [
-    { time: "1 hr ago",    event: "Criterion 5 score improved following Alum Matcher rollout", status: "success" },
-    { time: "4 hrs ago",   event: "Flag: Criterion 3.4.3 — Research papers below threshold", status: "error" },
-    { time: "Yesterday",   event: "SSR Draft: 'Institutional Values' response refreshed", status: "success" },
-    { time: "2 days ago",  event: "NBA readiness check: Mechanical Engineering at 82%", status: "info" },
-    { time: "3 days ago",  event: "Evidence alert: 42 faculty missing 'Appointment Letter' scans", status: "error" },
-  ],
-  capabilities: [
-    "Real-time NAAC/NBA/NIRF score estimation",
-    "Auto-generation of Self-Study Report (SSR) drafts",
-    "Automated Qualitative Metric (QlM) response drafting",
-    "Cross-department evidence tracking and document vault",
-    "Metric-driven gap analysis and quality improvement nudges",
-    "Faculty-student ratio and research-per-capita monitoring",
-    "Audit-ready data export formats (Excel/PDF)",
-  ],
-};
+import OpsCrudPage from "@/components/ops/OpsCrudPage";
 
-export default function Page() {
-  return <AgentPageTemplate config={config} />;
+export default function FinanceAccreditationPage() {
+  return (
+    <OpsCrudPage
+      title="Accreditation Agent"
+      subtitle="Track NAAC/NBA/NIRF readiness with evidence and gap status."
+      endpoint="/api/ops/finance/accreditation"
+      listTitle="Accreditation Criteria"
+      createTitle="Add Criterion"
+      fields={[
+        { key: "criterion", label: "Criterion" },
+        { key: "score", label: "Score", type: "number", min: 0, max: 5, step: 0.01 },
+        { key: "evidenceCount", label: "Evidence Count", type: "number", min: 0 },
+        { key: "status", label: "Status", type: "select", options: ["Met", "At Risk", "Missing"] },
+      ]}
+      summary={[
+        { label: "Criteria", kind: "count" },
+        { label: "Avg Score", kind: "avg", field: "score" },
+        { label: "Missing", kind: "countWhere", field: "status", equals: "Missing" },
+      ]}
+      statusKey="status"
+      statusOptions={["Met", "At Risk", "Missing"]}
+      seedData={[
+        { criterion: "NAAC 3.4.3", score: 2.9, evidenceCount: 6, status: "At Risk" },
+        { criterion: "NBA Outcome Metrics", score: 3.6, evidenceCount: 14, status: "Met" },
+        { criterion: "NIRF Outreach", score: 0.0, evidenceCount: 1, status: "Missing" },
+      ]}
+      accentClass="bg-rose-600 hover:bg-rose-700"
+    />
+  );
 }

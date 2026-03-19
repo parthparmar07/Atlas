@@ -1,0 +1,127 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Untitled Record",
+      "status": "Revision",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "manuscript": "Smart Grid Optimization",
+          "journal": "IEEE Access",
+          "reviewCycleDays": 29,
+          "status": "Revision",
+          "id": "be3fd9f7-afd1-4983-84c6-3e05376ae760"
+        }
+      },
+      "created_at": "2026-03-19T09:51:10.325357+00:00",
+      "updated_at": "2026-03-19T09:51:10.325357+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Untitled Record",
+      "status": "Submitted",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "manuscript": "Nano Materials Synthesis",
+          "journal": "Elsevier Materials",
+          "reviewCycleDays": 41,
+          "status": "Submitted",
+          "id": "ced09ed5-6ba1-45df-b833-1bea2230612b"
+        }
+      },
+      "created_at": "2026-03-19T09:51:10.491863+00:00",
+      "updated_at": "2026-03-19T09:51:10.491863+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Untitled Record",
+      "status": "Accepted",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "manuscript": "Rural Health Analytics",
+          "journal": "Springer Health",
+          "reviewCycleDays": 12,
+          "status": "Accepted",
+          "id": "2361cf94-a441-4bcc-b8c3-01e45ae0f14d"
+        }
+      },
+      "created_at": "2026-03-19T09:51:10.530185+00:00",
+      "updated_at": "2026-03-19T09:51:10.530185+00:00"
+    },
+    {
+      "id": 4,
+      "title": "Untitled Record",
+      "status": "Revision",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "manuscript": "Smart Grid Optimization",
+          "journal": "IEEE Access",
+          "reviewCycleDays": 29,
+          "status": "Revision",
+          "id": "06693367-9d04-431e-9594-46bef31278f4"
+        }
+      },
+      "created_at": "2026-03-19T09:51:11.402108+00:00",
+      "updated_at": "2026-03-19T09:51:11.402108+00:00"
+    },
+    {
+      "id": 5,
+      "title": "Untitled Record",
+      "status": "Submitted",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "manuscript": "Nano Materials Synthesis",
+          "journal": "Elsevier Materials",
+          "reviewCycleDays": 41,
+          "status": "Submitted",
+          "id": "de3fbf97-91bf-40c9-a8b2-3ac46a3b8146"
+        }
+      },
+      "created_at": "2026-03-19T09:51:11.445739+00:00",
+      "updated_at": "2026-03-19T09:51:11.445739+00:00"
+    },
+    {
+      "id": 6,
+      "title": "Untitled Record",
+      "status": "Accepted",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "manuscript": "Rural Health Analytics",
+          "journal": "Springer Health",
+          "reviewCycleDays": 12,
+          "status": "Accepted",
+          "id": "27f987d3-6fe9-42ac-b359-d46bb0066b2e"
+        }
+      },
+      "created_at": "2026-03-19T09:51:11.490548+00:00",
+      "updated_at": "2026-03-19T09:51:11.490548+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T09:51:10.325328+00:00"
+}

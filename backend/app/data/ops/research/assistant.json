@@ -1,0 +1,70 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Untitled Record",
+      "status": "Completed",
+      "owner": "Dr. Iyer",
+      "priority": "High",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "topic": "Quantum-safe cryptography",
+          "owner": "Dr. Iyer",
+          "priority": "High",
+          "turnaroundMins": 5,
+          "status": "Completed",
+          "id": "1423a176-3e7e-47d7-973a-5528d16116a5"
+        }
+      },
+      "created_at": "2026-03-19T09:50:23.010769+00:00",
+      "updated_at": "2026-03-19T09:50:23.010769+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Untitled Record",
+      "status": "Queued",
+      "owner": "Dr. Kannan",
+      "priority": "Low",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "topic": "Battery recycling policy review",
+          "owner": "Dr. Kannan",
+          "priority": "Low",
+          "turnaroundMins": 0,
+          "status": "Queued",
+          "id": "5761f350-a8ab-4381-9b8d-4b6f882c0640"
+        }
+      },
+      "created_at": "2026-03-19T09:50:23.114371+00:00",
+      "updated_at": "2026-03-19T09:50:23.114371+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Untitled Record",
+      "status": "Completed",
+      "owner": "Civil Lab",
+      "priority": "Medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "topic": "AI in precision agriculture",
+          "owner": "Civil Lab",
+          "priority": "Medium",
+          "turnaroundMins": 9,
+          "status": "Completed",
+          "id": "3"
+        }
+      },
+      "created_at": "2026-03-19T09:50:23.156465+00:00",
+      "updated_at": "2026-03-19T10:16:45.388211+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T09:50:23.010740+00:00"
+}

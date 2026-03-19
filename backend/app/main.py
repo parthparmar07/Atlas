@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api import auth, users, agents, telemetry, admin, ai, admissions
+from app.api import ops
 from app.api import agent_exec
 from app.models.admissions import Lead, LeadStage, NurtureTemplate
 from app.core.database import async_session_maker
@@ -97,6 +98,7 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(agent_exec.router, prefix="/api")
 app.include_router(admissions.router, prefix="/api")
+app.include_router(ops.router, prefix="/api")
 
 
 @app.get("/")

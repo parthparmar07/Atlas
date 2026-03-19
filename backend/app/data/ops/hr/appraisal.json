@@ -1,0 +1,133 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Dr. Sharma",
+      "status": "Reviewed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. Sharma",
+          "department": "CSE",
+          "kpiScore": 82,
+          "publications": 3,
+          "status": "Reviewed",
+          "id": "0d0db1cb-5f9e-44dd-876c-8b5973e632df"
+        }
+      },
+      "created_at": "2026-03-19T09:46:58.418736+00:00",
+      "updated_at": "2026-03-19T09:46:58.418736+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Dr. N. Iyer",
+      "status": "Draft",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. N. Iyer",
+          "department": "ECE",
+          "kpiScore": 76,
+          "publications": 2,
+          "status": "Draft",
+          "id": "e9619ca2-ea9e-4689-aa30-d3eefb1f009b"
+        }
+      },
+      "created_at": "2026-03-19T09:46:58.605453+00:00",
+      "updated_at": "2026-03-19T09:46:58.605453+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Dr. P. Menon",
+      "status": "Finalized",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. P. Menon",
+          "department": "Mechanical",
+          "kpiScore": 88,
+          "publications": 4,
+          "status": "Finalized",
+          "id": "1f0b083c-f829-4c44-8125-7a541fb41c37"
+        }
+      },
+      "created_at": "2026-03-19T09:46:58.658305+00:00",
+      "updated_at": "2026-03-19T09:46:58.658305+00:00"
+    },
+    {
+      "id": 4,
+      "title": "Dr. Sharma",
+      "status": "Reviewed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. Sharma",
+          "department": "CSE",
+          "kpiScore": 82,
+          "publications": 3,
+          "status": "Reviewed",
+          "id": "81c3ec39-45aa-4aa8-be82-35beebe4a76b"
+        }
+      },
+      "created_at": "2026-03-19T09:46:59.626855+00:00",
+      "updated_at": "2026-03-19T09:46:59.626855+00:00"
+    },
+    {
+      "id": 5,
+      "title": "Dr. N. Iyer",
+      "status": "Draft",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. N. Iyer",
+          "department": "ECE",
+          "kpiScore": 76,
+          "publications": 2,
+          "status": "Draft",
+          "id": "4a5e671e-4fcf-4e20-acd0-cd5fb12fe9d9"
+        }
+      },
+      "created_at": "2026-03-19T09:46:59.668368+00:00",
+      "updated_at": "2026-03-19T09:46:59.668368+00:00"
+    },
+    {
+      "id": 6,
+      "title": "Dr. P. Menon",
+      "status": "Finalized",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. P. Menon",
+          "department": "Mechanical",
+          "kpiScore": 88,
+          "publications": 4,
+          "status": "Finalized",
+          "id": "7ece0ac6-91ba-4979-acf6-6ed1eac3f0e8"
+        }
+      },
+      "created_at": "2026-03-19T09:46:59.708655+00:00",
+      "updated_at": "2026-03-19T09:46:59.708655+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T09:46:58.418712+00:00"
+}

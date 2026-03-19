@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Mail, Phone, RefreshCw, Sparkles, UserPlus } from "lucide-react";
+import { BrainCircuit, Mail, Phone, RefreshCw, ShieldAlert, Sparkles, UserPlus } from "lucide-react";
 import { api } from "@/lib/api";
 
 type Lead = {
@@ -13,285 +13,160 @@ type Lead = {
   source: string;
   stage: string;
   score: number;
-};
-
-type LeadProfile = Lead & {
   ai_summary?: string;
-};
-
-type Provenance = {
-  dataset: string;
-  storage: string;
-  api: string;
-  total_records: number;
-  source_mix: Record<string, number>;
-  latest_record_at?: string | null;
-  note: string;
-};
-
-const AGENT_META = {
-  agentId: "admissions-intelligence",
 };
 
 export default function AdmissionsIntelligencePage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [scoringIds, setScoringIds] = useState<number[]>([]);
-  const [error, setError] = useState<string>("");
-  const [provenance, setProvenance] = useState<Provenance | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    programme: "B.Tech CSE",
-    source: "web_form",
-  });
+  const [error, setError] = useState("");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", programme: "B.Tech CSE", source: "web_form" });
 
-  const fetchLeads = async () => {
+  const loadLeads = async () => {
     setLoading(true);
     setError("");
     try {
-      const [data, provenanceData] = await Promise.all([
-        api<Lead[]>("/api/admissions/leads"),
-        api<Provenance>("/api/admissions/provenance"),
-      ]);
+      const data = await api<Lead[]>("/api/admissions/leads");
       setLeads(data ?? []);
-      setProvenance(provenanceData);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load leads.");
+      setError(e instanceof Error ? e.message : "Failed to load admissions intelligence data.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    void fetchLeads();
+    void loadLeads();
   }, []);
 
   const onCreateLead = async () => {
-    if (!form.name || !form.email || !form.phone || !form.programme) {
-      setError("All fields are required to create a lead.");
-      return;
-    }
-
-    setSubmitting(true);
+    if (!form.name || !form.email || !form.phone) return;
     setError("");
     try {
-      await api<{ id: number }>("/api/admissions/leads", {
+      await api("/api/admissions/leads", {
         method: "POST",
         body: JSON.stringify(form),
       });
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        programme: "B.Tech CSE",
-        source: "web_form",
-      });
-      await fetchLeads();
+      setIsAddOpen(false);
+      setForm({ name: "", email: "", phone: "", programme: "B.Tech CSE", source: "web_form" });
+      await loadLeads();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create lead.");
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  const runRealScoring = async (leadId: number) => {
+  const runProfiler = async (leadId: number) => {
     setScoringIds((prev) => [...prev, leadId]);
     setError("");
     try {
-      await api<LeadProfile>(`/api/admissions/leads/${leadId}/profile`);
-      await fetchLeads();
+      const profile = await api<Lead>(`/api/admissions/leads/${leadId}/profile`);
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...profile } : l)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Scoring failed.");
+      setError(e instanceof Error ? e.message : "Failed to run AI profiler.");
     } finally {
       setScoringIds((prev) => prev.filter((id) => id !== leadId));
     }
   };
 
-  const scoreAllUnscored = async () => {
-    const targets = leads.filter((lead) => !lead.score || lead.score <= 0);
-    if (!targets.length) return;
-
-    setError("");
-    for (const lead of targets) {
-      await runRealScoring(lead.id);
-    }
-  };
-
-  const stats = useMemo(() => {
-    const total = leads.length;
-    const hot = leads.filter((l) => l.score >= 75).length;
-    const warm = leads.filter((l) => l.score >= 45 && l.score < 75).length;
-    const cold = leads.filter((l) => l.score < 45).length;
-    return { total, hot, warm, cold };
-  }, [leads]);
+  const stats = useMemo(() => ({
+    total: leads.length,
+    hot: leads.filter((l) => l.score >= 80).length,
+    warm: leads.filter((l) => l.score >= 50 && l.score < 80).length,
+    cold: leads.filter((l) => l.score < 50).length,
+    unscored: leads.filter((l) => !l.score || l.score === 0).length,
+  }), [leads]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-gray-800">
-      <div className="flex items-center justify-between gap-4">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Sparkles className="text-orange-500" />
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+            <BrainCircuit className="w-8 h-8 text-orange-500" />
             Admissions Intelligence AI
           </h1>
-          <p className="text-gray-500 mt-1">Real lead intake, scoring, and profile workflows from backend APIs.</p>
-        </div>
-        <button
-          onClick={() => void fetchLeads()}
-          className="bg-white border text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2"
-        >
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </button>
-      </div>
-
-      {error ? <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{error}</div> : null}
-
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Total Leads" value={stats.total.toString()} tone="text-blue-600" />
-        <StatCard label="Hot" value={stats.hot.toString()} tone="text-red-600" />
-        <StatCard label="Warm" value={stats.warm.toString()} tone="text-orange-600" />
-        <StatCard label="Cold" value={stats.cold.toString()} tone="text-gray-600" />
-      </div>
-
-      {provenance ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900">
-          <div className="font-semibold mb-1">Data Provenance</div>
-          <div>
-            Dataset: <span className="font-mono">{provenance.dataset}</span> | Source API: <span className="font-mono">{provenance.api}</span> | Storage: {provenance.storage}
-          </div>
-          <div className="mt-1">Total records: {provenance.total_records}</div>
-          <div className="mt-1">Source mix: {Object.entries(provenance.source_mix).map(([k, v]) => `${k}=${v}`).join(", ") || "n/a"}</div>
-          <div className="mt-1">{provenance.note}</div>
-        </div>
-      ) : null}
-
-      <div className="bg-white border rounded-xl p-4 shadow-sm space-y-4">
-        <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-          <UserPlus className="h-4 w-4 text-orange-500" /> Add New Lead
-        </h2>
-        <div className="grid grid-cols-5 gap-3">
-          <input
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder="Full name"
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            placeholder="Email"
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            placeholder="Phone"
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            value={form.programme}
-            onChange={(e) => setForm((f) => ({ ...f, programme: e.target.value }))}
-            placeholder="Programme"
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
-          <select
-            value={form.source}
-            onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
-            className="border rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="web_form">Web Form</option>
-            <option value="whatsapp">WhatsApp</option>
-            <option value="walk_in">Walk In</option>
-            <option value="referral">Referral</option>
-            <option value="social">Social</option>
-            <option value="agent">Agent</option>
-          </select>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Data comes from admissions leads API with source attribution and AI profile summaries.</p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => void onCreateLead()}
-            disabled={submitting}
-            className="bg-orange-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700"
-          >
-            {submitting ? "Creating..." : "Create Lead"}
-          </button>
-          <button
-            onClick={() => void scoreAllUnscored()}
-            disabled={!leads.length}
-            className="bg-gray-900 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-black flex items-center gap-2"
-          >
-            <Activity className="h-4 w-4" /> Score All Unscored
-          </button>
+          <button onClick={() => void loadLeads()} className="bg-white border border-slate-200 text-slate-700 px-4 py-3 rounded-xl font-bold hover:bg-slate-50 flex items-center gap-2 transition"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+          <button onClick={() => setIsAddOpen(true)} className="bg-orange-600 border border-orange-500 shadow-lg shadow-orange-500/20 text-white px-5 py-3 rounded-xl font-bold hover:bg-orange-700 flex items-center gap-2 transition"><UserPlus className="h-5 w-5" /> Create Lead</button>
         </div>
       </div>
 
-      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+      {error ? <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div> : null}
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center border border-slate-200"><div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Total Pipeline</div><div className="text-3xl font-black text-slate-900">{stats.total}</div></div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center"><div className="text-xs font-bold text-rose-500 uppercase tracking-widest mb-1">Hot (80+)</div><div className="text-3xl font-black text-slate-900">{stats.hot}</div></div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center"><div className="text-xs font-bold text-amber-500 uppercase tracking-widest mb-1">Warm (50-79)</div><div className="text-3xl font-black text-slate-900">{stats.warm}</div></div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center"><div className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">Cold (&lt;50)</div><div className="text-3xl font-black text-slate-900">{stats.cold}</div></div>
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center"><div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Unscored</div><div className="text-3xl font-black text-slate-700">{stats.unscored}</div></div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b text-sm text-gray-500 bg-white">
-              <th className="p-4 font-medium">Lead</th>
-              <th className="p-4 font-medium">Source</th>
-              <th className="p-4 font-medium">Programme</th>
-              <th className="p-4 font-medium">Score</th>
-              <th className="p-4 font-medium text-right">Action</th>
+            <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Prospect Profile</th>
+              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Metadata / Interest</th>
+              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">AI Intelligence</th>
+              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
-            {loading ? (
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            {loading ? <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-500">Loading prospects...</td></tr> : null}
+            {!loading && leads.length === 0 ? (
               <tr>
-                <td className="p-4 text-sm text-gray-500" colSpan={5}>Loading leads...</td>
+                <td colSpan={4} className="px-6 py-12 text-center"><ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500 font-medium">No prospects tracked.</p></td>
               </tr>
-            ) : leads.length === 0 ? (
-              <tr>
-                <td className="p-4 text-sm text-gray-500" colSpan={5}>No leads yet. Create one above to start a real workflow.</td>
+            ) : null}
+            {leads.map((lead) => (
+              <tr key={lead.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="px-6 py-6 min-w-[200px]">
+                  <div className="font-bold text-slate-900 dark:text-white mb-1.5 text-base">{lead.name}</div>
+                  <div className="text-xs font-medium text-slate-500 flex items-center gap-2 mb-1"><Mail className="w-3.5 h-3.5 text-slate-400" /> {lead.email}</div>
+                  <div className="text-xs font-medium text-slate-500 flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-slate-400" /> {lead.phone}</div>
+                </td>
+                <td className="px-6 py-6 max-w-[200px]">
+                  <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-2">{lead.programme_interest}</div>
+                  <div className="flex items-center gap-2 mb-2 text-xs font-medium text-slate-500">Source: <span className="text-slate-900 dark:text-white font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{lead.source}</span></div>
+                </td>
+                <td className="px-6 py-6 min-w-[250px] max-w-[400px]">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-lg uppercase tracking-wider ${lead.score >= 80 ? "bg-rose-100 text-rose-700" : lead.score >= 50 ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>Score: {Math.round(lead.score || 0)}%</span>
+                      <span className="text-xs font-black text-slate-400 uppercase">{lead.stage}</span>
+                    </div>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl text-sm text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">{lead.ai_summary || "Run profiler to generate AI profile summary."}</div>
+                  </div>
+                </td>
+                <td className="px-6 py-6 text-right align-top">
+                  <button disabled={scoringIds.includes(lead.id)} onClick={() => void runProfiler(lead.id)} className="px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 w-full justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 disabled:opacity-60">
+                    {scoringIds.includes(lead.id) ? <><RefreshCw className="h-4 w-4 animate-spin" /> Analyzing...</> : <><Sparkles className="h-4 w-4" /> Run AI Profiler</>}
+                  </button>
+                </td>
               </tr>
-            ) : (
-              leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-gray-50">
-                  <td className="p-4">
-                    <div className="font-medium text-gray-900">{lead.name}</div>
-                    <div className="text-xs text-gray-500 flex items-center gap-2 mt-1">
-                      <Mail className="h-3 w-3" /> {lead.email}
-                    </div>
-                    <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                      <Phone className="h-3 w-3" /> {lead.phone}
-                    </div>
-                  </td>
-                  <td className="p-4 text-sm text-gray-700">{lead.source}</td>
-                  <td className="p-4 text-sm text-gray-700">{lead.programme_interest}</td>
-                  <td className="p-4">
-                    {lead.score > 0 ? (
-                      <span className="text-sm font-semibold text-gray-900">{lead.score}</span>
-                    ) : (
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Pending</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => void runRealScoring(lead.id)}
-                      disabled={scoringIds.includes(lead.id)}
-                      className="bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-200 disabled:opacity-50"
-                    >
-                      {scoringIds.includes(lead.id) ? "Scoring..." : "Run AI Profile"}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
 
-function StatCard({ label, value, tone }: { label: string; value: string; tone: string }) {
-  return (
-    <div className="bg-white border rounded-xl p-5 shadow-sm">
-      <div className="text-sm font-medium text-gray-500 mb-1">{label}</div>
-      <div className={`text-2xl font-bold ${tone}`}>{value}</div>
+      {isAddOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-6">Import Prospect</h2>
+            <div className="space-y-4">
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Full Name</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl" /></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email</label><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl" /></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Phone</label><input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl" /></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Target Program</label><input value={form.programme} onChange={e => setForm({ ...form, programme: e.target.value })} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl" /></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Source</label><select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl"><option value="web_form">Web Form</option><option value="whatsapp">WhatsApp</option><option value="walk_in">Walk In</option><option value="referral">Referral</option><option value="social">Social</option><option value="agent">Agent</option></select></div>
+              <div className="pt-6 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700"><button onClick={() => setIsAddOpen(false)} className="px-5 py-2.5 font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">Cancel</button><button onClick={() => void onCreateLead()} className="px-6 py-2.5 bg-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30">Save Record</button></div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

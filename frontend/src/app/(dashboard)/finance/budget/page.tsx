@@ -1,52 +1,161 @@
-import AgentPageTemplate, { AgentConfig } from "@/components/agents/AgentPageTemplate";
+"use client";
 
-const config: AgentConfig = {
-  name: "Budget Monitor",
-  agentId: "finance-budget",
-  badge: "api",
-  domain: "Finance",
-  domainHref: "/finance",
-  domainColor: "#ef4444",
-  tagline: "Total visibility into every department's spend.",
-  description:
-    "Tracks departmental spending against sanctioned annual budgets in real-time. Flags overspend before it happens, manages the procurement approval pipeline, and provides one-click financial health dashboards for the Board of Trustees.",
-  stats: [
-    { label: "Total Budget",      value: "₹42.0Cr",change: "Institutional FY25" },
-    { label: "Overall Spend",     value: "₹31.2Cr",change: "74% utilisation" },
-    { label: "Pending Approvals", value: "8",      change: "Procurement requests" },
-    { label: "Savings Found",     value: "₹12.4L", change: "Through vendor audit", up: true },
-  ],
-  pipeline: [
-    { title: "Budget Sanction",   desc: "Annual departmental allocations uploaded and thresholds locked." },
-    { title: "Expense Tracking",   desc: "Invoices, payroll, and purchase orders auto-matched to budget heads." },
-    { title: "Risk Alerting",      desc: "Agent flags categories approaching 90% utilization and notifies HODs." },
-    { title: "Procurement Flow",   desc: "Purchase requests routed for one-click digital sign-off by authorities." },
-    { title: "Board Dashboard",    desc: "Real-time P&L, burn rate, and projected end-of-year surplus reporting." },
-  ],
-  actions: [
-    { label: "Check Spend",       desc: "Audit current departmental spending against limits" },
-    { label: "Forecast Burn",     desc: "Predict year-end budget utilization based on trends" },
-    { label: "Approve POs",       desc: "Review and sign-off on pending purchase orders" },
-    { label: "Analyse Savings",    desc: "Identify vendor consolidation or cost-saving opportunities" },
-  ],
-  activity: [
-    { time: "Just now",   event: "Purchase Order #9822 approved: Lab Consumables (₹18,000)", status: "success" },
-    { time: "2 hrs ago",  event: "Threshold alert: ECE travel budget at 92% — HOD notified", status: "error" },
-    { time: "Yesterday",  event: "Payroll sync: March salaries processed for 247 staff", status: "success" },
-    { time: "2 days ago", event: "Vendor audit: Switched electricity provider — est savings ₹12k/mo", status: "info" },
-    { time: "1 week ago", event: "Quarterly review: All depts within ±5% of budget", status: "success" },
-  ],
-  capabilities: [
-    "Departmental budget header management",
-    "Real-time expense and burn-rate tracking",
-    "Automated procurement approval hierarchy",
-    "PO-to-Invoice matching and audit trail",
-    "Budget utilization threshold alerting (90%/100%)",
-    "Vendor benchmarking and savings identification",
-    "Board-level strategic financial dashboards",
-  ],
+import { useEffect, useMemo, useState } from "react";
+
+type BudgetStatus = "On Track" | "Warning" | "Critical";
+
+type BudgetLine = {
+  id: string;
+  department: string;
+  allocated: number;
+  spent: number;
+  pendingApprovals: number;
+  status: BudgetStatus;
 };
 
-export default function Page() {
-  return <AgentPageTemplate config={config} />;
+type OpsRecord<T> = {
+  id: string;
+  data: T;
+};
+
+const STATUSES: BudgetStatus[] = ["On Track", "Warning", "Critical"];
+
+export default function FinanceBudgetPage() {
+  const [lines, setLines] = useState<BudgetLine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Omit<BudgetLine, "id">>({
+    department: "",
+    allocated: 0,
+    spent: 0,
+    pendingApprovals: 0,
+    status: "On Track",
+  });
+
+  const allocatedTotal = useMemo(() => lines.reduce((acc, item) => acc + item.allocated, 0), [lines]);
+  const spentTotal = useMemo(() => lines.reduce((acc, item) => acc + item.spent, 0), [lines]);
+  const warningCount = useMemo(() => lines.filter((item) => item.status !== "On Track").length, [lines]);
+
+  async function loadLines() {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch("/api/ops/finance/budget/records", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load budget lines");
+      const json = await res.json();
+      const records = (json.records ?? []) as OpsRecord<BudgetLine>[];
+      setLines(records.map((r) => r.data));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function seedIfEmpty() {
+    if (lines.length > 0) return;
+    const seed: Omit<BudgetLine, "id">[] = [
+      { department: "CSE", allocated: 12000000, spent: 8900000, pendingApprovals: 2, status: "On Track" },
+      { department: "ECE", allocated: 8600000, spent: 7800000, pendingApprovals: 1, status: "Warning" },
+      { department: "Central Facilities", allocated: 6400000, spent: 6400000, pendingApprovals: 3, status: "Critical" },
+    ];
+    await Promise.all(
+      seed.map((item) =>
+        fetch("/api/ops/finance/budget/records", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: { ...item, id: crypto.randomUUID() } }),
+        }),
+      ),
+    );
+    await loadLines();
+  }
+
+  async function createLine() {
+    if (!draft.department || draft.allocated <= 0 || draft.spent < 0) return;
+    await fetch("/api/ops/finance/budget/records", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { ...draft, id: crypto.randomUUID() } }),
+    });
+    setDraft({ department: "", allocated: 0, spent: 0, pendingApprovals: 0, status: "On Track" });
+    await loadLines();
+  }
+
+  async function updateStatus(line: BudgetLine, status: BudgetStatus) {
+    await fetch(`/api/ops/finance/budget/records/${line.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { ...line, status } }),
+    });
+    await loadLines();
+  }
+
+  useEffect(() => {
+    void loadLines();
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-slate-50 p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <section className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-white p-6">
+          <h1 className="text-2xl font-bold text-slate-900">Budget Monitor</h1>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+              <p className="text-xs text-slate-500">Allocated</p>
+              <p className="text-2xl font-bold text-slate-900">{allocatedTotal.toLocaleString()}</p>
+            </div>
+            <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+              <p className="text-xs text-slate-500">Spent</p>
+              <p className="text-2xl font-bold text-indigo-700">{spentTotal.toLocaleString()}</p>
+            </div>
+            <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+              <p className="text-xs text-slate-500">Warning/Critical</p>
+              <p className="text-2xl font-bold text-rose-700">{warningCount}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Department Budget Lines</h2>
+              <button onClick={seedIfEmpty} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Seed Sample Data</button>
+            </div>
+            {loading ? <p className="text-sm text-slate-500">Loading...</p> : null}
+            {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+            <div className="space-y-3">
+              {lines.map((line) => (
+                <div key={line.id} className="rounded-xl border border-slate-200 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">{line.department}</p>
+                      <p className="text-xs text-slate-500">Allocated {line.allocated.toLocaleString()} · Spent {line.spent.toLocaleString()} · Pending approvals {line.pendingApprovals}</p>
+                    </div>
+                    <select value={line.status} onChange={(e) => void updateStatus(line, e.target.value as BudgetStatus)} className="rounded-md border border-slate-300 px-2 py-1 text-xs">
+                      {STATUSES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ))}
+              {!loading && lines.length === 0 ? <p className="text-sm text-slate-500">No budget lines yet. Seed or add one.</p> : null}
+            </div>
+          </div>
+
+          <aside className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+            <h2 className="text-base font-semibold text-slate-900">Add Budget Line</h2>
+            <div className="mt-3 space-y-3">
+              <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Department" value={draft.department} onChange={(e) => setDraft((d) => ({ ...d, department: e.target.value }))} />
+              <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" type="number" min={0} placeholder="Allocated" value={draft.allocated} onChange={(e) => setDraft((d) => ({ ...d, allocated: Number(e.target.value) || 0 }))} />
+              <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" type="number" min={0} placeholder="Spent" value={draft.spent} onChange={(e) => setDraft((d) => ({ ...d, spent: Number(e.target.value) || 0 }))} />
+              <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" type="number" min={0} placeholder="Pending approvals" value={draft.pendingApprovals} onChange={(e) => setDraft((d) => ({ ...d, pendingApprovals: Number(e.target.value) || 0 }))} />
+              <button onClick={() => void createLine()} className="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Save Line</button>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
+  );
 }
