@@ -27,6 +27,10 @@ type LeadDocumentItem = {
   uploaded_at?: string | null;
 };
 
+const AGENT_META = {
+  agentId: "admissions-documents",
+};
+
 export default function DocumentVerifierPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadId, setLeadId] = useState<string>("");

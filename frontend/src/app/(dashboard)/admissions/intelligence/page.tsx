@@ -29,6 +29,10 @@ type Provenance = {
   note: string;
 };
 
+const AGENT_META = {
+  agentId: "admissions-intelligence",
+};
+
 export default function AdmissionsIntelligencePage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);

@@ -15,6 +15,10 @@ type Lead = {
 
 type FunnelStats = Record<string, number>;
 
+const AGENT_META = {
+  agentId: "admissions-leads",
+};
+
 export default function LeadNurturePage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [funnel, setFunnel] = useState<FunnelStats>({});

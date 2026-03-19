@@ -29,6 +29,10 @@ type Scholarship = {
   criteria_json: Record<string, any>;
 };
 
+const AGENT_META = {
+  agentId: "admissions-scholarship",
+};
+
 export default function ScholarshipMatcherPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);

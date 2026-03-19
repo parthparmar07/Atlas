@@ -51,6 +51,7 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
       title: "Academics", icon: BookOpen, href: "/academics", color: "text-sky-400",
       subItems: [
         { title: "Calendar", href: "/academics/calendar" },
+        { title: "Exams", href: "/academics/exams" },
         { title: "Timetable", href: "/academics/timetable" },
         { title: "Curriculum", href: "/academics/curriculum" },
         { title: "Substitution", href: "/academics/substitution" }
@@ -60,6 +61,7 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
       title: "HR & Faculty", icon: Target, href: "/hr", color: "text-emerald-400",
       subItems: [
         { title: "HR Bot", href: "/hr/bot" },
+        { title: "Leave Manager", href: "/hr/leave-manager" },
         { title: "Recruitment", href: "/hr/recruitment" },
         { title: "Appraisal", href: "/hr/appraisal" },
         { title: "Faculty Load Balancer", href: "/hr/load-balancer" }
@@ -68,11 +70,12 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
     { 
       title: "Student Lifecycle", icon: GraduationCap, href: "/students", color: "text-pink-400",
       subItems: [
+        { title: "Course Builder", href: "/students/course-builder" },
         { title: "Dropout Predictor", href: "/students/dropout" },
         { title: "Grievance", href: "/students/grievance" },
         { title: "Internships", href: "/students/internships" },
         { title: "Events Coordinator", href: "/students/events" },
-        { title: "Wellbeing Support", href: "/ai/agents/students-wellbeing" },
+        { title: "Wellbeing Support", href: "/students/wellbeing" },
         { title: "Projects", href: "/students/projects" }
       ]
     },
@@ -87,7 +90,8 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
     {
       title: "IT & Services", icon: Activity, href: "/ai/agents/it-support", color: "text-teal-400",
       subItems: [
-        { title: "IT Support", href: "/ai/agents/it-support" }
+        { title: "IT Support", href: "/ai/agents/it-support" },
+        { title: "Agent Catalog", href: "/ai/agents" }
       ]
     },
     { 
