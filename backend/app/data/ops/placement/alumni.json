@@ -1,0 +1,70 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Untitled Record",
+      "status": "Referral Active",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "alumniName": "Rohan Das",
+          "batch": "2019",
+          "company": "Amazon",
+          "role": "SDE-2",
+          "status": "Referral Active",
+          "id": "bc9a0c8b-5dcf-47e0-b1bb-5cc7a3cd0b94"
+        }
+      },
+      "created_at": "2026-03-19T10:18:03.110048+00:00",
+      "updated_at": "2026-03-19T10:18:03.110048+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Untitled Record",
+      "status": "Mentor",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "alumniName": "Anjali Rao",
+          "batch": "2020",
+          "company": "Microsoft",
+          "role": "Data Engineer",
+          "status": "Mentor",
+          "id": "884a41f8-d09d-4e8f-9731-2c88f979b9e0"
+        }
+      },
+      "created_at": "2026-03-19T10:18:03.281160+00:00",
+      "updated_at": "2026-03-19T10:18:03.281160+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Untitled Record",
+      "status": "Tracked",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "alumniName": "Karan Mehta",
+          "batch": "2018",
+          "company": "Infosys",
+          "role": "Lead Consultant",
+          "status": "Tracked",
+          "id": "3c0a8d17-9a1f-4db9-ba54-c9269b3ec943"
+        }
+      },
+      "created_at": "2026-03-19T10:18:03.332668+00:00",
+      "updated_at": "2026-03-19T10:18:03.332668+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T10:18:03.109926+00:00"
+}

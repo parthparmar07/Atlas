@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,84 +35,85 @@ const DEFAULT_PLATFORM_CORE = [
   { title: "Administrator", href: "/settings", icon: "settings", color: "text-slate-300" },
   { title: "Audit Logs", href: "/admin/audit", icon: "activity", color: "text-slate-300" },
   { title: "Security Core", href: "/ai/policies", icon: "shield", color: "text-slate-300" },
+  { title: "Orchestrator God Mode", href: "/admin/orchestrator", icon: "target", color: "text-amber-400" },
 ];
 
 const DOMAIN_GROUP = { group: "Platform Domains", items: [
-    { 
-      title: "Admissions & Leads", icon: Users, href: "/admissions", color: "text-indigo-400",
-      subItems: [
-        { title: "Lead Nurture", href: "/admissions/leads" },
-        { title: "Admissions Intel", href: "/admissions/intelligence" },
-        { title: "Scholarship", href: "/admissions/scholarship" },
-        { title: "Documents", href: "/admissions/documents" }
-      ]
-    },
-    { 
-      title: "Academics", icon: BookOpen, href: "/academics", color: "text-sky-400",
-      subItems: [
-        { title: "Calendar", href: "/academics/calendar" },
-        { title: "Exams", href: "/academics/exams" },
-        { title: "Timetable", href: "/academics/timetable" },
-        { title: "Curriculum", href: "/academics/curriculum" },
-        { title: "Substitution", href: "/academics/substitution" }
-      ]
-    },
-    { 
-      title: "HR & Faculty", icon: Target, href: "/hr", color: "text-emerald-400",
-      subItems: [
-        { title: "HR Bot", href: "/hr/bot" },
-        { title: "Leave Manager", href: "/hr/leave-manager" },
-        { title: "Recruitment", href: "/hr/recruitment" },
-        { title: "Appraisal", href: "/hr/appraisal" },
-        { title: "Faculty Load Balancer", href: "/hr/load-balancer" }
-      ]
-    },
-    { 
-      title: "Student Lifecycle", icon: GraduationCap, href: "/students", color: "text-pink-400",
-      subItems: [
-        { title: "Course Builder", href: "/students/course-builder" },
-        { title: "Dropout Predictor", href: "/students/dropout" },
-        { title: "Grievance", href: "/students/grievance" },
-        { title: "Internships", href: "/students/internships" },
-        { title: "Events Coordinator", href: "/students/events" },
-        { title: "Wellbeing Support", href: "/students/wellbeing" },
-        { title: "Projects", href: "/students/projects" }
-      ]
-    },
-    {
-      title: "Research & Innovation", icon: BarChart3, href: "/research", color: "text-cyan-400",
-      subItems: [
-        { title: "Research Assistant", href: "/research/assistant" },
-        { title: "Grant Tracker", href: "/research/grant" },
-        { title: "Publication Ops", href: "/research/publication" }
-      ]
-    },
-    {
-      title: "IT & Services", icon: Activity, href: "/ai/agents/it-support", color: "text-teal-400",
-      subItems: [
-        { title: "IT Support", href: "/ai/agents/it-support" },
-        { title: "Agent Catalog", href: "/ai/agents" }
-      ]
-    },
-    { 
-      title: "Placement & Industry", icon: Briefcase, href: "/placement", color: "text-orange-400",
-      subItems: [
-        { title: "Placement Intel", href: "/placement/intelligence" },
-        { title: "Interview Prep", href: "/placement/interview-prep" },
-        { title: "Resume Review", href: "/placement/resume" },
-        { title: "Alumni Network", href: "/placement/alumni" }
-      ]
-    },
-    { 
-      title: "Finance & Compliance", icon: LayoutDashboard, href: "/finance", color: "text-amber-400",
-      subItems: [
-        { title: "Budget Monitor", href: "/finance/budget" },
-        { title: "Procurement", href: "/finance/procurement" },
-        { title: "Fee Collection", href: "/finance/fees" },
-        { title: "Accreditation", href: "/finance/accreditation" }
-      ]
-    }
-  ]};
+  { 
+    title: "Admissions Orbit", icon: Users, href: "/admissions", color: "text-indigo-400",
+    subItems: [
+      { title: "Lead Nurture", href: "/admissions/leads" },
+      { title: "Admissions Intel", href: "/admissions/intelligence" },
+      { title: "Scholarship", href: "/admissions/scholarship" },
+      { title: "Documents", href: "/admissions/documents" }
+    ]
+  },
+  { 
+    title: "Academic Command", icon: BookOpen, href: "/academics", color: "text-sky-400",
+    subItems: [
+      { title: "Calendar", href: "/academics/calendar" },
+      { title: "Exams", href: "/academics/exams" },
+      { title: "Timetable", href: "/academics/timetable" },
+      { title: "Curriculum", href: "/academics/curriculum" },
+      { title: "Substitution", href: "/academics/substitution" }
+    ]
+  },
+  { 
+    title: "Workforce Sync", icon: Target, href: "/hr", color: "text-emerald-400",
+    subItems: [
+      { title: "HR Bot", href: "/hr/bot" },
+      { title: "Leave Manager", href: "/hr/leave-manager" },
+      { title: "Recruitment", href: "/hr/recruitment" },
+      { title: "Appraisal", href: "/hr/appraisal" },
+      { title: "Faculty Load Balancer", href: "/hr/load-balancer" }
+    ]
+  },
+  { 
+    title: "Student Lifecycle", icon: GraduationCap, href: "/students", color: "text-pink-400",
+    subItems: [
+      { title: "Course Builder", href: "/students/course-builder" },
+      { title: "Dropout Predictor", href: "/students/dropout" },
+      { title: "Grievance", href: "/students/grievance" },
+      { title: "Internships", href: "/students/internships" },
+      { title: "Events Coordinator", href: "/students/events" },
+      { title: "Wellbeing Support", href: "/students/wellbeing" },
+      { title: "Projects", href: "/students/projects" }
+    ]
+  },
+  {
+    title: "Research Assistant", icon: BarChart3, href: "/research", color: "text-cyan-400",
+    subItems: [
+      { title: "Research Assistant", href: "/research/assistant" },
+      { title: "Grant Tracker", href: "/research/grant" },
+      { title: "Publication Ops", href: "/research/publication" }
+    ]
+  },
+  {
+    title: "Infrastructure Command", icon: Activity, href: "/ai/agents/it-support", color: "text-teal-400",
+    subItems: [
+      { title: "IT Support", href: "/ai/agents/it-support" },
+      { title: "Agent Catalog", href: "/ai/agents" }
+    ]
+  },
+  { 
+    title: "Career Success", icon: Briefcase, href: "/placement", color: "text-orange-400",
+    subItems: [
+      { title: "Placement Intel", href: "/placement/intelligence" },
+      { title: "Interview Prep", href: "/placement/interview-prep" },
+      { title: "Resume Review", href: "/placement/resume" },
+      { title: "Alumni Network", href: "/placement/alumni" }
+    ]
+  },
+  { 
+    title: "Finance & Governance", icon: LayoutDashboard, href: "/finance", color: "text-amber-400",
+    subItems: [
+      { title: "Budget Monitor", href: "/finance/budget" },
+      { title: "Procurement", href: "/finance/procurement" },
+      { title: "Fee Collection", href: "/finance/fees" },
+      { title: "Accreditation", href: "/finance/accreditation" }
+    ]
+  }
+]};
 
 function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean, pathname: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -228,7 +229,17 @@ export default function Sidebar() {
           color: item.color || "text-slate-300",
           icon: ICON_MAP[item.icon] || LayoutDashboard,
         }));
-        if (mapped.length > 0) setPlatformCoreItems(mapped);
+        if (mapped.length > 0) {
+          setPlatformCoreItems(prev => {
+            const merged = [...DEFAULT_PLATFORM_CORE];
+            mapped.forEach((m: any) => {
+              if (!merged.find((p: any) => p.href === m.href)) {
+                merged.push(m);
+              }
+            });
+            return merged.map(item => ({ ...item, icon: ICON_MAP[item.icon as string] || item.icon || LayoutDashboard }));
+          });
+        }
       } catch {
         // Keep defaults when API is unavailable.
       }
@@ -250,10 +261,11 @@ export default function Sidebar() {
       className="h-screen bg-[#1a163a] text-slate-300 flex flex-col shrink-0 relative z-30 transition-shadow sidebar-scrollbar overflow-y-auto overflow-x-hidden border-r border-[#2d2859]"
     >
       {/* Header / Logo */}
-      <div className="h-16 flex items-center px-5 shrink-0 justify-between">
+      <div className="h-16 flex items-center px-5 shrink-0 justify-between border-b border-[#2d2859]/50">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0">
-            <span className="text-indigo-400 font-bold text-lg leading-none">A</span>
+          {/* Logo mark */}
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-[0_0_16px_rgba(99,102,241,0.5)] flex items-center justify-center shrink-0 border border-indigo-400/30">
+            <span className="text-white font-black text-lg leading-none tracking-tight">A</span>
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -263,8 +275,8 @@ export default function Sidebar() {
                 exit={{ opacity: 0, x: -10 }}
                 className="flex flex-col whitespace-nowrap"
               >
-                <span className="font-bold text-white text-base tracking-wide leading-tight">ATLAS</span>
-                <span className="text-[10px] text-indigo-300 tracking-wider font-semibold">SKILLTECH</span>
+                <span className="font-black text-white text-base tracking-wide leading-tight">ATLAS SKILLTECH</span>
+                <span className="text-[9px] text-indigo-300/80 tracking-[0.2em] font-black uppercase">University ∙ AI Command Centre</span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -277,6 +289,7 @@ export default function Sidebar() {
           {collapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
+
 
       {/* Navigation */}
       <nav className="flex-1 py-4 flex flex-col gap-6 w-full">
@@ -306,8 +319,17 @@ export default function Sidebar() {
 
       {/* Footer Profile / Actions */}
       <div className="p-4 border-t border-[#2d2859] shrink-0">
+        {/* Live system indicator */}
+        {!collapsed && (
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">35 Agents Online</span>
+          </div>
+        )}
         <div className="flex items-center gap-3 w-full">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 block shrink-0" />
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 block shrink-0 flex items-center justify-center shadow-[0_0_12px_rgba(99,102,241,0.4)]">
+            <span className="text-white font-black text-sm">AD</span>
+          </div>
           <AnimatePresence>
             {!collapsed && (
               <motion.div
@@ -316,8 +338,8 @@ export default function Sidebar() {
                 exit={{ opacity: 0, x: -10 }}
                 className="flex flex-col overflow-hidden whitespace-nowrap"
               >
-                <span className="text-sm font-semibold text-white truncate">Administrator</span>
-                <span className="text-xs text-slate-400 truncate">System Access</span>
+                <span className="text-sm font-bold text-white truncate">Administrator</span>
+                <span className="text-xs text-slate-400 truncate">Full System Access</span>
               </motion.div>
             )}
           </AnimatePresence>

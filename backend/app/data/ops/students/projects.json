@@ -83,7 +83,7 @@
     {
       "id": 6,
       "title": "Smart Library Bot",
-      "status": "completed",
+      "status": "risk",
       "owner": "system",
       "priority": "medium",
       "source": "seed",
@@ -94,7 +94,7 @@
         "progress": 40
       },
       "created_at": "2026-03-19T09:14:13.269318+00:00",
-      "updated_at": "2026-03-19T10:16:21.715917+00:00"
+      "updated_at": "2026-03-19T16:26:23.337295+00:00"
     }
   ],
   "actions": [
@@ -129,6 +129,22 @@
       "status": "SUCCESS",
       "result": "Milestone Tracking executed successfully for students/projects",
       "created_at": "2026-03-19T10:16:21.748702+00:00"
+    },
+    {
+      "id": 5,
+      "action": "Milestone Tracking",
+      "context": "project_id=6 status=review",
+      "status": "SUCCESS",
+      "result": "Milestone Tracking executed successfully for students/projects",
+      "created_at": "2026-03-19T16:26:21.697203+00:00"
+    },
+    {
+      "id": 6,
+      "action": "Milestone Tracking",
+      "context": "project_id=6 status=risk",
+      "status": "SUCCESS",
+      "result": "Milestone Tracking executed successfully for students/projects",
+      "created_at": "2026-03-19T16:26:24.163962+00:00"
     }
   ],
   "communications": [],

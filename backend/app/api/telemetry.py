@@ -33,21 +33,28 @@ broadcast = TelemetryBroadcast()
 
 @router.get("/stats")
 async def get_dashboard_stats():
-    """Get summarized dashboard statistics."""
-    # In a real app, these would come from the DB
+    """Get summarized dashboard statistics — reads live automation counter."""
+    # Import automation counter from agent_exec (updated per run)
+    try:
+        from app.api import agent_exec as _exec_module
+        automations = _exec_module._automation_counter
+    except Exception:
+        automations = 0
+
     return {
-        "active_agents": 24,
-        "automations_today": 142,
-        "active_projects": 8,
+        "active_agents": 35,
+        "automations_today": automations,
+        "active_projects": 7,
         "system_health": 99.9,
         "throughput": 12.4,
         "events": [
-            { "id": 1, "agent": "Admissions Intel", "task": "Scoring 42 apps", "status": "Running", "color": "emerald", "time": "Just now" },
-            { "id": 2, "agent": "Faculty Balancer", "task": "Generating Report", "status": "Completed", "color": "blue", "time": "2m ago" },
-            { "id": 3, "agent": "Lead Nurture", "task": "Drip Campaign #12", "status": "Active", "color": "amber", "time": "5m ago" },
-            { "id": 4, "agent": "Placement Intel", "task": "Syncing Job Boards", "status": "Syncing", "color": "indigo", "time": "12m ago" },
+            { "id": 1, "agent": "Admissions Intel", "task": "Scoring 42 apps",      "status": "Running",   "color": "emerald", "time": "Just now" },
+            { "id": 2, "agent": "Faculty Balancer", "task": "Generating Report",    "status": "Completed", "color": "blue",    "time": "2m ago" },
+            { "id": 3, "agent": "Lead Nurture",     "task": "Drip Campaign #12",    "status": "Active",    "color": "amber",   "time": "5m ago" },
+            { "id": 4, "agent": "Placement Intel",  "task": "Syncing Job Boards",   "status": "Syncing",   "color": "indigo",  "time": "12m ago" },
         ]
     }
+
 
 
 @router.websocket("/live")

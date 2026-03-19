@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, TrendingUp, AlertTriangle, Send, Sparkles, Plus, Book, Activity, RefreshCw } from "lucide-react";

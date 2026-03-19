@@ -1,34 +1,203 @@
 "use client";
 
-import OpsCrudPage from "@/components/ops/OpsCrudPage";
+import { useState } from "react";
+import { 
+  Calendar as CalendarIcon, ChevronLeft, ChevronRight, 
+  Search, Filter, BookOpen, Layers, 
+  Cpu, Gavel, Pin, Clock, MapPin, 
+  CheckCircle2, Sparkles, Download, Printer,
+  MoreHorizontal, Users, Target, ShieldCheck,
+  AlertCircle, Activity, Globe, PlusCircle, Bookmark
+} from "lucide-react";
+
+const SCHOOLS = [
+  { id: "isme", name: "ISME Business", color: "bg-indigo-500", text: "text-indigo-500" },
+  { id: "isdi", name: "ISDI Design", color: "bg-pink-500", text: "text-pink-500" },
+  { id: "ugdx", name: "uGDX Tech", icon: Cpu, color: "bg-cyan-500", text: "text-cyan-500" },
+  { id: "law", name: "Law & Policy", icon: Gavel, color: "bg-amber-500", text: "text-amber-500" },
+];
+
+const CALENDAR_EVENTS = [
+  { id: "EV-1", title: "Semester III Exams", school: "isme", date: "12 May", type: "Exam", venue: "Bloomberg Lab", importance: "Critical" },
+  { id: "EV-2", title: "NASA Rover Field Test", school: "ugdx", date: "15 May", type: "Project", venue: "uGDX Deep Tech Bay", importance: "High" },
+  { id: "EV-3", title: "Parsons Design Workshop", school: "isdi", date: "18 May", type: "Workshop", venue: "Studio A", importance: "High" },
+  { id: "EV-4", title: "Supreme Court Moot Trial", school: "law", date: "22 May", type: "Event", venue: "Moot Court Room", importance: "Medium" },
+];
+
+const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function AcademicsCalendarPage() {
+  const [selectedSchool, setSelectedSchool] = useState("all");
+
   return (
-    <OpsCrudPage
-      title="Calendar Generator"
-      subtitle="Maintain a conflict-free institutional academic calendar."
-      endpoint="/api/ops/academics/calendar"
-      listTitle="Academic Calendar Events"
-      createTitle="Add Calendar Event"
-      fields={[
-        { key: "event", label: "Event" },
-        { key: "date", label: "Date", type: "date" },
-        { key: "owner", label: "Owner" },
-        { key: "status", label: "Status", type: "select", options: ["Draft", "Approved", "Published"] },
-      ]}
-      summary={[
-        { label: "Events", kind: "count" },
-        { label: "Published", kind: "countWhere", field: "status", equals: "Published" },
-        { label: "Approved", kind: "countWhere", field: "status", equals: "Approved" },
-      ]}
-      statusKey="status"
-      statusOptions={["Draft", "Approved", "Published"]}
-      seedData={[
-        { event: "Internal II Exams", date: "2026-04-08", owner: "Controller Office", status: "Approved" },
-        { event: "Sports Day", date: "2026-03-28", owner: "Student Affairs", status: "Published" },
-        { event: "Semester Orientation", date: "2026-06-15", owner: "Academic Cell", status: "Draft" },
-      ]}
-      accentClass="bg-cyan-600 hover:bg-cyan-700"
-    />
+    <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
+      {/* Header Context */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-3 py-1 bg-sky-500/10 border border-sky-500/20 rounded-full w-fit">
+            <CalendarIcon className="w-3.5 h-3.5 text-sky-500" />
+            <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Master Orbit v4.0</span>
+          </div>
+          <h1>Institutional Calendar</h1>
+          <p className="text-lg text-slate-500 font-medium italic">Managed orchestration for ISME, ISDI, uGDX, and Law academic cycles.</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+           <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm">
+              <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+              <input type="text" placeholder="AI Prompt: Generate 2024 ISME Cycle..." className="bg-transparent border-none focus:ring-0 text-[11px] font-bold text-slate-600 w-64 uppercase tracking-wider" />
+              <button className="bg-slate-900 text-white p-2 rounded-xl hover:bg-indigo-600 transition-all"><PlusCircle className="w-4 h-4" /></button>
+           </div>
+           <button className="flex items-center gap-2 px-6 py-4 rounded-3xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:shadow-xl transition-all">
+              <PlusCircle className="w-5 h-5 text-indigo-500" /> Add Personal Key
+           </button>
+           <button className="flex items-center gap-2 px-8 py-4 rounded-3xl bg-slate-900 text-white font-black text-xs hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200 hover:-translate-y-1">
+              <Globe className="w-5 h-5 text-sky-400" /> Export to Google/Outlook
+           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-8">
+         {/* Left Side: Modular Calendar Grid */}
+         <div className="col-span-12 xl:col-span-8 space-y-6">
+            <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-2xl overflow-hidden relative">
+               <div className="flex items-center justify-between mb-10">
+                  <div className="flex items-center gap-8">
+                     <h2 className="text-3xl font-black text-slate-900 tracking-tighter">May 2024</h2>
+                     <div className="flex items-center gap-2">
+                        <button className="p-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-indigo-600"><ChevronLeft className="w-5 h-5" /></button>
+                        <button className="p-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-indigo-600"><ChevronRight className="w-5 h-5" /></button>
+                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     {SCHOOLS.map((s) => (
+                        <button key={s.id} onClick={() => setSelectedSchool(s.id)} className={`p-2 rounded-xl transition-all ${selectedSchool === s.id ? `bg-indigo-50 ${s.text}` : 'opacity-40 grayscale hover:opacity-100'}`}>
+                           {s.icon ? <s.icon className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
+                        </button>
+                     ))}
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-inner">
+                  {WEEK_DAYS.map((d, i) => (
+                     <div key={i} className={`p-6 bg-slate-50 text-center text-[10px] font-black uppercase text-slate-400 tracking-widest ${i > 4 ? 'bg-indigo-50/30' : ''}`}>{d}</div>
+                  ))}
+                  {Array.from({ length: 35 }).map((_, i) => {
+                     const dayNum = i - 3; // Mocking starting from Wednesday
+                     const isDay = dayNum > 0 && dayNum <= 31;
+                     const events = isDay ? CALENDAR_EVENTS.filter(e => e.date.includes(dayNum.toString().padStart(2, '0'))) : [];
+                     const hasMatchingEvent = events.some(e => selectedSchool === 'all' || e.school === selectedSchool);
+
+                     return (
+                        <div key={i} className={`h-40 bg-white p-4 group relative transition-colors ${!isDay ? 'bg-slate-50 opacity-20' : 'hover:bg-slate-50'}`}>
+                           {isDay && (
+                              <>
+                                 <span className="text-xs font-black text-slate-300 group-hover:text-indigo-600 transition-colors">{dayNum}</span>
+                                 <div className="mt-2 space-y-1.5 overflow-hidden">
+                                    {events.map((e, ei) => {
+                                       const sObj = SCHOOLS.find(s => s.id === e.school);
+                                       const isVisible = selectedSchool === 'all' || e.school === selectedSchool;
+                                       if (!isVisible) return null;
+                                       return (
+                                          <div key={ei} className={`p-2 rounded-xl border ${sObj?.color.replace('bg-', 'bg-').replace('500', '50')} ${sObj?.text.replace('text-', 'border-').replace('500', '100')} flex flex-col gap-0.5 shadow-sm group/ev`}>
+                                             <div className="flex items-center justify-between">
+                                                <span className={`text-[8px] font-black uppercase tracking-tighter ${sObj?.text}`}>{e.type}</span>
+                                                <Bookmark className={`w-2.5 h-2.5 ${sObj?.text} opacity-0 group-hover/ev:opacity-100 transition-opacity`} />
+                                             </div>
+                                             <div className="text-[10px] font-black text-slate-900 leading-tight line-clamp-2">{e.title}</div>
+                                          </div>
+                                       )
+                                    })}
+                                 </div>
+                                 <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <PlusCircle className="w-5 h-5 text-slate-200 hover:text-indigo-600 cursor-pointer" />
+                                 </div>
+                              </>
+                           )}
+                        </div>
+                     )
+                  })}
+               </div>
+            </div>
+         </div>
+
+         {/* Right Sidebar: Key Orbit & AI Insights */}
+         <div className="col-span-12 xl:col-span-4 space-y-6">
+            {/* Key Milestones Queue */}
+            <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
+               <h3 className="text-xl font-black mb-8 flex items-center gap-3">
+                 <Pin className="w-6 h-6 text-indigo-400" /> Institutional Milestones
+               </h3>
+               
+               <div className="space-y-4">
+                  {CALENDAR_EVENTS.map((e, i) => {
+                     const sObj = SCHOOLS.find(s => s.id === e.school);
+                     return (
+                        <div key={i} className="group relative p-6 bg-white/5 border border-white/10 rounded-[2rem] hover:bg-white/10 transition-all cursor-pointer">
+                           <div className="flex items-center gap-4">
+                              <div className={`w-12 h-12 rounded-2xl ${sObj?.color} flex items-center justify-center shadow-lg`}>
+                                 <CalendarIcon className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                 <div className="flex items-center justify-between mb-1">
+                                    <h4 className="text-sm font-black text-white">{e.title}</h4>
+                                    <span className="text-[10px] font-black text-indigo-400">{e.date}</span>
+                                 </div>
+                                 <div className="flex items-center gap-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                    <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {e.venue}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     )
+                  })}
+               </div>
+               
+               <div className="mt-10 p-8 bg-indigo-600 rounded-[2.5rem] relative overflow-hidden shadow-2xl group/card">
+                  <div className="relative z-10">
+                     <Sparkles className="w-7 h-7 text-indigo-100 mb-4" />
+                     <h4 className="text-xl font-black leading-tight mb-2">AI Calendar Sync</h4>
+                     <p className="text-xs text-indigo-50 italic mb-6 leading-relaxed">
+                       "Overlap detected between uGDX Field Test and ISME Finals. Suggesting 4-hour gap for inter-school students."
+                     </p>
+                     <button className="flex items-center gap-2 text-xs font-black text-white hover:text-indigo-100 transition-colors">
+                       Approve Gap Adjustment <ChevronRight className="w-4 h-4" />
+                     </button>
+                  </div>
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/card:scale-110 transition-transform"><Cpu className="w-32 h-32" /></div>
+               </div>
+            </div>
+
+            {/* Reputation & Engagement Heatmap */}
+            <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-xl overflow-hidden relative">
+               <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-indigo-500" /> Reputation Pulse
+               </h3>
+               
+               <div className="space-y-6">
+                  {[
+                     { label: "Design Week Visibility", val: 82, color: "bg-pink-500" },
+                     { label: "Research Citations", val: 44, color: "bg-cyan-500" },
+                     { label: "Moot Court Win Rate", val: 92, color: "bg-amber-500" },
+                  ].map((s, i) => (
+                     <div key={i} className="space-y-1.5 flex flex-col gap-1">
+                        <div className="flex justify-between items-end text-[10px] font-black uppercase text-slate-400">
+                           <span>{s.label}</span>
+                           <span className="text-slate-900">{s.val}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                           <div className={`h-full ${s.color} rounded-full transition-all duration-1000 shadow-lg`} style={{ width: `${s.val}%` }} />
+                        </div>
+                     </div>
+                  ))}
+               </div>
+               
+               <button className="w-full mt-10 py-5 bg-slate-900 text-white font-black text-xs rounded-3xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200">
+                  <Printer className="w-4 h-4 text-emerald-400" /> Print Master Schedule
+               </button>
+            </div>
+         </div>
+      </div>
+    </div>
   );
 }

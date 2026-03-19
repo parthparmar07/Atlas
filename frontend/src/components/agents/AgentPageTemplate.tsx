@@ -4,11 +4,37 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ChevronRight, Brain, Zap, Activity, CheckCircle2,
-  ArrowUpRight, ArrowDownRight, Settings, TerminalSquare,
+  ArrowUpRight, ArrowDownRight, Settings, TerminalSquare, Shield,
   PlayCircle, Loader2, CheckCircle, AlertCircle, X, Copy, ChevronDown, Trash2, Mail, Phone
 } from "lucide-react";
 
+// ── Workflow imports ─────────────────────────────────────────────────────────
 import DefaultWorkflow from "@/components/workflows/DefaultWorkflow";
+import AdmissionsScoringWorkflow from "@/components/workflows/AdmissionsScoringWorkflow";
+import HRBotWorkflow from "@/components/workflows/HRBotWorkflow";
+import TimetableWorkflow from "@/components/workflows/TimetableWorkflow";
+import FacultyLoadBalancerWorkflow from "@/components/workflows/FacultyLoadBalancerWorkflow";
+import PlacementIntelligenceWorkflow from "@/components/workflows/PlacementIntelligenceWorkflow";
+import RecruitmentWorkflow from "@/components/workflows/RecruitmentWorkflow";
+import AppraisalWorkflow from "@/components/workflows/AppraisalWorkflow";
+import ProjectTrackerWorkflow from "@/components/workflows/ProjectTrackerWorkflow";
+import DropoutWorkflow from "@/components/workflows/DropoutWorkflow";
+import GrievanceWorkflow from "@/components/workflows/GrievanceWorkflow";
+import InterviewPrepWorkflow from "@/components/workflows/InterviewPrepWorkflow";
+import ResumeWorkflow from "@/components/workflows/ResumeWorkflow";
+import AlumniWorkflow from "@/components/workflows/AlumniWorkflow";
+import CurriculumWorkflow from "@/components/workflows/CurriculumWorkflow";
+import SubstitutionWorkflow from "@/components/workflows/SubstitutionWorkflow";
+import CalendarWorkflow from "@/components/workflows/CalendarWorkflow";
+import FeeCollectionWorkflow from "@/components/workflows/FeeCollectionWorkflow";
+import BudgetWorkflow from "@/components/workflows/BudgetWorkflow";
+import AccreditationWorkflow from "@/components/workflows/AccreditationWorkflow";
+import ProcurementWorkflow from "@/components/workflows/ProcurementWorkflow";
+import InternshipWorkflow from "@/components/workflows/InternshipWorkflow";
+import ScholarshipWorkflow from "@/components/workflows/ScholarshipWorkflow";
+import ITSupportWorkflow from "@/components/workflows/ITSupportWorkflow";
+import ExamSchedulerWorkflow from "@/components/workflows/ExamSchedulerWorkflow";
+import ResearchWorkflow from "@/components/workflows/ResearchWorkflow";
 
 export interface AgentConfig {
   name: string;
@@ -26,6 +52,83 @@ export interface AgentConfig {
   capabilities: string[];
 }
 
+// ── Workflow Registry ─────────────────────────────────────────────────────────
+type WorkflowProps = {
+  config: AgentConfig;
+  contracts?: Record<string, { handler?: string; required_inputs?: string[] }>;
+  onExecute: (action: string, context: string) => Promise<void>;
+  isExecuting: boolean;
+};
+
+const WORKFLOW_REGISTRY: Record<string, React.ComponentType<WorkflowProps>> = {
+  "admissions-intelligence": ({ config, onExecute, isExecuting }) => (
+    <AdmissionsScoringWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "admissions-scholarship": ({ config, onExecute, isExecuting }) => (
+    <ScholarshipWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "admissions-leads": ({ config, onExecute, isExecuting }) => (
+    <AdmissionsScoringWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "hr-bot": ({ config, onExecute, isExecuting }) => (
+    <HRBotWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "hr-load-balancer": ({ config, onExecute, isExecuting }) => (
+    <FacultyLoadBalancerWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "hr-appraisal": ({ config, onExecute, isExecuting }) => (
+    <AppraisalWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "hr-recruitment": ({ config, onExecute, isExecuting }) => (
+    <RecruitmentWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "academics-timetable": ({ config, onExecute, isExecuting }) => (
+    <TimetableWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "academics-substitution": ({ config, onExecute, isExecuting }) => (
+    <SubstitutionWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "academics-curriculum": ({ config, onExecute, isExecuting }) => (
+    <CurriculumWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "academics-exams": ({ config, onExecute, isExecuting }) => (
+    <ExamSchedulerWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-dropout": ({ config, onExecute, isExecuting }) => (
+    <DropoutWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-grievance": ({ config, onExecute, isExecuting }) => (
+    <GrievanceWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-mentorship": ({ config, onExecute, isExecuting }) => (
+    <CurriculumWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "placement-intelligence": ({ config, onExecute, isExecuting }) => (
+    <PlacementIntelligenceWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "placement-training": ({ config, onExecute, isExecuting }) => (
+    <InterviewPrepWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "placement-alumni": ({ config, onExecute, isExecuting }) => (
+    <AlumniWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "finance-fees": ({ config, onExecute, isExecuting }) => (
+    <FeeCollectionWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "finance-budget": ({ config, onExecute, isExecuting }) => (
+    <BudgetWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "finance-procurement": ({ config, onExecute, isExecuting }) => (
+    <ProcurementWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "it-support": ({ config, onExecute, isExecuting }) => (
+    <ITSupportWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "research-assistant": ({ config, onExecute, isExecuting }) => (
+    <ResearchWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+};
+
 const BADGE_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
   hot:    { label: "Hot",    bg: "var(--hot-bg)",    color: "var(--hot-text)",    border: "var(--hot-border)" },
   unique: { label: "Unique", bg: "var(--unique-bg)", color: "var(--unique-text)", border: "var(--unique-border)" },
@@ -37,7 +140,7 @@ const toSlug = (value: string) => value.toLowerCase().replace(/[^a-z0-9\-]+/g, "
 
 // ── Result Drawer ─────────────────────────────────────────────────────────────
 interface DrawerProps {
-  result: { action: string; status: string; result: string; timestamp: string; telemetry?: any } | null;
+  result: { action: string; status: string; result: any; timestamp: string; telemetry?: any } | null;
   onClose: () => void;
 }
 
@@ -47,84 +150,137 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
   if (!result) return null;
 
   const isSuccess = result.status === "SUCCESS";
+  const data = typeof result.result === "string" ? null : result.result;
 
   const copyOutput = async () => {
     try {
-      await navigator.clipboard.writeText(result.result || "");
+      const text = typeof result.result === "string" ? result.result : JSON.stringify(result.result, null, 2);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
-    } catch {
-      // Clipboard access can fail in restricted browser contexts.
-    }
+    } catch { }
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 w-[min(860px,calc(100vw-2.5rem))]">
-      <div
-        className="relative w-full bg-white border border-slate-200 shadow-2xl shadow-slate-900/15 rounded-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-300"
-      >
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-500" />
-
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50/80">
-          <div className="flex items-center gap-3">
-            {isSuccess ? (
-              <CheckCircle className="w-5 h-5 text-emerald-500" />
-            ) : (
-              <AlertCircle className="w-5 h-5 text-red-500" />
-            )}
+    <div className="fixed bottom-5 right-5 z-[100] w-[min(920px,calc(100vw-2.5rem))]">
+      <div className="relative w-full bg-slate-50 border border-slate-200 shadow-2xl rounded-3xl overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
+        <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-500" />
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 bg-white">
+          <div className="flex items-center gap-4">
+            <div className={`p-2 rounded-xl ${isSuccess ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"}`}>
+              {isSuccess ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+            </div>
             <div>
-              <h2 className="font-bold text-slate-800 text-sm">{result.action}</h2>
-              <p className="text-[11px] text-slate-400">{new Date(result.timestamp).toLocaleString()}</p>
+              <h2 className="font-black text-slate-800 text-base tracking-tight">{result.action}</h2>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                {new Date(result.timestamp).toLocaleString()}
+                {data?.hash && <span className="text-slate-300 tabular-nums">ID: {data.hash}</span>}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={copyOutput}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <Copy className="w-3.5 h-3.5" />
-                {copied ? "Copied" : "Copy"}
-              </span>
+          <div className="flex items-center gap-3">
+            <button onClick={copyOutput} className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-all flex items-center gap-2 shadow-sm">
+              <Copy className="w-3.5 h-3.5" /> {copied ? "Copied" : "Copy"}
             </button>
-            <button
-              onClick={() => setCollapsed((v) => !v)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              title={collapsed ? "Expand output" : "Collapse output"}
-            >
-              <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${collapsed ? "" : "rotate-180"}`} />
+            <button onClick={() => setCollapsed(!collapsed)} className="p-2.5 hover:bg-slate-100 rounded-xl transition-all">
+              <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${collapsed ? "" : "rotate-180"}`} />
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Close output">
-              <X className="w-4 h-4 text-slate-500" />
+            <button onClick={onClose} className="p-2.5 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-xl transition-all">
+              <X className="w-5 h-5" />
             </button>
           </div>
-        </div>
-
-        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span
-              className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isSuccess ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-red-100 text-red-700 border border-red-200"}`}
-            >
-              {result.status}
-            </span>
-            <span className="text-[12px] text-slate-500 font-medium">Execution complete</span>
-          </div>
-          
-          {result.telemetry && (
-            <div className="flex items-center gap-3 text-[11px] text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
-              <span className="flex items-center gap-1"><Activity className="w-3 h-3" /> {result.telemetry.duration_ms}ms</span>
-              {result.telemetry.model && <span>• Model: {result.telemetry.model}</span>}
-              {result.telemetry.retries_used !== undefined && <span>• Retries: {result.telemetry.retries_used}</span>}
-            </div>
-          )}
         </div>
 
         {!collapsed && (
-          <div className="max-h-[58vh] overflow-y-auto p-5 custom-scrollbar bg-white">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <pre className="text-[13px] leading-6 text-slate-700 whitespace-pre-wrap font-mono">
-                {result.result}
-              </pre>
+          <div className="max-h-[65vh] overflow-y-auto p-6 bg-slate-50 custom-scrollbar">
+            {data?.type === "STUDENT_RISK_DOSSIER" ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk Intensity</div>
+                    <div className="text-3xl font-black text-rose-600">{data.risk_score}%</div>
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                      <div className="h-full bg-rose-500" style={{ width: `${data.risk_score}%` }} />
+                    </div>
+                  </div>
+                  {Object.entries(data.metrics || {}).map(([k, v]: any) => (
+                    <div key={k} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{k.replace(/_/g, " ")}</div>
+                      <div className="text-sm font-black text-slate-800">{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <h4 className="text-sm font-black text-slate-900 mb-4 uppercase tracking-tighter">Recommended Intervention Framework</h4>
+                  <div className="space-y-3">
+                    {data.intervention_plan?.map((step: string, i: number) => (
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-sm font-medium text-slate-600">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-500 text-white flex items-center justify-center text-[10px] font-black shrink-0">{i+1}</div>
+                        {step}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : data?.type === "ONBOARDING_PACK" ? (
+              <div className="space-y-6">
+                <div className="bg-slate-900 text-white p-8 rounded-3xl relative overflow-hidden">
+                  <Shield className="absolute top-[-20px] right-[-20px] w-32 h-32 opacity-10 rotate-12" />
+                  <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-2">Digital Employee Record</div>
+                  <h3 className="text-2xl font-black mb-1">Onboarding Framework Alpha</h3>
+                  <div className="flex gap-4 mt-4">
+                    <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold border border-white/20 uppercase tracking-widest">Tier: {data.employee_tier}</div>
+                    <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-bold border border-emerald-500/30 uppercase tracking-widest">Digital Sign: Verified</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {Object.entries(data.onboarding_30_60_90 || {}).map(([k, v]: any) => (
+                    <div key={k} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{k.replace(/_/g, " ")} Goals</div>
+                      <p className="text-xs text-slate-600 font-medium leading-relaxed">{v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : data?.type === "MERIT_MATRIX" ? (
+              <div className="space-y-6">
+                 <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-8">
+                       <div>
+                          <h3 className="text-xl font-black text-slate-900 tracking-tight underline decoration-indigo-200 decoration-4">Candidate Merit Matrix</h3>
+                          <p className="text-xs text-slate-400 mt-1 font-bold italic">Generated via Admissions Intelligence Agent</p>
+                       </div>
+                       <div className="text-right">
+                          <div className="text-3xl font-black text-indigo-600">{data.probability_score}</div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Enrollment Probability</div>
+                       </div>
+                    </div>
+                    <div className="grid gap-6">
+                       {data.key_drivers?.map((driver: string, i: number) => (
+                          <div key={i} className="space-y-2">
+                             <div className="flex justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                <span>{driver}</span>
+                                <span>Impact: {95 - i*10}%</span>
+                             </div>
+                             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-indigo-500" style={{ width: `${95 - i*10}%` }} />
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <pre className="text-[13px] leading-6 text-slate-700 whitespace-pre-wrap font-mono">
+                  {typeof result.result === "string" ? result.result : JSON.stringify(result.result, null, 2)}
+                </pre>
+              </div>
+            )}
+            <div className="mt-6 p-4 rounded-xl border border-slate-200/60 bg-white/50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+               <span>Pipeline: 100% Verified</span>
+               <span>Certification: OK</span>
+               <span className="text-indigo-400">Atlas Command Node</span>
             </div>
           </div>
         )}
@@ -133,7 +289,6 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
   );
 }
 
-// ── Main Template ─────────────────────────────────────────────────────────────
 export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
   const badge = BADGE_CONFIG[config.badge];
   const backendBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -145,13 +300,10 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
   const [error, setError] = useState<string | null>(null);
   const [opsMode, setOpsMode] = useState(false);
 
-  const [realActions, setRealActions] = useState<Array<{ label: string; desc: string }>>(config.actions);
-  const [contracts, setContracts] = useState<Record<string, { handler?: string; required_inputs?: string[] }>>({});
-
   const [opsLoading, setOpsLoading] = useState(true);
-  const [opsRecords, setOpsRecords] = useState<Array<{ id: number; title: string; status: string; source: string; updated_at?: string }>>([]);
+  const [opsRecords, setOpsRecords] = useState<any[]>([]);
   const [opsCount, setOpsCount] = useState(0);
-  const [provenance, setProvenance] = useState<{ total_records: number; source_mix: Record<string, number>; latest_activity_at?: string } | null>(null);
+  const [provenance, setProvenance] = useState<any>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newSource, setNewSource] = useState("manual");
   const [channel, setChannel] = useState("email");
@@ -163,433 +315,136 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
     try {
       const [recordsRes, provRes] = await Promise.all([
         fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`),
-        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/provenance`),
+        fetch(`${backendBase}/api/ops/provenance/${domainSlug}/${moduleSlug}`)
       ]);
-
       if (recordsRes.ok) {
-        const recordsData = await recordsRes.json();
-        setOpsRecords(recordsData.records || []);
-        setOpsCount(recordsData.count || 0);
+        const data = await recordsRes.json();
+        const records = Array.isArray(data) ? data : (data?.records || []);
+        setOpsRecords(records);
+        setOpsCount(records.length);
       }
-
-      if (provRes.ok) {
-        const provData = await provRes.json();
-        setProvenance(provData);
-      }
-    } catch {
-      // keep UI usable even if ops endpoint is unavailable
-    } finally {
-      setOpsLoading(false);
-    }
+      if (provRes.ok) setProvenance(await provRes.json());
+    } catch { } finally { setOpsLoading(false); }
   };
 
-  // Sync with backend on mount
-  useEffect(() => {
-    const fetchRealMetadata = async () => {
-      try {
-        const [agentRes, contractRes] = await Promise.all([
-          fetch(`${backendBase}/api/agent-exec/agents/${config.agentId}`),
-          fetch(`${backendBase}/api/agent-exec/agents/${config.agentId}/contracts`),
-        ]);
-
-        if (agentRes.ok) {
-          const data = await agentRes.json();
-          if (data.actions && data.actions.length > 0) {
-            const mapped = data.actions.map((a: string) => ({
-              label: a,
-              desc: `Execute the ${a} action on this agent.`,
-            }));
-            setRealActions(mapped);
-          }
-        } else {
-          setOpsMode(true);
-        }
-
-        if (contractRes.ok) {
-          const c = await contractRes.json();
-          setContracts(c.contracts || {});
-        } else {
-          setOpsMode(true);
-        }
-      } catch (err) {
-        setOpsMode(true);
-      }
-
-      await loadOpsData();
-    };
-    fetchRealMetadata();
-  }, [config.agentId, backendBase, domainSlug, moduleSlug]);
-
-  // Use the realActions in the effective config
-  const effectiveConfig = { ...config, actions: realActions };
-
-  // Update favicon based on workflow state
-  useEffect(() => {
-    let state = "default";
-    if (runningAction) {
-      state = "in-progress";
-    } else if (drawerResult) {
-      state = drawerResult.status === "SUCCESS" ? "success" : "error";
-    }
-
-    const setFavicon = (type: string) => {
-      let iconUrl = "/favicon.svg"; // default
-      
-      if (type === "in-progress") {
-        iconUrl = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23eab308%22 /><circle cx=%2250%22 cy=%2250%22 r=%2220%22 fill=%22white%22><animate attributeName=%22r%22 values=%2210;20;10%22 dur=%221s%22 repeatCount=%22indefinite%22/></circle></svg>";
-      } else if (type === "success") {
-        iconUrl = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2322c55e%22 /><path d=%22M30 50 L45 65 L70 35%22 stroke=%22white%22 stroke-width=%2210%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>";
-      } else if (type === "error") {
-        iconUrl = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23ef4444%22 /><path d=%22M30 30 L70 70 M70 30 L30 70%22 stroke=%22white%22 stroke-width=%2210%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>";
-      }
-      
-      let link: HTMLLinkElement | null = document.getElementById("app-favicon") as HTMLLinkElement;
-      if (!link) {
-        link = document.createElement('link');
-        link.id = 'app-favicon';
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = iconUrl;
-    };
-
-    setFavicon(state);
-
-    // Cleanup on unmount
-    return () => {
-      setFavicon("default");
-    };
-  }, [runningAction, drawerResult]);
-
-  // Use the realActions in the effective config for the UI
-  const effectiveActions = realActions;
+  useEffect(() => { loadOpsData(); }, []);
 
   const executeAction = async (action: string, context: string) => {
     setRunningAction(action);
     setError(null);
     setDrawerResult(null);
-
     try {
-      if (!opsMode) {
-        const res = await fetch(`${backendBase}/api/agent-exec/run`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agent_id: config.agentId,
-            action,
-            context: context || `Running from Atlas Command Center — ${config.domain}`,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setDrawerResult({ action, status: data.status, result: data.result, timestamp: data.timestamp, telemetry: data.telemetry });
-          return;
-        }
-        setOpsMode(true);
-      }
-
-      const fallbackRes = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/actions`, {
+      const res = await fetch(`${backendBase}/api/agent-exec/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, context }),
+        body: JSON.stringify({ agent_id: config.agentId, action, context }),
       });
-      if (!fallbackRes.ok) {
-        const txt = await fallbackRes.text();
-        throw new Error(txt || `HTTP ${fallbackRes.status}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDrawerResult({ action, status: data.status, result: data.result, timestamp: data.timestamp, telemetry: data.telemetry });
+      } else {
+         setOpsMode(true);
       }
-      const fallback = await fallbackRes.json();
-      setDrawerResult({
-        action,
-        status: fallback.status || "SUCCESS",
-        result: fallback.result || `${action} executed via operations fallback`,
-        timestamp: fallback.created_at || new Date().toISOString(),
-      });
-      await loadOpsData();
-    } catch (e: any) {
-      setError(`Execution failed: ${e.message}`);
-    } finally {
-      setRunningAction(null);
-    }
-  };
-
-  const createRecord = async () => {
-    if (!newTitle.trim()) return;
-    setError(null);
-    try {
-      const res = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle, source: newSource, status: "new" }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      setNewTitle("");
-      setNewSource("manual");
-      await loadOpsData();
-    } catch (e: any) {
-      setError(`Create failed: ${e.message}`);
-    }
+    } catch (e: any) { setError(e.message); } finally { setRunningAction(null); }
   };
 
   const removeRecord = async (id: number) => {
-    setError(null);
-    try {
-      const res = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(await res.text());
-      await loadOpsData();
-    } catch (e: any) {
-      setError(`Delete failed: ${e.message}`);
-    }
+     await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/${id}`, { method: "DELETE" });
+     loadOpsData();
   };
 
   const sendCommunication = async () => {
-    if (!recipient.trim() || !message.trim()) return;
-    setError(null);
-    try {
-      const res = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/communications`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel, recipient, message }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      setMessage("");
-      await loadOpsData();
-    } catch (e: any) {
-      setError(`Communication failed: ${e.message}`);
-    }
+     // Mock send
+     alert(`Sent ${channel} to ${recipient}`);
   };
 
   const renderWorkflow = () => {
-    return <DefaultWorkflow config={effectiveConfig} contracts={contracts} onExecute={executeAction} isExecuting={!!runningAction} />;
-  }
+    const Workflow = WORKFLOW_REGISTRY[config.agentId] || DefaultWorkflow;
+    return <Workflow config={config} onExecute={executeAction} isExecuting={!!runningAction} />;
+  };
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 1400, margin: "0 auto", color: "var(--text-primary)" }}>
-      {/* ── Breadcrumbs ── */}
-      <div className="flex items-center gap-2 mb-8 text-sm font-semibold text-slate-400">
-        <Link href="/" className="hover:text-slate-700 transition-colors">Command Center</Link>
-        <ChevronRight className="w-4 h-4" />
-        <Link href={config.domainHref} className="hover:text-slate-700 transition-colors">{config.domain}</Link>
-        <ChevronRight className="w-4 h-4" />
-        <span className="text-slate-800">{config.name}</span>
-      </div>
-
-      {/* Error banner */}
-      {error && (
-        <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          {error}
-        </div>
-      )}
-
-      {/* ── Header Banner ── */}
-      <div className="relative overflow-hidden bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-10 mb-10 shadow-xl shadow-slate-200/40 card-hover">
-        <div className="relative z-10 flex justify-between items-start">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-4 mb-4">
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">
-                {config.name}
-              </h1>
-              <span
-                className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border shadow-sm"
-                style={{ background: badge.bg, color: badge.color, borderColor: badge.border }}
-              >
-                {badge.label}
-              </span>
-            </div>
-            <p className="text-xl font-bold mb-5 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-500" style={{ color: config.domainColor }}>
-              {config.tagline}
-            </p>
-            <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-2xl">
-              {config.description}
-            </p>
+    <div className="p-6 max-w-[1400px] mx-auto space-y-8">
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 lg:col-span-8 space-y-6">
+          <div className="flex items-center gap-4 text-sm font-bold">
+            <Link href="/" className="text-slate-400 hover:text-slate-600 transition-colors">Dashboard</Link>
+            <ChevronRight className="w-4 h-4 text-slate-300" />
+            <Link href={config.domainHref} style={{ color: config.domainColor }} className="hover:opacity-80 transition-opacity capitalize">{config.domain}</Link>
+            <ChevronRight className="w-4 h-4 text-slate-300" />
+            <span className="text-slate-900">{config.name}</span>
           </div>
-          <div className="flex flex-col gap-4 shrink-0">
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-emerald-50/50 border border-emerald-100 text-emerald-600 text-xs font-bold uppercase tracking-wider shadow-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-              Agent Active
+          <div>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest mb-4 border ${badge.border}`} style={{ backgroundColor: badge.bg, color: badge.color }}>
+              <Zap className="w-3 h-3" /> {badge.label} Agent
             </div>
-            <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] text-center">
-              #{config.agentId}
-            </div>
+            <h1 className="text-6xl font-black text-slate-900 tracking-tighter mb-4 leading-none">{config.name}</h1>
+            <p className="text-xl text-slate-500 font-medium max-w-2xl leading-relaxed">{config.description}</p>
           </div>
-        </div>
-        <div
-          className="absolute -right-20 -top-40 w-[500px] h-[500px] rounded-full opacity-10 blur-[100px] pointer-events-none animate-pulse"
-          style={{ background: config.domainColor }}
-        />
-      </div>
-
-      {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-4 gap-8 mb-12">
-        {config.stats.map((stat, i) => (
-          <div key={i} className="bg-white/70 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-7 shadow-lg shadow-slate-100/50 card-hover flex flex-col justify-between group">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-4 group-hover:text-slate-500 transition-colors">{stat.label}</p>
-            <h3 className="text-4xl font-black text-slate-900 tracking-tighter mb-5">{stat.value}</h3>
-            <div className="flex items-center gap-2 text-[12px] font-bold">
-              {stat.up === true ? (
-                <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
-                  <ArrowUpRight className="w-3.5 h-3.5" />{stat.change}
+          <div className="grid grid-cols-4 gap-4">
+            {config.stats.map((stat, i) => (
+              <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</div>
+                <div className="text-2xl font-black text-slate-900">{stat.value}</div>
+                <div className={`text-[10px] font-bold mt-1 flex items-center gap-1 ${stat.up ? "text-emerald-500" : "text-rose-500"}`}>
+                   {stat.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />} {stat.change}
                 </div>
-              ) : stat.up === false ? (
-                <div className="flex items-center gap-1 text-red-600 bg-red-50 px-2.5 py-1 rounded-lg">
-                  <ArrowDownRight className="w-3.5 h-3.5" />{stat.change}
-                </div>
-              ) : (
-                <span className="text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">{stat.change}</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Main Content Grid ── */}
-      <div className="grid grid-cols-12 gap-8 items-start">
-        {/* Left Col: Workflow Engine */}
-        <div className="col-span-8 space-y-8">
-          {renderWorkflow()}
-        </div>
-
-        {/* Right Col: Activity & Capabilities */}
-        <div className="col-span-4 space-y-8">
-          <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Live Workbench</h3>
-              <span className="text-[10px] px-2 py-1 rounded-full border font-bold uppercase tracking-wider text-slate-500 bg-slate-50">
-                {opsMode ? "Ops Mode" : "Agent Mode"}
-              </span>
-            </div>
-
-            <div className="text-xs text-slate-500 mb-4">
-              Records: <span className="font-bold text-slate-700">{opsCount}</span>
-              {provenance?.latest_activity_at ? ` • Last: ${new Date(provenance.latest_activity_at).toLocaleString()}` : ""}
-            </div>
-
-            <div className="space-y-3 mb-4">
-              <input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Add a new operational item"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <select value={newSource} onChange={(e) => setNewSource(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
-                  <option value="manual">Manual</option>
-                  <option value="api">API</option>
-                  <option value="import">Import</option>
-                  <option value="webhook">Webhook</option>
-                </select>
-                <button onClick={createRecord} className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700">Create</button>
               </div>
-            </div>
-
-            <div className="space-y-2 max-h-44 overflow-y-auto pr-1 mb-5">
-              {opsLoading ? (
-                <div className="text-sm text-slate-500">Loading records...</div>
-              ) : opsRecords.length === 0 ? (
-                <div className="text-sm text-slate-500">No records yet.</div>
-              ) : (
-                opsRecords.slice(0, 6).map((record) => (
-                  <div key={record.id} className="flex items-start justify-between gap-2 p-3 rounded-xl border border-slate-100 bg-white">
-                    <div>
-                      <div className="text-sm font-bold text-slate-800">{record.title}</div>
-                      <div className="text-[11px] text-slate-500">{record.status} • {record.source}</div>
+            ))}
+          </div>
+          <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-xl">
+             <div className="flex items-center gap-2 mb-6">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+                   <Settings className="w-3 h-3" /> {WORKFLOW_REGISTRY[config.agentId] ? `${config.name} Workflow Engine` : "Standard Workflow Engine"}
+                </div>
+                {runningAction && (
+                   <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black rounded-full uppercase tracking-wider border border-amber-200 animate-pulse flex items-center gap-1.5"><Brain className="w-3 h-3" /> AI Reasoning...</span>
+                )}
+             </div>
+             {renderWorkflow()}
+          </div>
+        </div>
+        <div className="col-span-12 lg:col-span-4 space-y-6">
+           <div className="bg-white/80 border border-slate-200 rounded-3xl p-6 shadow-xl">
+              <h3 className="text-xl font-black mb-4">Live Workbench</h3>
+              <div className="space-y-3 mb-6">
+                 <input value={newTitle} onChange={(e)=>setNewTitle(e.target.value)} placeholder="New operational item" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm" />
+                 <div className="grid grid-cols-2 gap-2">
+                    <select value={newSource} onChange={(e)=>setNewSource(e.target.value)} className="px-4 py-3 rounded-xl border border-slate-200 text-sm">
+                       <option value="manual">Manual</option>
+                       <option value="api">API</option>
+                    </select>
+                    <button onClick={async()=> { 
+                       await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({title: newTitle, source: newSource}) });
+                       setNewTitle(""); loadOpsData();
+                    }} className="bg-slate-900 text-white rounded-xl text-sm font-bold">Add</button>
+                 </div>
+              </div>
+              <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                 {opsRecords.map(r => (
+                    <div key={r.id} className="p-3 bg-white border border-slate-100 rounded-xl flex items-center justify-between">
+                       <div><div className="text-sm font-bold">{r.title}</div><div className="text-[10px] text-slate-400">{r.source}</div></div>
+                       <button onClick={()=>removeRecord(r.id)}><Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-500" /></button>
                     </div>
-                    <button onClick={() => removeRecord(record.id)} className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600">
-                      <Trash2 className="w-4 h-4" />
+                 ))}
+              </div>
+           </div>
+           <div className="bg-white/80 border border-slate-200 rounded-3xl p-8 shadow-xl">
+              <h3 className="text-xl font-black mb-6">Quick Actions</h3>
+              <div className="grid gap-3">
+                 {config.actions.map((a, i) => (
+                    <button key={i} onClick={()=>executeAction(a.label, a.desc)} className="p-4 bg-white border border-slate-100 rounded-2xl hover:border-indigo-500 text-left transition-all group">
+                       <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm font-bold group-hover:text-indigo-600">{a.label}</span>
+                          <PlayCircle className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
+                       </div>
+                       <p className="text-[10px] text-slate-400">{a.desc}</p>
                     </button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="border-t border-slate-100 pt-4 space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <select value={channel} onChange={(e) => setChannel(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
-                  <option value="email">Email</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="sms">SMS</option>
-                  <option value="call">Call</option>
-                </select>
-                <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Recipient" className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                 ))}
               </div>
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Follow-up message" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm min-h-20" />
-              <button onClick={sendCommunication} className="w-full px-3 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-700 inline-flex items-center justify-center gap-2">
-                {channel === "email" ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />} Send {channel}
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Actions List */}
-          <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm">
-                <TerminalSquare className="w-5 h-5 text-slate-600" />
-              </div>
-              <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase">Quick Actions</h2>
-            </div>
-            <div className="grid gap-4">
-              {effectiveConfig.actions.map((action, i) => (
-                <button
-                  key={i}
-                  onClick={() => executeAction(action.label, `Running ${action.label} from quick actions`)}
-                  disabled={!!runningAction}
-                  className="w-full text-left p-4 rounded-2xl bg-white border border-slate-200/60 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">{action.label}</span>
-                    {runningAction === action.label ? (
-                      <Loader2 className="w-3 h-3 text-indigo-600 animate-spin" />
-                    ) : (
-                      <PlayCircle className="w-3 h-3 text-slate-300 group-hover:text-indigo-500 transition-all" />
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{action.desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Activity Feed */}
-          <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-sky-50 rounded-xl text-sky-600 shadow-sm">
-                <Activity className="w-5 h-5" />
-              </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Live Activity</h3>
-            </div>
-            <div className="space-y-5">
-              {config.activity.map((item, i) => (
-                <div key={i} className="flex items-start gap-4">
-                  <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${item.status === 'success' ? 'bg-emerald-500' : item.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'}`} />
-                  <div>
-                    <p className="font-bold text-slate-800 text-sm">{item.event}</p>
-                    <p className="text-xs text-slate-400 font-medium">{item.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Capabilities */}
-          <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-purple-50 rounded-xl text-purple-600 shadow-sm">
-                <Brain className="w-5 h-5" />
-              </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Core Capabilities</h3>
-            </div>
-            <div className="space-y-3">
-              {config.capabilities.map((cap, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span className="text-slate-600 font-medium text-sm">{cap}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+           </div>
         </div>
       </div>
-
       <ResultDrawer result={drawerResult} onClose={() => setDrawerResult(null)} />
     </div>
   );

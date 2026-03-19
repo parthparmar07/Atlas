@@ -1,233 +1,197 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Calendar, RefreshCw, Layers, ShieldCheck, AlertCircle, Sparkles, CheckCircle2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { useState } from "react";
+import { 
+  FileText, Calendar, Clock, MapPin, 
+  Users, AlertTriangle, CheckCircle2, 
+  Search, Filter, BookOpen, Layers, 
+  Cpu, Gavel, ArrowRight, Download, Printer
+} from "lucide-react";
 
-type OpsRecord = {
-    id: number;
-    title: string;
-    status: string;
-    metadata?: Record<string, unknown>;
-};
-
-type ScheduleSlot = {
-    id: number;
-    date: string;
-    time: string;
-    subject: string;
-    conflict: boolean;
-    proctors: number;
-};
-
-const DEFAULT_SCHEDULE: Omit<ScheduleSlot, "id">[] = [
-    { date: "May 10", time: "Morning", subject: "Mathematics 101", conflict: false, proctors: 4 },
-    { date: "May 10", time: "Afternoon", subject: "Physics 2A", conflict: true, proctors: 2 },
-    { date: "May 11", time: "Morning", subject: "Computer Science", conflict: false, proctors: 5 },
+const SCHOOLS = [
+  { id: "isme", name: "ISME (Business & Management)", icon: BookOpen, color: "bg-indigo-500", programs: ["BBA Hons.", "MBA", "B.Sc Finance", "Global Management"] },
+  { id: "isdi", name: "ISDI (School of Design)", icon: Layers, color: "bg-pink-500", programs: ["B.Des Fashion", "B.Des Product", "B.Des UI/UX", "M.Des Strategies"] },
+  { id: "ugdx", name: "uGDX (School of Technology)", icon: Cpu, color: "bg-cyan-500", programs: ["B.Tech AI/ML", "B.Tech Robotics", "B.Tech Data Science", "Generative AI"] },
+  { id: "law", name: "Atlas Law & Policy", icon: Gavel, color: "bg-amber-500", programs: ["BBA LL.B. (Hons.)", "IP Law Specialization"] },
 ];
 
-const GENERATED_SCHEDULE: Omit<ScheduleSlot, "id">[] = [
-    { date: "May 10", time: "09:00 AM", subject: "Mathematics 101", conflict: false, proctors: 4 },
-    { date: "May 10", time: "02:00 PM", subject: "Database Systems", conflict: false, proctors: 3 },
-    { date: "May 11", time: "09:00 AM", subject: "Computer Science", conflict: false, proctors: 5 },
-    { date: "May 11", time: "02:00 PM", subject: "Physics 2A (Rescheduled)", conflict: false, proctors: 4 },
-    { date: "May 12", time: "09:00 AM", subject: "Literature", conflict: false, proctors: 2 },
+const EXAM_SCHEDULE = [
+  { id: "EX-101", school: "isme", subject: "Business Psychology (MBA)", date: "2024-05-12", time: "10:00 AM", room: "Bloomberg Lab", status: "Confirmed", proctors: 3 },
+  { id: "EX-102", school: "isdi", subject: "Strategic Design (M.Des)", date: "2024-05-14", time: "02:00 PM", room: "Studio A", status: "Audit Needed", proctors: 2 },
+  { id: "EX-103", school: "ugdx", subject: "NASA Rover Challenge (Tech)", date: "2024-05-15", time: "09:00 AM", room: "Deep Tech Lab", status: "Confirmed", proctors: 5 },
+  { id: "EX-104", school: "law", subject: "Constitutional Law I (Law)", date: "2024-05-16", time: "11:00 AM", room: "Moot Court Room", status: "Pending Law-Tech Sync", proctors: 2 },
+  { id: "EX-105", school: "ugdx", subject: "Generative AI Systems (Tech)", date: "2024-05-18", time: "10:00 AM", room: "AI Bay 01", status: "Confirmed", proctors: 4 },
+  { id: "EX-106", school: "isdi", subject: "Sustainable Fashion (Fash)", date: "2024-05-19", time: "01:00 PM", room: "Studio D", status: "Confirmed", proctors: 2 },
 ];
 
-export default function ExamSchedulerPage() {
-  const [isGenerating, setIsGenerating] = useState(false);
-    const [records, setRecords] = useState<OpsRecord[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+export default function AcademicsExamsPage() {
+  const [selectedSchool, setSelectedSchool] = useState("all");
 
-    const loadSchedule = async () => {
-        setLoading(true);
-        setError("");
-        try {
-            const data = await api<{ records: OpsRecord[]; count: number }>("/api/ops/academics/exams");
-            if ((data.records ?? []).length === 0) {
-                await Promise.all(
-                    DEFAULT_SCHEDULE.map((slot) =>
-                        api("/api/ops/academics/exams", {
-                            method: "POST",
-                            body: JSON.stringify({
-                                title: slot.subject,
-                                status: slot.conflict ? "conflict" : "scheduled",
-                                source: "seed",
-                                metadata: {
-                                    date: slot.date,
-                                    time: slot.time,
-                                    conflict: slot.conflict,
-                                    proctors: slot.proctors,
-                                },
-                            }),
-                        })
-                    )
-                );
-                const seeded = await api<{ records: OpsRecord[]; count: number }>("/api/ops/academics/exams");
-                setRecords(seeded.records ?? []);
-            } else {
-                setRecords(data.records ?? []);
-            }
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Failed to load schedule.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        void loadSchedule();
-    }, []);
-
-    const schedule = useMemo(
-        () =>
-            records.map((r) => ({
-                id: r.id,
-                date: String(r.metadata?.date ?? "TBD"),
-                time: String(r.metadata?.time ?? "TBD"),
-                subject: r.title,
-                conflict: String(r.status).toLowerCase() === "conflict" || Boolean(r.metadata?.conflict),
-                proctors: Number(r.metadata?.proctors ?? 0),
-            })),
-        [records]
-    );
-
-    const handleGenerate = async () => {
-    setIsGenerating(true);
-        setError("");
-        try {
-            await api("/api/ops/academics/exams/actions", {
-                method: "POST",
-                body: JSON.stringify({ action: "Generate Optimal Schedule", context: "Resolve conflicts and optimize proctoring" }),
-            });
-
-            await Promise.all(records.map((record) => api(`/api/ops/academics/exams/${record.id}`, { method: "DELETE" })));
-            await Promise.all(
-                GENERATED_SCHEDULE.map((slot) =>
-                    api("/api/ops/academics/exams", {
-                        method: "POST",
-                        body: JSON.stringify({
-                            title: slot.subject,
-                            status: "scheduled",
-                            source: "generator",
-                            metadata: {
-                                date: slot.date,
-                                time: slot.time,
-                                conflict: slot.conflict,
-                                proctors: slot.proctors,
-                            },
-                        }),
-                    })
-                )
-            );
-            await loadSchedule();
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Failed to generate schedule.");
-        } finally {
-            setIsGenerating(false);
-        }
-  };
+  const filteredExams = selectedSchool === "all" 
+    ? EXAM_SCHEDULE 
+    : EXAM_SCHEDULE.filter(e => e.school === selectedSchool);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen">
-      <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-cyan-600" />
-            Exam Auto-Scheduler AI
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Conflict-free timetable generation & proctor allocation</p>
+    <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
+      {/* Header Context */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-3 py-1 bg-sky-500/10 border border-sky-500/20 rounded-full w-fit">
+            <Calendar className="w-3.5 h-3.5 text-sky-500" />
+            <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Spring Semester 2024</span>
+          </div>
+          <h1>Examination Control</h1>
+          <p className="text-lg text-slate-500 font-medium italic">Managed orchestration for ISME, ISDI, uGDX, and Law.</p>
         </div>
-        <button 
-                        onClick={() => void handleGenerate()}
-                        disabled={isGenerating || loading}
-            className="bg-cyan-600 border border-cyan-500 shadow-lg shadow-cyan-500/30 text-white px-6 py-3 rounded-xl font-bold hover:bg-cyan-700 flex items-center gap-2 transition disabled:opacity-50"
-        >
-            {isGenerating ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-            {isGenerating ? "Resolving Conflicts..." : "Generate Optimal Schedule"}
-        </button>
+        
+        <div className="flex items-center gap-3">
+           <button className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold hover:shadow-lg transition-all">
+              <Printer className="w-4 h-4" /> Print Seating
+           </button>
+           <button className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 hover:-translate-y-1">
+              <Download className="w-4 h-4" /> Master Schedule
+           </button>
+        </div>
       </div>
 
-            {error ? <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div> : null}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* School Selective Filter */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <button 
+          onClick={() => setSelectedSchool("all")}
+          className={`p-6 rounded-[2rem] border transition-all text-left group overflow-hidden relative ${selectedSchool === "all" ? "bg-slate-900 border-slate-800 text-white shadow-2xl" : "bg-white border-slate-100 text-slate-900 hover:border-slate-300"}`}
+        >
+           <Search className={`w-8 h-8 mb-4 ${selectedSchool === "all" ? "text-indigo-400" : "text-slate-300 group-hover:text-slate-900"}`} />
+           <div className="font-black text-xl leading-tight">All Schools</div>
+           <div className="text-xs opacity-60 font-medium mt-1">Unified View</div>
+           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform"><CheckCircle2 className="w-24 h-24" /></div>
+        </button>
         
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-2">
-                <Layers className="w-4 h-4" /> Constraints Loaded
-            </h3>
-             <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 rounded-xl font-medium text-sm">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Room Capacity Limits
-            </div>
-             <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 rounded-xl font-medium text-sm">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Student Enrollment Overlaps
-            </div>
-             <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 rounded-xl font-medium text-sm">
-                <ShieldCheck className="w-5 h-5 text-slate-400" /> Faculty Availability
-            </div>
-        </div>
+        {SCHOOLS.map((s) => (
+          <button 
+            key={s.id}
+            onClick={() => setSelectedSchool(s.id)}
+            className={`p-6 rounded-[2rem] border transition-all text-left group relative overflow-hidden ${selectedSchool === s.id ? "bg-slate-900 border-slate-800 text-white shadow-2xl scale-105" : "bg-white border-slate-100 text-slate-900 hover:border-slate-300"}`}
+          >
+             <s.icon className={`w-8 h-8 mb-4 ${selectedSchool === s.id ? "text-white" : "text-slate-300 group-hover:text-slate-900"}`} />
+             <div className="font-black text-xl leading-tight">{s.name.split(' ')[0]}</div>
+             <div className="text-[10px] opacity-60 font-black uppercase tracking-widest mt-1">{s.name.split(' (')[1]?.replace(')', '') || 'Specialist'}</div>
+             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform"><s.icon className="w-24 h-24" /></div>
+          </button>
+        ))}
+      </div>
 
-        <div className="md:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden flex flex-col h-full">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    Draft Timetable
-                </h3>
-                <div className="flex gap-2">
-                     <span className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400">
-                         {schedule.filter(s => s.conflict).length} Conflicts
-                     </span>
-                </div>
-            </div>
-            
-            <div className="overflow-x-auto p-4 flex-1">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700/50">
-                            <th className="pb-3 pl-2">Date / Time</th>
-                            <th className="pb-3">Subject</th>
-                            <th className="pb-3">Proctors</th>
-                            <th className="pb-3">Status</th>
+      <div className="grid grid-cols-12 gap-8">
+         {/* Main Schedule Table */}
+         <div className="col-span-12 xl:col-span-8 space-y-6">
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-xl overflow-hidden">
+               <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Active Schedule Matrix</h3>
+                  <div className="text-sm font-bold text-slate-400">{filteredExams.length} Exams Listed</div>
+               </div>
+
+               <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                     <thead>
+                        <tr className="border-b border-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                           <th className="pb-4 pl-2 text-center">School</th>
+                           <th className="pb-4">Program & Subject</th>
+                           <th className="pb-4">Location</th>
+                           <th className="pb-4">Timing</th>
+                           <th className="pb-4">Status</th>
+                           <th className="pb-4 text-right pr-2">Actions</th>
                         </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                                                {loading ? (
-                                                    <tr>
-                                                        <td colSpan={4} className="py-6 text-sm text-slate-500">Loading schedule...</td>
-                                                    </tr>
-                                                ) : null}
-                        {schedule.map((slot, i) => (
-                            <tr key={i} className="group">
-                                <td className="py-4 pl-2">
-                                    <div className="font-bold text-slate-900 dark:text-white text-sm">{slot.date}</div>
-                                    <div className="text-xs font-medium text-slate-500 mt-0.5">{slot.time}</div>
-                                </td>
-                                <td className="py-4">
-                                     <div className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{slot.subject}</div>
-                                </td>
-                                <td className="py-4">
-                                    <div className="flex items-center gap-1 text-slate-500">
-                                        <ShieldCheck className="w-4 h-4" /> <span className="text-sm font-bold">{slot.proctors}</span>
+                     </thead>
+                     <tbody className="divide-y divide-slate-50">
+                        {filteredExams.map((e) => {
+                           const schoolObj = SCHOOLS.find(s => s.id === e.school);
+                           return (
+                              <tr key={e.id} className="group hover:bg-slate-50 transition-colors">
+                                 <td className="py-6 pl-2">
+                                    <div className={`w-12 h-12 rounded-2xl ${schoolObj?.color || 'bg-slate-100'} flex items-center justify-center shadow-lg`}>
+                                       {schoolObj && <schoolObj.icon className="w-5 h-5 text-white" />}
                                     </div>
-                                </td>
-                                <td className="py-4">
-                                    {slot.conflict ? (
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 rounded-lg text-[10px] font-black uppercase tracking-wider border border-rose-200 dark:border-rose-500/20">
-                                            <AlertCircle className="w-3.5 h-3.5" /> Overlap Detected
-                                        </div>
-                                    ) : (
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                                            <CheckCircle2 className="w-3.5 h-3.5" /> Cleared
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                 </td>
+                                 <td className="py-6">
+                                    <div className="text-sm font-black text-slate-900">{e.subject}</div>
+                                    <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{schoolObj?.name}</div>
+                                 </td>
+                                 <td className="py-6">
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
+                                       <MapPin className="w-3.5 h-3.5 text-slate-400" /> {e.room}
+                                    </div>
+                                 </td>
+                                 <td className="py-6">
+                                    <div className="text-sm font-black text-slate-700">{e.date}</div>
+                                    <div className="text-[10px] text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {e.time}</div>
+                                 </td>
+                                 <td className="py-6">
+                                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit border ${e.status === 'Confirmed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-amber-50 border-amber-100 text-amber-600'}`}>
+                                       <span className={`w-1.5 h-1.5 rounded-full ${e.status === 'Confirmed' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                                       <span className="text-[10px] font-black uppercase tracking-widest">{e.status}</span>
+                                    </div>
+                                 </td>
+                                 <td className="py-6 pr-2 text-right">
+                                    <button className="p-2 rounded-xl text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all opacity-0 group-hover:opacity-100">
+                                       <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                 </td>
+                              </tr>
+                           )
+                        })}
+                     </tbody>
+                  </table>
+               </div>
             </div>
-        </div>
+         </div>
 
+         {/* Right Sidebar: Logistics & AI Hub */}
+         <div className="col-span-12 xl:col-span-4 space-y-6">
+            {/* Seating Capacity Heatmap */}
+            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden">
+               <div className="relative z-10">
+                  <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                     <Users className="w-5 h-5 text-sky-400" /> Logistics Intelligence
+                  </h3>
+                  <div className="space-y-5">
+                     {[
+                        { label: "Proctor Availability", val: 88, status: "Stable" },
+                        { label: "Moot Court Room (Law)", val: 100, status: "Full" },
+                        { label: "Bloomberg Terminal (ISME)", val: 42, status: "Optimal" },
+                        { label: "NASA Workshop (uGDX)", val: 12, status: "Maintenance" },
+                     ].map((item, i) => (
+                        <div key={i} className="space-y-1.5">
+                           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              <span>{item.label}</span>
+                              <span className={item.val > 90 ? "text-rose-400" : "text-emerald-400"}>{item.status}</span>
+                           </div>
+                           <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full transition-all duration-1000 ${item.val > 90 ? 'bg-rose-500' : 'bg-sky-500'}`} style={{ width: `${item.val}%` }} />
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+                  <button className="w-full mt-8 py-4 rounded-2xl bg-white/10 text-white font-black text-xs hover:bg-white/20 transition-all border border-white/5">
+                     Request Multi-School Sync
+                  </button>
+               </div>
+               <div className="absolute top-0 right-0 p-8 opacity-5"><Layers className="w-48 h-48" /></div>
+            </div>
+
+            {/* AI Auditor */}
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-8 text-white shadow-2xl relative group overflow-hidden">
+               <div className="relative z-10">
+                  <AlertTriangle className="w-8 h-8 text-amber-300 mb-4 animate-bounce" />
+                  <h3 className="text-2xl font-black leading-tight mb-2">AI Examination Auditor</h3>
+                  <p className="text-sm text-indigo-100 font-medium leading-relaxed mb-6">
+                     Checking for conflicting dates in uGDX Prototyping and ISDI Studio slots.
+                  </p>
+                  <div className="p-4 bg-black/20 rounded-2xl border border-white/10 font-mono text-[10px] text-indigo-200">
+                     [ORCHESTRATOR] 2 Potential Clashes Found: <br/> B.Des Fashion vs BBA Sem II. <br/> Suggesting date: May 18.
+                  </div>
+               </div>
+               <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-all"><Cpu className="w-32 h-32" /></div>
+            </div>
+         </div>
       </div>
     </div>
   );

@@ -1,0 +1,70 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Dr. Krishnan",
+      "status": "Overloaded",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. Krishnan",
+          "department": "CSE",
+          "hoursPerWeek": 23.4,
+          "duties": 4,
+          "status": "Overloaded",
+          "id": "24ddae67-f545-4319-9608-f6392edeb969"
+        }
+      },
+      "created_at": "2026-03-19T10:20:16.605439+00:00",
+      "updated_at": "2026-03-19T10:20:16.605439+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Prof. A. Nair",
+      "status": "Balanced",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Prof. A. Nair",
+          "department": "ECE",
+          "hoursPerWeek": 15.2,
+          "duties": 2,
+          "status": "Balanced",
+          "id": "3ae0f4d3-08c7-48bc-83f4-60ecbd5526eb"
+        }
+      },
+      "created_at": "2026-03-19T10:20:16.737768+00:00",
+      "updated_at": "2026-03-19T10:20:16.737768+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Dr. Meera",
+      "status": "Monitor",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "faculty": "Dr. Meera",
+          "department": "Mechanical",
+          "hoursPerWeek": 18.1,
+          "duties": 3,
+          "status": "Monitor",
+          "id": "f4f7bb8f-0bdc-45b5-a358-a614c84e7ed4"
+        }
+      },
+      "created_at": "2026-03-19T10:20:16.793491+00:00",
+      "updated_at": "2026-03-19T10:20:16.793491+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T10:20:16.605403+00:00"
+}

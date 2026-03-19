@@ -64,7 +64,16 @@
       "updated_at": "2026-03-19T09:56:16.842118+00:00"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Generate Timetable",
+      "context": "Department: Computer Science\nSemester: Fall 2026",
+      "status": "SUCCESS",
+      "result": "Generate Timetable executed successfully for academics/timetable",
+      "created_at": "2026-03-19T14:48:01.723946+00:00"
+    }
+  ],
   "communications": [],
   "created_at": "2026-03-19T09:56:16.620968+00:00"
 }

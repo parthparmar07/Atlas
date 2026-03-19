@@ -1,0 +1,67 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Untitled Record",
+      "status": "Approved",
+      "owner": "Controller Office",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "event": "Internal II Exams",
+          "date": "2026-04-08",
+          "owner": "Controller Office",
+          "status": "Approved",
+          "id": "32dc4dd7-3e25-48c3-9d91-7e58479bf2a4"
+        }
+      },
+      "created_at": "2026-03-19T10:19:07.402947+00:00",
+      "updated_at": "2026-03-19T10:19:07.402947+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Untitled Record",
+      "status": "Draft",
+      "owner": "Academic Cell",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "event": "Semester Orientation",
+          "date": "2026-06-15",
+          "owner": "Academic Cell",
+          "status": "Draft",
+          "id": "c46e47bd-009b-4b4a-b4bf-5b67cddc5412"
+        }
+      },
+      "created_at": "2026-03-19T10:19:07.570057+00:00",
+      "updated_at": "2026-03-19T10:19:07.570057+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Untitled Record",
+      "status": "Published",
+      "owner": "Student Affairs",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "event": "Sports Day",
+          "date": "2026-03-28",
+          "owner": "Student Affairs",
+          "status": "Published",
+          "id": "823f45aa-d96f-42b3-86b2-7a163d4b4273"
+        }
+      },
+      "created_at": "2026-03-19T10:19:07.616398+00:00",
+      "updated_at": "2026-03-19T10:19:07.616398+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T10:19:07.402921+00:00"
+}

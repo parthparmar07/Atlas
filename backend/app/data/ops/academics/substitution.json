@@ -1,0 +1,133 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "title": "Untitled Record",
+      "status": "Completed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "subject": "Physics",
+          "absentFaculty": "Dr. Reddy",
+          "substituteFaculty": "Mr. Rao",
+          "slot": "Mon 10:00",
+          "status": "Completed",
+          "id": "f9ed9903-ac20-4292-84c3-b7ca64b26857"
+        }
+      },
+      "created_at": "2026-03-19T15:13:17.358351+00:00",
+      "updated_at": "2026-03-19T15:13:17.358351+00:00"
+    },
+    {
+      "id": 2,
+      "title": "Untitled Record",
+      "status": "Failed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "subject": "Advanced VLSI",
+          "absentFaculty": "Dr. Menon",
+          "substituteFaculty": "",
+          "slot": "Tue 08:00",
+          "status": "Failed",
+          "id": "d2f7c40c-5931-4737-b14a-9be4ecfaa3c3"
+        }
+      },
+      "created_at": "2026-03-19T15:13:17.453238+00:00",
+      "updated_at": "2026-03-19T15:13:17.453238+00:00"
+    },
+    {
+      "id": 3,
+      "title": "Untitled Record",
+      "status": "Approved",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "subject": "Machine Learning",
+          "absentFaculty": "Dr. Krishnan",
+          "substituteFaculty": "Ms. Nair",
+          "slot": "Wed 14:00",
+          "status": "Approved",
+          "id": "e30008ee-cfae-40c7-bbb1-2068af76cf5d"
+        }
+      },
+      "created_at": "2026-03-19T15:13:17.500540+00:00",
+      "updated_at": "2026-03-19T15:13:17.500540+00:00"
+    },
+    {
+      "id": 4,
+      "title": "Untitled Record",
+      "status": "Completed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "subject": "Physics",
+          "absentFaculty": "Dr. Reddy",
+          "substituteFaculty": "Mr. Rao",
+          "slot": "Mon 10:00",
+          "status": "Completed",
+          "id": "bf8697de-1f11-4b35-9f9a-e2edf5d86d2a"
+        }
+      },
+      "created_at": "2026-03-19T15:13:18.524913+00:00",
+      "updated_at": "2026-03-19T15:13:18.524913+00:00"
+    },
+    {
+      "id": 5,
+      "title": "Untitled Record",
+      "status": "Failed",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "subject": "Advanced VLSI",
+          "absentFaculty": "Dr. Menon",
+          "substituteFaculty": "",
+          "slot": "Tue 08:00",
+          "status": "Failed",
+          "id": "92d31702-3ca8-4cdf-8ec6-54d5a657b49e"
+        }
+      },
+      "created_at": "2026-03-19T15:13:18.690442+00:00",
+      "updated_at": "2026-03-19T15:13:18.690442+00:00"
+    },
+    {
+      "id": 6,
+      "title": "Untitled Record",
+      "status": "Approved",
+      "owner": "system",
+      "priority": "medium",
+      "source": "frontend-records",
+      "notes": "",
+      "metadata": {
+        "raw": {
+          "subject": "Machine Learning",
+          "absentFaculty": "Dr. Krishnan",
+          "substituteFaculty": "Ms. Nair",
+          "slot": "Wed 14:00",
+          "status": "Approved",
+          "id": "07b35ca8-e6fb-40e0-939e-d4754275965f"
+        }
+      },
+      "created_at": "2026-03-19T15:13:18.729947+00:00",
+      "updated_at": "2026-03-19T15:13:18.729947+00:00"
+    }
+  ],
+  "actions": [],
+  "communications": [],
+  "created_at": "2026-03-19T15:13:17.358322+00:00"
+}

@@ -1,6 +1,7 @@
 import abc
 import json
-from typing import Any, Dict, List
+import asyncio
+from typing import Any, Dict, List, Callable
 from pydantic import BaseModel
 import datetime
 
@@ -44,28 +45,45 @@ class AgenticPipeline(abc.ABC):
         """Evaluate success against KPIs and update policy."""
         pass
         
-    async def run(self, goal: str, context: str = "") -> AgentState:
+    async def run(self, goal: str, context: str = "", step_callback: Callable[[str, str], Any] = None) -> AgentState:
         state = AgentState(goal=goal, context=context)
         
+        async def emit(status: str, detail: str = ""):
+            if step_callback:
+                if asyncio.iscoroutinefunction(step_callback):
+                    await step_callback(status, detail)
+                else:
+                    step_callback(status, detail)
+
         try:
             state.status = "PERCEIVING"
+            await emit("PERCEIVING", "Gathering data from context, memory, and tools...")
             state.perception_data = await self.perceive(state)
             
             state.status = "REASONING"
+            await emit("REASONING", "Analyzing perceived data and determining strategy...")
             state.reasoning_summary = await self.reason(state)
             
             state.status = "PLANNING"
+            await emit("PLANNING", "Decomposing the goal into actionable steps...")
             state.plan = await self.plan(state)
             
             state.status = "EXECUTING"
+            for i, step in enumerate(state.plan):
+                await emit("EXECUTING", f"Step {i+1}/{len(state.plan)}: {step}")
+                # Actual execution is inside self.execute which calls steps.
+            
             state.execution_results = await self.execute(state)
             
             state.status = "REFLECTING"
+            await emit("REFLECTING", "Evaluating success and updating long-term memory...")
             state.reflection = await self.reflect(state)
             
             state.status = "SUCCESS"
+            await emit("SUCCESS", "Goal achieved successfully.")
         except Exception as e:
             state.status = "ERROR"
             state.reflection = f"Failed during {state.status}: {str(e)}"
+            await emit("ERROR", state.reflection)
             
         return state

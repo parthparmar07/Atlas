@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, ShieldAlert, CheckCircle, Clock, Download, RefreshCw, FileText } from "lucide-react";
