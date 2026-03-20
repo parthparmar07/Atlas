@@ -23,7 +23,10 @@ type Provenance = {
   note: string;
 };
 
+import { useSchool } from "@/context/SchoolContext";
+
 export default function LeadNurturePage() {
+  const { currentSchool } = useSchool();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [provenance, setProvenance] = useState<Provenance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,8 +44,8 @@ export default function LeadNurturePage() {
     setError("");
     try {
       const [leadData, provData] = await Promise.all([
-        api<Lead[]>("/api/admissions/leads"),
-        api<Provenance>("/api/admissions/provenance"),
+        api<Lead[]>(`/api/admissions/leads?school=${currentSchool.id}`),
+        api<Provenance>(`/api/admissions/provenance?school=${currentSchool.id}`),
       ]);
       setLeads(leadData ?? []);
       setProvenance(provData ?? null);
@@ -55,7 +58,7 @@ export default function LeadNurturePage() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [currentSchool.id]);
 
   const funnel = useMemo(() => {
     return {
@@ -103,7 +106,10 @@ export default function LeadNurturePage() {
     try {
       await api("/api/admissions/leads", {
         method: "POST",
-        body: JSON.stringify(newLead),
+        body: JSON.stringify({
+          ...newLead,
+          school_id: currentSchool.id
+        }),
       });
       setIsAddOpen(false);
       setNewLead({ name: "", email: "", phone: "", programme: "B.Tech CSE", source: "web_form" });

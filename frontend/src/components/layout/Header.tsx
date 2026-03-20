@@ -13,8 +13,11 @@ interface HeaderProps {
   onOpenAIManager?: () => void;
 }
 
+import { useSchool } from "@/context/SchoolContext";
+
 export default function Header({ onOpenAIManager }: HeaderProps) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const { currentSchool } = useSchool();
 
   return (
     <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200 z-20 shrink-0 sticky top-0 shadow-sm">
@@ -30,26 +33,35 @@ export default function Header({ onOpenAIManager }: HeaderProps) {
           </div>
           <input 
             type="text" 
-            placeholder="Search agents, students, or system logs..." 
+            placeholder={`Search ${currentSchool.name} agents, students, or system logs...`} 
             className="w-full bg-transparent border-none py-2.5 px-2 text-sm outline-none placeholder:text-slate-400 text-slate-800"
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
           />
           <button
             onClick={onOpenAIManager}
-            className="flex items-center gap-2 m-1 px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-xs font-bold rounded-full mr-1 tracking-wide shadow-sm"
+            className="flex items-center gap-2 m-1 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white text-xs font-black rounded-full mr-1 tracking-wide shadow-sm"
           >
             <Zap className="w-3.5 h-3.5" /> AI MANAGER
           </button>
         </div>
 
+        {/* Global School context indicator in Header */}
+        <div className={cn("hidden lg:flex items-center gap-3 px-4 py-2 rounded-full border transition-all animate-in slide-in-from-left-4", currentSchool.bg, currentSchool.border)}>
+          <currentSchool.icon className={cn("w-4 h-4", currentSchool.color)} />
+          <div className="flex flex-col leading-none">
+            <span className={cn("text-[9px] font-black uppercase tracking-widest opacity-60", currentSchool.color)}>{currentSchool.name}</span>
+            <span className={cn("text-[10px] font-black text-slate-900 tracking-tight")}>Institutional Hub</span>
+          </div>
+        </div>
+
         {/* Status indicator */}
-        <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold tracking-wide upppercase uppercase">
+        <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-black tracking-widest uppercase">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          SYSTEM OPTIMAL
+          SYSTEM OPTIMAL (0.4ms)
         </div>
       </div>
 
@@ -61,8 +73,8 @@ export default function Header({ onOpenAIManager }: HeaderProps) {
             <Moon className="w-5 h-5" />
           </button>
           <button className="relative p-2 rounded-full hover:text-indigo-600 hover:bg-slate-100 transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+            <Bell className="w-5 h-5 transition-transform hover:scale-110" />
+            <span className="absolute top-1.5 right-2 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white animate-bounce" />
           </button>
         </div>
 
@@ -70,15 +82,15 @@ export default function Header({ onOpenAIManager }: HeaderProps) {
         <div className="h-8 w-px bg-slate-200"></div>
 
         {/* User profile */}
-        <button className="flex items-center gap-3 hover:bg-slate-50 p-1.5 pr-3 rounded-full transition-colors">
-          <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center font-bold text-white text-sm shrink-0">
+        <button className="flex items-center gap-3 hover:bg-slate-50 p-1.5 pr-3 rounded-full transition-colors group">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center font-black text-white text-sm shrink-0 shadow-lg group-hover:scale-105 transition-transform">
             AD
           </div>
-          <div className="flex flex-col items-start leading-none">
-            <span className="text-sm font-bold text-slate-800">Admin User</span>
-            <span className="text-[10px] font-bold text-slate-400 tracking-wider">SUPER USER</span>
+          <div className="flex flex-col items-start leading-none gap-0.5">
+            <span className="text-sm font-black text-slate-800">Administrator</span>
+            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase italic">Full System Access</span>
           </div>
-          <ChevronDown className="w-4 h-4 text-slate-400 ml-1" />
+          <ChevronDown className="w-4 h-4 text-slate-400 ml-1 group-hover:text-indigo-600 transition-colors" />
         </button>
 
       </div>

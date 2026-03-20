@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Atlas Skilltech University Command Center",
 };
 
+import { SchoolProvider } from "@/context/SchoolContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -28,7 +30,9 @@ export default function RootLayout({
         <link id="app-favicon" rel="icon" href="/favicon.svg" />
       </head>
       <body className="min-h-screen antialiased font-body dark:bg-slate-900 dark:text-white bg-slate-50">
-        {children}
+        <SchoolProvider>
+          {children}
+        </SchoolProvider>
       </body>
     </html>
   );

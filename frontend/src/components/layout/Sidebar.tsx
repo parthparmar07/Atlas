@@ -8,9 +8,12 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import {
   BarChart3, Users, Settings, BookOpen, GraduationCap,
-  Briefcase, Target, Shield, LayoutDashboard, ChevronLeft, Menu, Activity, ChevronDown
+  Briefcase, Target, Shield, LayoutDashboard, ChevronLeft, Menu, Activity, 
+  ChevronDown, Orbit, Layers, Cpu, Gavel, Sparkles
 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/api";
+
+import { useSchool, SCHOOLS } from "@/context/SchoolContext";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -71,6 +74,7 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
   { 
     title: "Student Lifecycle", icon: GraduationCap, href: "/students", color: "text-pink-400",
     subItems: [
+      { title: "Master Matrix", href: "/students/master-list" },
       { title: "Course Builder", href: "/students/course-builder" },
       { title: "Dropout Predictor", href: "/students/dropout" },
       { title: "Grievance", href: "/students/grievance" },
@@ -125,18 +129,21 @@ function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean,
     <div className="flex flex-col">
       <div
         className={cn(
-          "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative cursor-pointer",
+          "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
           isParentActive ? "bg-indigo-600/10 border border-indigo-500/20 text-white" : "hover:bg-white/5 text-slate-400 hover:text-slate-200"
         )}
-        onClick={() => {
-          if (hasSubItems && !collapsed) {
-            setIsOpen(!isOpen);
-          } else if (hasSubItems && collapsed) {
-            // Just act as a link or expand sidebar, for simplicity we won't auto-expand here, Next Link doesn't wrap entirely
-          }
-        }}
       >
-        <Link href={hasSubItems ? "#" : item.href} className="flex items-center gap-3 flex-1 overflow-hidden pointer-events-auto">
+        <Link 
+          href={item.href} 
+          className="flex items-center gap-3 flex-1 overflow-hidden pointer-events-auto"
+          onClick={(e) => {
+            // If we have sub-items and it's NOT collapsed, we still want to toggle the menu
+            // but the Link will handle the navigation.
+            if (hasSubItems && !collapsed) {
+               setIsOpen(true);
+            }
+          }}
+        >
           <item.icon className={cn("w-5 h-5 shrink-0 transition-colors", isParentActive ? "text-indigo-400" : item.color)} />
           <AnimatePresence>
             {!collapsed && (
@@ -153,12 +160,21 @@ function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean,
         </Link>
 
         {!collapsed && hasSubItems && (
-          <ChevronDown
-            className={cn(
-              "w-4 h-4 transition-transform duration-200 text-slate-500",
-              isOpen ? "rotate-180 text-indigo-400" : ""
-            )}
-          />
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsOpen(!isOpen);
+            }}
+            className="p-1 hover:bg-white/10 rounded-md transition-colors"
+          >
+            <ChevronDown
+              className={cn(
+                "w-4 h-4 transition-transform duration-200 text-slate-500",
+                isOpen ? "rotate-180 text-indigo-400" : ""
+              )}
+            />
+          </button>
         )}
         
         {!collapsed && isParentActive && !hasSubItems && (
@@ -209,8 +225,10 @@ function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean,
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { currentSchool: selectedSchool, setSchool } = useSchool();
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showSchoolMenu, setShowSchoolMenu] = useState(false);
   const [platformCoreItems, setPlatformCoreItems] = useState<any[]>(
     DEFAULT_PLATFORM_CORE.map((item) => ({ ...item, icon: ICON_MAP[item.icon] || LayoutDashboard }))
   );
@@ -258,37 +276,75 @@ export default function Sidebar() {
     <motion.aside
       initial={false}
       animate={{ width: collapsed ? 80 : 280 }}
-      className="h-screen bg-[#1a163a] text-slate-300 flex flex-col shrink-0 relative z-30 transition-shadow sidebar-scrollbar overflow-y-auto overflow-x-hidden border-r border-[#2d2859]"
+      style={{ borderRightColor: `var(--sidebar-accent)` }}
+      className="h-screen bg-[#1a163a] text-slate-300 flex flex-col shrink-0 relative z-30 transition-all duration-500 border-r-4 shadow-[10px_0_40px_rgba(0,0,0,0.2)]"
     >
-      {/* Header / Logo */}
-      <div className="h-16 flex items-center px-5 shrink-0 justify-between border-b border-[#2d2859]/50">
+      {/* Header / Logo (Fixed) */}
+      <div className="h-20 flex items-center px-6 shrink-0 justify-between border-b border-[#2d2859]/50 relative">
         <div className="flex items-center gap-3 overflow-hidden">
-          {/* Logo mark */}
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-[0_0_16px_rgba(99,102,241,0.5)] flex items-center justify-center shrink-0 border border-indigo-400/30">
-            <span className="text-white font-black text-lg leading-none tracking-tight">A</span>
+          <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center shrink-0 border border-indigo-400/30`}>
+            <span className="text-white font-black text-xl leading-none">A</span>
           </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="flex flex-col whitespace-nowrap"
-              >
-                <span className="font-black text-white text-base tracking-wide leading-tight">ATLAS SKILLTECH</span>
-                <span className="text-[9px] text-indigo-300/80 tracking-[0.2em] font-black uppercase">University ∙ AI Command Centre</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {!collapsed && (
+            <div className="flex flex-col whitespace-nowrap">
+              <span className="font-black text-white text-[15px] tracking-tight leading-none uppercase">Atlas SkillTech</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                 <span className={`w-1.5 h-1.5 rounded-full bg-current ${selectedSchool.color} animate-pulse`} />
+                 <span className={`text-[9px] ${selectedSchool.color} font-black uppercase tracking-widest`}>{selectedSchool.name} Active</span>
+              </div>
+            </div>
+          )}
         </div>
-
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-lg hover:bg-white/5 transition-colors absolute right-4 text-slate-400 hover:text-white"
-        >
-          {collapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
       </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto sidebar-scrollbar flex flex-col min-h-0 overscroll-contain">
+        {/* School Vertical Switcher */}
+        {!collapsed && (
+          <div className="px-4 py-6 border-b border-[#2d2859]/30">
+            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 pl-2 italic">Institutional Context</div>
+            <div className="relative group">
+              <button 
+                onClick={() => setShowSchoolMenu(!showSchoolMenu)}
+                className="w-full flex items-center justify-between p-3.5 rounded-[1.25rem] bg-indigo-500/5 border border-indigo-500/10 hover:border-indigo-500/30 transition-all text-left shadow-inner"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-xl ${selectedSchool.bg} flex items-center justify-center`}>
+                    <selectedSchool.icon className={`w-4 h-4 ${selectedSchool.color}`} />
+                  </div>
+                <div>
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Target School</div>
+                  <div className="text-sm font-black text-white leading-none whitespace-nowrap">{selectedSchool.name}</div>
+                </div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showSchoolMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showSchoolMenu && (
+              <div className="absolute top-full left-0 w-full mt-2 bg-[#1b1742] border border-[#2d2859] rounded-2xl shadow-3xl p-2 z-[100] animate-in fade-in slide-in-from-top-2 zoom-in-95 backdrop-blur-xl">
+                {SCHOOLS.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                        setSchool(s.id);
+                        setShowSchoolMenu(false);
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors ${selectedSchool.id === s.id ? 'bg-indigo-500/10' : ''}`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center`}>
+                      <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
+                    </div>
+                    <div className="text-left">
+                       <div className="text-xs font-bold text-slate-200">{s.name}</div>
+                       <div className="text-[8px] text-slate-500 font-bold uppercase">{s.description}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
 
       {/* Navigation */}
@@ -316,6 +372,7 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+      </div>
 
       {/* Footer Profile / Actions */}
       <div className="p-4 border-t border-[#2d2859] shrink-0">

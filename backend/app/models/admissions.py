@@ -29,6 +29,7 @@ class Lead(Base):
     email: Mapped[str] = mapped_column(String(255), index=True)
     phone: Mapped[str] = mapped_column(String(20))
     programme_interest: Mapped[str] = mapped_column(String(100))
+    school_id: Mapped[str] = mapped_column(String(20), index=True, default="atlas")
     source: Mapped[LeadSource] = mapped_column(Enum(LeadSource))
     stage: Mapped[LeadStage] = mapped_column(Enum(LeadStage), default=LeadStage.NEW)
     score: Mapped[float] = mapped_column(Float, default=0.0)

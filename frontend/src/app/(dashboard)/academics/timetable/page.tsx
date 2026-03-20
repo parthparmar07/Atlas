@@ -26,29 +26,33 @@ const SCHEDULE_DATA = [
   { id: 4, school: "law", day: "Thursday", slot: "03:15 - 04:45", subject: "Legal Writing", prof: "Adv. Mehra", room: "Court Room" },
 ];
 
+import { useSchool } from "@/context/SchoolContext";
+
 export default function AcademicsTimetablePage() {
+  const { currentSchool } = useSchool();
   const [selectedSchool, setSelectedSchool] = useState("isme");
 
-  const schoolObj = SCHOOLS.find(s => s.id === selectedSchool) || SCHOOLS[0];
+  const actualSchoolId = currentSchool.id === 'atlas' ? selectedSchool : currentSchool.id;
+  const schoolObj = SCHOOLS.find(s => s.id === actualSchoolId) || SCHOOLS[0];
 
   return (
     <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full w-fit">
-            <Layout className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Master Orchestration v2.4</span>
+          <div className={`flex items-center gap-2 px-3 py-1 ${currentSchool.bg} border border-indigo-500/10 rounded-full w-fit`}>
+            <Layout className={`w-3.5 h-3.5 ${currentSchool.color}`} />
+            <span className={`text-[10px] font-black ${currentSchool.color} uppercase tracking-widest`}>{currentSchool.name} Matrix</span>
           </div>
-          <h1>Timetable Matrix</h1>
-          <p className="text-lg text-slate-500 font-medium">Dynamic scheduling for {schoolObj.name} across its specialized programs.</p>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter">Timetable Orchestrator</h1>
+          <p className="text-lg text-slate-500 font-medium">Dynamic scheduling for {currentSchool.name} across its specialized programs.</p>
         </div>
         
         <div className="flex items-center gap-3">
            <button className="flex items-center gap-2 px-6 py-4 rounded-3xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:shadow-xl transition-all">
               <PlusSquare className="w-5 h-5 text-indigo-500" /> New Session
            </button>
-           <button className="flex items-center gap-2 px-8 py-4 rounded-3xl bg-indigo-600 text-white font-black text-xs hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-200 hover:-translate-y-1">
+           <button className={`flex items-center gap-2 px-8 py-4 rounded-3xl ${currentSchool.bg.replace('5%', '100%')} text-white font-black text-xs hover:bg-opacity-90 transition-all shadow-2xl shadow-indigo-200 hover:-translate-y-1`}>
               <Sparkles className="w-5 h-5" /> Propose Shift
            </button>
         </div>
@@ -59,18 +63,18 @@ export default function AcademicsTimetablePage() {
          <div className="col-span-12 xl:col-span-3 space-y-6">
             <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl space-y-8">
                <h3 className="text-lg font-black text-slate-900 mb-6 px-1 flex items-center justify-between">
-                  Target School
+                  Institutional Focus
                   <ChevronRight className="w-5 h-5 text-slate-300" />
                </h3>
                
                <div className="space-y-3">
-                  {SCHOOLS.map((s) => (
+                  {SCHOOLS.filter(s => currentSchool.id === 'atlas' || s.id === currentSchool.id).map((s) => (
                      <button 
                         key={s.id}
-                        onClick={() => setSelectedSchool(s.id)}
-                        className={`w-full flex items-center gap-4 p-5 rounded-3xl border transition-all ${selectedSchool === s.id ? `${s.bg} ${s.border}` : "bg-white border-slate-100 hover:border-slate-300 opacity-60 grayscale"}`}
+                        onClick={() => currentSchool.id === 'atlas' && setSelectedSchool(s.id)}
+                        className={`w-full flex items-center gap-4 p-5 rounded-3xl border transition-all ${actualSchoolId === s.id ? `${s.bg} ${s.border}` : "bg-white border-slate-100 hover:border-slate-300 opacity-60 grayscale"}`}
                      >
-                        <div className={`w-12 h-12 rounded-2xl ${selectedSchool === s.id ? 'bg-white' : 'bg-slate-100'} flex items-center justify-center shadow-lg`}>
+                        <div className={`w-12 h-12 rounded-2xl ${actualSchoolId === s.id ? 'bg-white' : 'bg-slate-100'} flex items-center justify-center shadow-lg`}>
                            <s.icon className={`w-6 h-6 ${s.color}`} />
                         </div>
                         <div className="text-left overflow-hidden">
@@ -97,17 +101,17 @@ export default function AcademicsTimetablePage() {
             <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
                <div className="relative z-10">
                   <h3 className="text-xl font-black mb-4">Faculty Load AI</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed italic mb-6">"Suggesting 15-min break after 10:45 sessions to maintain NASA-grade teacher focus."</p>
+                  <p className="text-xs text-slate-400 leading-relaxed italic mb-6">"Suggesting 15-min break after 10:45 sessions to maintain {currentSchool.name}-grade teacher focus."</p>
                   <div className="space-y-1.5 mb-8">
                      <div className="flex justify-between text-[10px] font-black uppercase text-slate-500">
                         <span>Burnout Risk</span>
                         <span className="text-emerald-400">Low</span>
                      </div>
                      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '22%' }} />
+                        <div className={`h-full ${schoolObj.color.replace('text', 'bg')} rounded-full`} style={{ width: '22%' }} />
                      </div>
                   </div>
-                  <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black hover:bg-white/10 transition-colors">Audit All Schools</button>
+                  <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black hover:bg-white/10 transition-colors">Institutional Audit</button>
                </div>
                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><Sparkles className="w-48 h-48" /></div>
             </div>
@@ -152,7 +156,7 @@ export default function AcademicsTimetablePage() {
                         </div>
                         {TIME_SLOTS.map((slot, sIdx) => {
                            const session = SCHEDULE_DATA.find(s => s.day === day && s.slot === slot);
-                           const isFilteredSchool = session?.school === selectedSchool;
+                           const isFilteredSchool = session?.school === actualSchoolId;
                            
                            return (
                               <div key={sIdx} className={`h-32 rounded-3xl p-4 transition-all relative group overflow-hidden ${session ? (
@@ -172,7 +176,7 @@ export default function AcademicsTimetablePage() {
                                           <Users className="w-3 h-3" />
                                           <span className="text-[10px] font-black">{session.prof}</span>
                                        </div>
-                                       <div className="flex items-center gap-1.5 text-indigo-500">
+                                       <div className={`flex items-center gap-1.5 ${schoolObj.color}`}>
                                           <MapPin className="w-3 h-3" />
                                           <span className="text-[10px] font-black">{session.room}</span>
                                        </div>

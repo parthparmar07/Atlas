@@ -11,7 +11,7 @@ import {
   FileCode, FileSearch, Presentation,
   Building2, Users, MapPin, CheckCircle2,
   ExternalLink, TrendingDown, Medal, Sparkles,
-  Clock, ChevronRight
+  Timer as Clock, ChevronRight
 } from "lucide-react";
 
 const SCHOOLS = [
@@ -28,28 +28,33 @@ const OPPORTUNITIES = [
   { id: "INT-504", company: "AZB & Partners", school: "law", role: "Legal Associate (AI Law)", location: "Delhi", stipend: "₹42k", deadline: "12 June", status: "Open", match: 91 },
 ];
 
+import { useSchool } from "@/context/SchoolContext";
+
 export default function StudentInternshipsPage() {
+  const { currentSchool } = useSchool();
   const [selectedSchool, setSelectedSchool] = useState("all");
+
+  const actualSchoolId = currentSchool.id === 'atlas' ? selectedSchool : currentSchool.id;
 
   return (
     <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header Context */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full w-fit">
-            <Medal className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Global Industry Orbit v5.0</span>
+          <div className={`flex items-center gap-2 px-3 py-1 ${currentSchool.bg} border border-indigo-500/10 rounded-full w-fit`}>
+            <Medal className={`w-3.5 h-3.5 ${currentSchool.color}`} />
+            <span className={`text-[10px] font-black ${currentSchool.color} uppercase tracking-widest`}>{currentSchool.name} Industry Orbit</span>
           </div>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">Industry Portal</h1>
-          <p className="text-lg text-slate-500 font-medium italic">Managed orchestration for ISME, ISDI, uGDX, and Law summer internships.</p>
+          <h1 className="text-6xl font-black text-slate-900 tracking-tighter leading-none">Industry Portal</h1>
+          <p className="text-lg text-slate-500 font-medium italic">Managed orchestration for {currentSchool.name} industrial internships and placement tracks.</p>
         </div>
         
         <div className="flex items-center gap-3">
            <button className="flex items-center gap-2 px-6 py-4 rounded-3xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:shadow-xl transition-all">
-              <Building2 className="w-5 h-5 text-indigo-500" /> Partner Catalog
+              <Building2 className="w-5 h-5 text-indigo-500" /> Professional Catalog
            </button>
            <button className="flex items-center gap-2 px-8 py-4 rounded-3xl bg-slate-900 text-white font-black text-xs hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200 hover:-translate-y-1">
-              <Sparkles className="w-5 h-5 text-amber-400" /> AI Opportunity Match
+              <Sparkles className="w-5 h-5 text-amber-400" /> AI Skill Sync
            </button>
         </div>
       </div>
@@ -60,23 +65,28 @@ export default function StudentInternshipsPage() {
             <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-2xl overflow-hidden relative">
                <div className="flex items-center justify-between mb-10">
                   <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg"><Briefcase className="w-5 h-5 text-white" /></div>
-                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">Summer '24 Internship Pipeline</h2>
+                     <div className={`w-10 h-10 rounded-2xl ${currentSchool.bg} flex items-center justify-center shadow-lg`}><Briefcase className={`w-5 h-5 ${currentSchool.color}`} /></div>
+                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">{currentSchool.name} Pipeline</h2>
                   </div>
-                  <div className="flex items-center gap-2">
-                      {SCHOOLS.map((s) => {
-                         const Icon = s.icon;
-                         return (
-                           <button key={s.id} onClick={() => setSelectedSchool(s.id)} className={`p-2 rounded-xl transition-all ${selectedSchool === s.id ? `bg-indigo-50 ${s.color}` : 'opacity-40 grayscale hover:opacity-100'}`}>
-                             <Icon className="w-5 h-5" />
-                           </button>
-                         );
-                      })}
-                  </div>
+                  {currentSchool.id === 'atlas' && (
+                    <div className="flex items-center gap-2">
+                        {SCHOOLS.map((s) => {
+                           const Icon = s.icon;
+                           return (
+                             <button key={s.id} onClick={() => setSelectedSchool(s.id)} className={`p-2 rounded-xl transition-all ${selectedSchool === s.id ? `bg-indigo-50 ${s.color}` : 'opacity-40 grayscale hover:opacity-100'}`}>
+                               <Icon className="w-5 h-5" />
+                             </button>
+                           );
+                        })}
+                        <button onClick={() => setSelectedSchool('all')} className={`p-2 rounded-xl transition-all ${selectedSchool === 'all' ? 'bg-indigo-50 text-indigo-600' : 'opacity-40 grayscale hover:opacity-100'}`}>
+                           <Layers className="w-5 h-5" />
+                        </button>
+                    </div>
+                  )}
                </div>
 
                <div className="space-y-4">
-                  {OPPORTUNITIES.filter(o => selectedSchool === 'all' || o.school === selectedSchool).map((o) => {
+                  {OPPORTUNITIES.filter(o => actualSchoolId === 'all' || o.school === actualSchoolId).map((o) => {
                      const sObj = SCHOOLS.find(s => s.id === o.school);
                      return (
                         <div key={o.id} className="group relative p-8 bg-white border border-slate-50 rounded-[2.5rem] hover:border-indigo-500 transition-all hover:shadow-2xl overflow-hidden">
@@ -91,7 +101,7 @@ export default function StudentInternshipsPage() {
                                  </div>
                                  <div className="flex items-center gap-6 text-[11px] text-slate-500 font-bold">
                                     <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {o.location}</span>
-                                    <span className="flex items-center gap-1.5 font-black text-slate-900 italic">Expected Stipend: {o.stipend}</span>
+                                    <span className="flex items-center gap-1.5 font-black text-slate-900 italic text-[13px]">Expected Stipend: {o.stipend}</span>
                                  </div>
                               </div>
                               <div className="flex flex-col items-end gap-3 text-right">
@@ -99,7 +109,7 @@ export default function StudentInternshipsPage() {
                                     <span className={`w-1.5 h-1.5 rounded-full ${o.status === 'Shortlisted' ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse'} inline-block mr-1`} />
                                     {o.status}
                                  </div>
-                                 <div className="text-2xl font-black text-slate-900 tracking-tighter">{o.match}% Match</div>
+                                 <div className="text-2xl font-black text-slate-900 tracking-tighter">{o.match}% Institutional Match</div>
                               </div>
                            </div>
                            
@@ -112,7 +122,7 @@ export default function StudentInternshipsPage() {
                                  </div>
                                  <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-2">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                    <span className="text-[10px] font-black text-emerald-600 uppercase">IRI Verified</span>
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase">Verification Active</span>
                                  </div>
                               </div>
                               <div className="flex items-center gap-2">
@@ -136,15 +146,14 @@ export default function StudentInternshipsPage() {
             {/* IRI Readiness Dashboard */}
             <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
                <h3 className="text-xl font-black mb-8 flex items-center gap-3">
-                 <ShieldCheck className="w-6 h-6 text-indigo-400" /> Internship Readiness (IRI)
+                 <ShieldCheck className="w-6 h-6 text-indigo-400" /> Readiness Matrix (IRI)
                </h3>
                
                <div className="space-y-6">
                   {[
-                     { label: "Technical Mastery", val: 82, color: "bg-indigo-500" },
-                     { label: "Portfolio Assessment", val: 94, color: "bg-pink-500" },
-                     { label: "Interview Confidence", val: 78, color: "bg-cyan-500" },
-                     { label: "Soft Skill Benchmarking", val: 65, color: "bg-amber-500" },
+                     { label: "Technical Mastery", val: 82, color: currentSchool.color.replace('text', 'bg') },
+                     { label: "Institutional Alignment", val: 94, color: "bg-slate-500" },
+                     { label: "Professional Pulse", val: 78, color: "bg-cyan-500" },
                   ].map((s, i) => (
                      <div key={i} className="space-y-1.5">
                         <div className="flex justify-between items-end text-[10px] font-black uppercase text-slate-500 group-hover:text-white transition-colors">
@@ -163,7 +172,7 @@ export default function StudentInternshipsPage() {
                      <Sparkles className="w-7 h-7 text-indigo-100 mb-4" />
                      <h4 className="text-xl font-black leading-tight mb-2">AI Placement Scout</h4>
                      <p className="text-xs text-indigo-50 italic mb-6 leading-relaxed">
-                       "Top Match Detected: NASA Rover Simulation (uGDX). Your PR-801 project score (92%) aligns perfectly with their Deep Tech requirements."
+                       "Detected high-intent placement opportunities for {currentSchool.name} students. Recommended action: Global Sync."
                      </p>
                      <button className="flex items-center gap-2 text-xs font-black text-white hover:text-indigo-100 transition-colors">
                        Priority Profile Sync <ChevronRight className="w-4 h-4" />
@@ -188,18 +197,10 @@ export default function StudentInternshipsPage() {
                      <div className="text-[10px] font-black text-slate-400 uppercase mb-2">PPO Conversion</div>
                      <div className="text-xl font-black text-slate-800">44% <span className="text-[10px] text-emerald-500 font-bold">+5%</span></div>
                   </div>
-                  <div className="p-5 bg-slate-50 rounded-[2rem] border border-slate-100">
-                     <div className="text-[10px] font-black text-slate-400 uppercase mb-2">Top Hiring</div>
-                     <div className="text-sm font-black text-slate-800">ISME x Bloomberg</div>
-                  </div>
-                  <div className="p-5 bg-slate-50 rounded-[2rem] border border-slate-100">
-                     <div className="text-[10px] font-black text-slate-400 uppercase mb-2">Global Placed</div>
-                     <div className="text-xl font-black text-slate-800">122 <span className="text-[10px] text-slate-400 font-bold">Students</span></div>
-                  </div>
                </div>
                
                <button className="w-full mt-10 py-5 bg-slate-900 text-white font-black text-xs rounded-3xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200">
-                  <Globe className="w-4 h-4 text-emerald-400" /> View Global Alumni Connect
+                  <Globe className="w-4 h-4 text-emerald-400" /> Global Alumni Connect
                </button>
             </div>
          </div>

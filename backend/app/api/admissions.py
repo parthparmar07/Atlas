@@ -21,6 +21,7 @@ def _serialize_lead(lead: Lead) -> dict:
         "email": lead.email,
         "phone": lead.phone,
         "programme_interest": lead.programme_interest,
+        "school_id": lead.school_id,
         "source": _to_enum_value(lead.source),
         "stage": _to_enum_value(lead.stage),
         "score": lead.score,
@@ -63,12 +64,13 @@ async def create_lead(body: dict, db: AsyncSession = Depends(get_db)):
         email=body.get("email"),
         phone=body.get("phone"), 
         programme_interest=body.get("programme"),
+        school_id=body.get("school_id", "atlas"),
         source=source,
     )
     db.add(lead)
     await db.commit()
     await db.refresh(lead)
-    await broadcast.broadcast({"type": "new_lead", "lead_id": lead.id, "name": lead.name, "programme": lead.programme_interest})
+    await broadcast.broadcast({"type": "new_lead", "lead_id": lead.id, "name": lead.name, "programme": lead.programme_interest, "school": lead.school_id})
     return {"id": lead.id, "status": "created"}
 
 @router.post("/leads/{lead_id}/documents")
@@ -130,9 +132,15 @@ async def _parse_and_score(lead_id, doc_id, contents, mime_type):
     })
 
 @router.get("/leads")
-async def list_leads(stage: str = None, tier: str = None,
+async def list_leads(stage: str | None = None, tier: str | None = None, school: str = "atlas",
                      db: AsyncSession = Depends(get_db)):
+    """List leads — filtered by school to ensure institutional isolation."""
     q = select(Lead).order_by(desc(Lead.score))
+    
+    # Strictly filter by school unless Global (atlas) is requested
+    if school != "atlas":
+        q = q.where(Lead.school_id == school)
+        
     if stage: 
         q = q.where(Lead.stage == stage)
     result = await db.execute(q)

@@ -26,33 +26,38 @@ const CALENDAR_EVENTS = [
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+import { useSchool } from "@/context/SchoolContext";
+
 export default function AcademicsCalendarPage() {
+  const { currentSchool } = useSchool();
   const [selectedSchool, setSelectedSchool] = useState("all");
+
+  const actualSchoolId = currentSchool.id === 'atlas' ? selectedSchool : currentSchool.id;
 
   return (
     <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header Context */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 px-3 py-1 bg-sky-500/10 border border-sky-500/20 rounded-full w-fit">
-            <CalendarIcon className="w-3.5 h-3.5 text-sky-500" />
-            <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Master Orbit v4.0</span>
+          <div className={`flex items-center gap-2 px-3 py-1 ${currentSchool.bg} border border-indigo-500/10 rounded-full w-fit`}>
+            <CalendarIcon className={`w-3.5 h-3.5 ${currentSchool.color}`} />
+            <span className={`text-[10px] font-black ${currentSchool.color} uppercase tracking-widest`}>{currentSchool.name} Orbit</span>
           </div>
-          <h1>Institutional Calendar</h1>
-          <p className="text-lg text-slate-500 font-medium italic">Managed orchestration for ISME, ISDI, uGDX, and Law academic cycles.</p>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter">Academic Timeline</h1>
+          <p className="text-lg text-slate-500 font-medium italic">Managing {currentSchool.name} academic cycles and institutional milestones.</p>
         </div>
         
         <div className="flex items-center gap-3">
            <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm">
               <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
-              <input type="text" placeholder="AI Prompt: Generate 2024 ISME Cycle..." className="bg-transparent border-none focus:ring-0 text-[11px] font-bold text-slate-600 w-64 uppercase tracking-wider" />
+              <input type="text" placeholder={`AI: Optimize ${currentSchool.name} Schedule...`} className="bg-transparent border-none focus:ring-0 text-[11px] font-bold text-slate-600 w-64 uppercase tracking-wider" />
               <button className="bg-slate-900 text-white p-2 rounded-xl hover:bg-indigo-600 transition-all"><PlusCircle className="w-4 h-4" /></button>
            </div>
            <button className="flex items-center gap-2 px-6 py-4 rounded-3xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:shadow-xl transition-all">
-              <PlusCircle className="w-5 h-5 text-indigo-500" /> Add Personal Key
+              <PlusCircle className="w-5 h-5 text-indigo-500" /> New Milestone
            </button>
            <button className="flex items-center gap-2 px-8 py-4 rounded-3xl bg-slate-900 text-white font-black text-xs hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200 hover:-translate-y-1">
-              <Globe className="w-5 h-5 text-sky-400" /> Export to Google/Outlook
+              <Globe className="w-5 h-5 text-sky-400" /> Cloud Sync
            </button>
         </div>
       </div>
@@ -69,13 +74,18 @@ export default function AcademicsCalendarPage() {
                         <button className="p-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-indigo-600"><ChevronRight className="w-5 h-5" /></button>
                      </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                     {SCHOOLS.map((s) => (
-                        <button key={s.id} onClick={() => setSelectedSchool(s.id)} className={`p-2 rounded-xl transition-all ${selectedSchool === s.id ? `bg-indigo-50 ${s.text}` : 'opacity-40 grayscale hover:opacity-100'}`}>
-                           {s.icon ? <s.icon className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
-                        </button>
-                     ))}
-                  </div>
+                  {currentSchool.id === 'atlas' && (
+                    <div className="flex items-center gap-2">
+                       {SCHOOLS.map((s) => (
+                          <button key={s.id} onClick={() => setSelectedSchool(s.id)} className={`p-2 rounded-xl transition-all ${selectedSchool === s.id ? `bg-indigo-50 ${s.text}` : 'opacity-40 grayscale hover:opacity-100'}`}>
+                             {s.icon ? <s.icon className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
+                          </button>
+                       ))}
+                       <button onClick={() => setSelectedSchool('all')} className={`p-2 rounded-xl transition-all ${selectedSchool === 'all' ? 'bg-indigo-50 text-indigo-600' : 'opacity-40 grayscale hover:opacity-100'}`}>
+                          <Layers className="w-5 h-5" />
+                       </button>
+                    </div>
+                  )}
                </div>
 
                <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-inner">
@@ -86,7 +96,7 @@ export default function AcademicsCalendarPage() {
                      const dayNum = i - 3; // Mocking starting from Wednesday
                      const isDay = dayNum > 0 && dayNum <= 31;
                      const events = isDay ? CALENDAR_EVENTS.filter(e => e.date.includes(dayNum.toString().padStart(2, '0'))) : [];
-                     const hasMatchingEvent = events.some(e => selectedSchool === 'all' || e.school === selectedSchool);
+                     const filteredEvents = events.filter(e => actualSchoolId === 'all' || e.school === actualSchoolId);
 
                      return (
                         <div key={i} className={`h-40 bg-white p-4 group relative transition-colors ${!isDay ? 'bg-slate-50 opacity-20' : 'hover:bg-slate-50'}`}>
@@ -94,10 +104,8 @@ export default function AcademicsCalendarPage() {
                               <>
                                  <span className="text-xs font-black text-slate-300 group-hover:text-indigo-600 transition-colors">{dayNum}</span>
                                  <div className="mt-2 space-y-1.5 overflow-hidden">
-                                    {events.map((e, ei) => {
+                                    {filteredEvents.map((e, ei) => {
                                        const sObj = SCHOOLS.find(s => s.id === e.school);
-                                       const isVisible = selectedSchool === 'all' || e.school === selectedSchool;
-                                       if (!isVisible) return null;
                                        return (
                                           <div key={ei} className={`p-2 rounded-xl border ${sObj?.color.replace('bg-', 'bg-').replace('500', '50')} ${sObj?.text.replace('text-', 'border-').replace('500', '100')} flex flex-col gap-0.5 shadow-sm group/ev`}>
                                              <div className="flex items-center justify-between">
@@ -108,9 +116,6 @@ export default function AcademicsCalendarPage() {
                                           </div>
                                        )
                                     })}
-                                 </div>
-                                 <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <PlusCircle className="w-5 h-5 text-slate-200 hover:text-indigo-600 cursor-pointer" />
                                  </div>
                               </>
                            )}
@@ -126,16 +131,16 @@ export default function AcademicsCalendarPage() {
             {/* Key Milestones Queue */}
             <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
                <h3 className="text-xl font-black mb-8 flex items-center gap-3">
-                 <Pin className="w-6 h-6 text-indigo-400" /> Institutional Milestones
+                 <Pin className="w-6 h-6 text-indigo-400" /> {currentSchool.name} Milestones
                </h3>
                
                <div className="space-y-4">
-                  {CALENDAR_EVENTS.map((e, i) => {
+                  {CALENDAR_EVENTS.filter(e => currentSchool.id === 'atlas' || e.school === currentSchool.id).map((e, i) => {
                      const sObj = SCHOOLS.find(s => s.id === e.school);
                      return (
                         <div key={i} className="group relative p-6 bg-white/5 border border-white/10 rounded-[2rem] hover:bg-white/10 transition-all cursor-pointer">
                            <div className="flex items-center gap-4">
-                              <div className={`w-12 h-12 rounded-2xl ${sObj?.color} flex items-center justify-center shadow-lg`}>
+                              <div className={`w-12 h-12 rounded-2xl ${sObj?.color || 'bg-indigo-600'} flex items-center justify-center shadow-lg`}>
                                  <CalendarIcon className="w-5 h-5 text-white" />
                               </div>
                               <div className="flex-1">
@@ -156,12 +161,12 @@ export default function AcademicsCalendarPage() {
                <div className="mt-10 p-8 bg-indigo-600 rounded-[2.5rem] relative overflow-hidden shadow-2xl group/card">
                   <div className="relative z-10">
                      <Sparkles className="w-7 h-7 text-indigo-100 mb-4" />
-                     <h4 className="text-xl font-black leading-tight mb-2">AI Calendar Sync</h4>
+                     <h4 className="text-xl font-black leading-tight mb-2">Institutional Logic</h4>
                      <p className="text-xs text-indigo-50 italic mb-6 leading-relaxed">
-                       "Overlap detected between uGDX Field Test and ISME Finals. Suggesting 4-hour gap for inter-school students."
+                       "Auditing {currentSchool.name} calendar for resource conflicts. High availability detected for Exam blocks."
                      </p>
                      <button className="flex items-center gap-2 text-xs font-black text-white hover:text-indigo-100 transition-colors">
-                       Approve Gap Adjustment <ChevronRight className="w-4 h-4" />
+                       Optimize Resource Map <ChevronRight className="w-4 h-4" />
                      </button>
                   </div>
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/card:scale-110 transition-transform"><Cpu className="w-32 h-32" /></div>
@@ -171,14 +176,14 @@ export default function AcademicsCalendarPage() {
             {/* Reputation & Engagement Heatmap */}
             <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-xl overflow-hidden relative">
                <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-indigo-500" /> Reputation Pulse
+                  <Activity className="w-5 h-5 text-indigo-500" /> Professional Pulse
                </h3>
                
                <div className="space-y-6">
                   {[
-                     { label: "Design Week Visibility", val: 82, color: "bg-pink-500" },
-                     { label: "Research Citations", val: 44, color: "bg-cyan-500" },
-                     { label: "Moot Court Win Rate", val: 92, color: "bg-amber-500" },
+                     { label: `${currentSchool.name} Visibility`, val: 82, color: currentSchool.color.replace('text', 'bg') },
+                     { label: "Faculty Engagement", val: 44, color: "bg-slate-300" },
+                     { label: "Cycle Completion", val: 92, color: "bg-emerald-500" },
                   ].map((s, i) => (
                      <div key={i} className="space-y-1.5 flex flex-col gap-1">
                         <div className="flex justify-between items-end text-[10px] font-black uppercase text-slate-400">
@@ -193,7 +198,7 @@ export default function AcademicsCalendarPage() {
                </div>
                
                <button className="w-full mt-10 py-5 bg-slate-900 text-white font-black text-xs rounded-3xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200">
-                  <Printer className="w-4 h-4 text-emerald-400" /> Print Master Schedule
+                  <Printer className="w-4 h-4 text-emerald-400" /> Generate Institutional PDF
                </button>
             </div>
          </div>

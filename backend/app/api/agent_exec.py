@@ -160,6 +160,20 @@ async def run_agent(
     _dur_ms = int((datetime.datetime.now(datetime.timezone.utc) - _start).total_seconds() * 1000)
     await _emit_terminal_event("completed", body.agent_id, agent_name, body.action, "SUCCESS", _dur_ms)
 
+    # Emit signal to Synaptic Pipeline
+    try:
+        from app.api.signals import signal_bus, Signal
+        import uuid
+        await signal_bus.emit(Signal(
+            id=str(uuid.uuid4()),
+            source_agent=agent_name,
+            action=body.action,
+            payload={"result": "success", "duration_ms": _dur_ms},
+            priority=2
+        ))
+    except Exception as e:
+        print(f"Signal emission failed: {e}")
+
     # Handle cascades
     cascades = result.get("cascades", []) if isinstance(result, dict) else []
     for cascade in cascades:

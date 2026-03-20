@@ -5,7 +5,8 @@ import {
   FileText, Calendar, Clock, MapPin, 
   Users, AlertTriangle, CheckCircle2, 
   Search, Filter, BookOpen, Layers, 
-  Cpu, Gavel, ArrowRight, Download, Printer
+  Cpu, Gavel, ArrowRight, Download, Printer,
+  Sparkles, Activity
 } from "lucide-react";
 
 const SCHOOLS = [
@@ -24,61 +25,68 @@ const EXAM_SCHEDULE = [
   { id: "EX-106", school: "isdi", subject: "Sustainable Fashion (Fash)", date: "2024-05-19", time: "01:00 PM", room: "Studio D", status: "Confirmed", proctors: 2 },
 ];
 
+import { useSchool } from "@/context/SchoolContext";
+
 export default function AcademicsExamsPage() {
+  const { currentSchool } = useSchool();
   const [selectedSchool, setSelectedSchool] = useState("all");
 
-  const filteredExams = selectedSchool === "all" 
+  const actualSchoolId = currentSchool.id === 'atlas' ? selectedSchool : currentSchool.id;
+
+  const filteredExams = actualSchoolId === "all" 
     ? EXAM_SCHEDULE 
-    : EXAM_SCHEDULE.filter(e => e.school === selectedSchool);
+    : EXAM_SCHEDULE.filter(e => e.school === actualSchoolId);
 
   return (
     <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header Context */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 px-3 py-1 bg-sky-500/10 border border-sky-500/20 rounded-full w-fit">
-            <Calendar className="w-3.5 h-3.5 text-sky-500" />
-            <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Spring Semester 2024</span>
+          <div className={`flex items-center gap-2 px-3 py-1 ${currentSchool.bg} border border-indigo-500/10 rounded-full w-fit`}>
+            <Calendar className={`w-3.5 h-3.5 ${currentSchool.color}`} />
+            <span className={`text-[10px] font-black ${currentSchool.color} uppercase tracking-widest`}>{currentSchool.name} Exam Orbit</span>
           </div>
-          <h1>Examination Control</h1>
-          <p className="text-lg text-slate-500 font-medium italic">Managed orchestration for ISME, ISDI, uGDX, and Law.</p>
+          <h1 className="text-6xl font-black text-slate-900 tracking-tighter leading-none">Assessment Matrix</h1>
+          <p className="text-lg text-slate-500 font-medium italic">Managed orchestration for {currentSchool.name} academic assessments and proctoring.</p>
         </div>
         
         <div className="flex items-center gap-3">
            <button className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold hover:shadow-lg transition-all">
               <Printer className="w-4 h-4" /> Print Seating
            </button>
-           <button className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 hover:-translate-y-1">
+           <button className={`flex items-center gap-2 px-6 py-3 rounded-2xl ${currentSchool.bg.replace('5%', '100%')} text-white font-bold hover:bg-opacity-90 transition-all shadow-xl shadow-slate-200 hover:-translate-y-1`}>
               <Download className="w-4 h-4" /> Master Schedule
            </button>
         </div>
       </div>
 
       {/* School Selective Filter */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <button 
-          onClick={() => setSelectedSchool("all")}
-          className={`p-6 rounded-[2rem] border transition-all text-left group overflow-hidden relative ${selectedSchool === "all" ? "bg-slate-900 border-slate-800 text-white shadow-2xl" : "bg-white border-slate-100 text-slate-900 hover:border-slate-300"}`}
-        >
-           <Search className={`w-8 h-8 mb-4 ${selectedSchool === "all" ? "text-indigo-400" : "text-slate-300 group-hover:text-slate-900"}`} />
-           <div className="font-black text-xl leading-tight">All Schools</div>
-           <div className="text-xs opacity-60 font-medium mt-1">Unified View</div>
-           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform"><CheckCircle2 className="w-24 h-24" /></div>
-        </button>
-        
-        {SCHOOLS.map((s) => (
+      {currentSchool.id === 'atlas' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <button 
-            key={s.id}
-            onClick={() => setSelectedSchool(s.id)}
-            className={`p-6 rounded-[2rem] border transition-all text-left group relative overflow-hidden ${selectedSchool === s.id ? "bg-slate-900 border-slate-800 text-white shadow-2xl scale-105" : "bg-white border-slate-100 text-slate-900 hover:border-slate-300"}`}
+            onClick={() => setSelectedSchool("all")}
+            className={`p-6 rounded-[2rem] border transition-all text-left group overflow-hidden relative ${selectedSchool === "all" ? "bg-slate-900 border-slate-800 text-white shadow-2xl" : "bg-white border-slate-100 text-slate-900 hover:border-slate-300"}`}
           >
-             <s.icon className={`w-8 h-8 mb-4 ${selectedSchool === s.id ? "text-white" : "text-slate-300 group-hover:text-slate-900"}`} />
-             <div className="font-black text-xl leading-tight">{s.name.split(' ')[0]}</div>
-             <div className="text-[10px] opacity-60 font-black uppercase tracking-widest mt-1">{s.name.split(' (')[1]?.replace(')', '') || 'Specialist'}</div>
-             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform"><s.icon className="w-24 h-24" /></div>
+             <Search className={`w-8 h-8 mb-4 ${selectedSchool === "all" ? "text-indigo-400" : "text-slate-300 group-hover:text-slate-900"}`} />
+             <div className="font-black text-xl leading-tight">All Schools</div>
+             <div className="text-xs opacity-60 font-medium mt-1">Unified View</div>
+             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform"><CheckCircle2 className="w-24 h-24" /></div>
           </button>
-        ))}
-      </div>
+          
+          {SCHOOLS.map((s) => (
+            <button 
+              key={s.id}
+              onClick={() => setSelectedSchool(s.id)}
+              className={`p-6 rounded-[2rem] border transition-all text-left group relative overflow-hidden ${selectedSchool === s.id ? "bg-slate-900 border-slate-800 text-white shadow-2xl scale-105" : "bg-white border-slate-100 text-slate-900 hover:border-slate-300"}`}
+            >
+               <s.icon className={`w-8 h-8 mb-4 ${selectedSchool === s.id ? "text-white" : "text-slate-300 group-hover:text-slate-900"}`} />
+               <div className="font-black text-xl leading-tight">{s.name.split(' ')[0]}</div>
+               <div className="text-[10px] opacity-60 font-black uppercase tracking-widest mt-1">{s.name.split(' (')[1]?.replace(')', '') || 'Specialist'}</div>
+               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform"><s.icon className="w-24 h-24" /></div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-12 gap-8">
          {/* Main Schedule Table */}
@@ -107,13 +115,13 @@ export default function AcademicsExamsPage() {
                            return (
                               <tr key={e.id} className="group hover:bg-slate-50 transition-colors">
                                  <td className="py-6 pl-2">
-                                    <div className={`w-12 h-12 rounded-2xl ${schoolObj?.color || 'bg-slate-100'} flex items-center justify-center shadow-lg`}>
+                                    <div className={`w-12 h-12 rounded-2xl ${schoolObj?.color || 'bg-slate-100'} flex items-center justify-center shadow-lg transition-transform group-hover:scale-110`}>
                                        {schoolObj && <schoolObj.icon className="w-5 h-5 text-white" />}
                                     </div>
                                  </td>
                                  <td className="py-6">
                                     <div className="text-sm font-black text-slate-900">{e.subject}</div>
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{schoolObj?.name}</div>
+                                    <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{schoolObj?.name} Specialized Track</div>
                                  </td>
                                  <td className="py-6">
                                     <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
@@ -122,7 +130,7 @@ export default function AcademicsExamsPage() {
                                  </td>
                                  <td className="py-6">
                                     <div className="text-sm font-black text-slate-700">{e.date}</div>
-                                    <div className="text-[10px] text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {e.time}</div>
+                                    <div className="text-[10px] text-slate-400 flex items-center gap-1 font-bold italic"><Clock className="w-3 h-3" /> {e.time} Slots</div>
                                  </td>
                                  <td className="py-6">
                                     <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit border ${e.status === 'Confirmed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-amber-50 border-amber-100 text-amber-600'}`}>
@@ -131,7 +139,7 @@ export default function AcademicsExamsPage() {
                                     </div>
                                  </td>
                                  <td className="py-6 pr-2 text-right">
-                                    <button className="p-2 rounded-xl text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all opacity-0 group-hover:opacity-100">
+                                    <button className="p-2 rounded-xl text-slate-300 hover:text-slate-900 transition-all opacity-0 group-hover:opacity-100">
                                        <ArrowRight className="w-5 h-5" />
                                     </button>
                                  </td>
@@ -155,9 +163,7 @@ export default function AcademicsExamsPage() {
                   <div className="space-y-5">
                      {[
                         { label: "Proctor Availability", val: 88, status: "Stable" },
-                        { label: "Moot Court Room (Law)", val: 100, status: "Full" },
-                        { label: "Bloomberg Terminal (ISME)", val: 42, status: "Optimal" },
-                        { label: "NASA Workshop (uGDX)", val: 12, status: "Maintenance" },
+                        { label: "Institutional Capacity", val: 42, status: "Optimal" },
                      ].map((item, i) => (
                         <div key={i} className="space-y-1.5">
                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -165,13 +171,13 @@ export default function AcademicsExamsPage() {
                               <span className={item.val > 90 ? "text-rose-400" : "text-emerald-400"}>{item.status}</span>
                            </div>
                            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full transition-all duration-1000 ${item.val > 90 ? 'bg-rose-500' : 'bg-sky-500'}`} style={{ width: `${item.val}%` }} />
+                              <div className={`h-full rounded-full transition-all duration-1000 ${currentSchool.color.replace('text', 'bg')}`} style={{ width: `${item.val}%` }} />
                            </div>
                         </div>
                      ))}
                   </div>
-                  <button className="w-full mt-8 py-4 rounded-2xl bg-white/10 text-white font-black text-xs hover:bg-white/20 transition-all border border-white/5">
-                     Request Multi-School Sync
+                  <button className="w-full mt-8 py-4 rounded-2xl bg-white/10 text-white font-black text-xs hover:bg-white/20 transition-all border border-white/5 uppercase tracking-widest">
+                     Multi-School Sync Protocol
                   </button>
                </div>
                <div className="absolute top-0 right-0 p-8 opacity-5"><Layers className="w-48 h-48" /></div>
@@ -180,13 +186,13 @@ export default function AcademicsExamsPage() {
             {/* AI Auditor */}
             <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-8 text-white shadow-2xl relative group overflow-hidden">
                <div className="relative z-10">
-                  <AlertTriangle className="w-8 h-8 text-amber-300 mb-4 animate-bounce" />
-                  <h3 className="text-2xl font-black leading-tight mb-2">AI Examination Auditor</h3>
+                  <Sparkles className="w-8 h-8 text-amber-300 mb-4 animate-bounce" />
+                  <h3 className="text-2xl font-black leading-tight mb-2">Examination Auditor</h3>
                   <p className="text-sm text-indigo-100 font-medium leading-relaxed mb-6">
-                     Checking for conflicting dates in uGDX Prototyping and ISDI Studio slots.
+                     Checking for conflicting dates in {currentSchool.name} assessment cycles.
                   </p>
                   <div className="p-4 bg-black/20 rounded-2xl border border-white/10 font-mono text-[10px] text-indigo-200">
-                     [ORCHESTRATOR] 2 Potential Clashes Found: <br/> B.Des Fashion vs BBA Sem II. <br/> Suggesting date: May 18.
+                     [ORCHESTRATOR] Institutional Audit Active. <br/> No clashes detected in active modules.
                   </div>
                </div>
                <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-all"><Cpu className="w-32 h-32" /></div>

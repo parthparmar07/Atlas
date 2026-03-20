@@ -27,49 +27,72 @@ const MODULES = [
   { id: "M-108", name: "Global Trade Policy", school: "law", type: "Core", credits: 4, level: "Sem 4", prerequisite: "Intro to Law" },
 ];
 
+import { useSchool } from "@/context/SchoolContext";
+
 export default function StudentCourseBuilderPage() {
-  const [selectedSchool, setSelectedSchool] = useState("all");
+  const { currentSchool } = useSchool();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredModules = MODULES.filter(m => {
+    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || m.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSchool = currentSchool.id === "atlas" || m.school === currentSchool.id;
+    return matchesSearch && matchesSchool;
+  });
 
   return (
     <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header Context */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-3 py-1 bg-sky-500/10 border border-sky-500/20 rounded-full w-fit">
-            <BookOpen className="w-3.5 h-3.5 text-sky-500" />
-            <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Skill Architecture v3.1</span>
-          </div>
-          <h1>Course Architect</h1>
-          <p className="text-lg text-slate-500 font-medium italic">Managed curriculum building for ISME, ISDI, uGDX, and Law tracks.</p>
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-2xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+           <currentSchool.icon className={`w-80 h-80 ${currentSchool.color}`} />
         </div>
-        
-        <div className="flex items-center gap-3">
-           <button className="flex items-center gap-2 px-6 py-4 rounded-3xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:shadow-xl transition-all">
-              <Download className="w-5 h-5 text-indigo-500" /> Syllabus Pack
-           </button>
-           <button className="flex items-center gap-2 px-8 py-4 rounded-3xl bg-slate-900 text-white font-black text-xs hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200 hover:-translate-y-1">
-              <Sparkles className="w-5 h-5 text-amber-400" /> AI Adaptive Builder
-           </button>
+
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 relative z-10">
+          <div className="space-y-4">
+            <div className={`flex items-center gap-2 px-3 py-1 ${currentSchool.bg} border border-indigo-500/10 rounded-full w-fit`}>
+              <currentSchool.icon className={`w-3.5 h-3.5 ${currentSchool.color}`} />
+              <span className={`text-[10px] font-black ${currentSchool.color} uppercase tracking-widest`}>{currentSchool.name} Registrar</span>
+            </div>
+            <h1 className="text-6xl font-black text-slate-900 tracking-tighter leading-none">
+               {currentSchool.name === 'Atlas Global' ? 'Syllabus' : currentSchool.name} <br/>
+               <span className="text-slate-400">Course Architect</span>
+            </h1>
+            <p className="text-xl text-slate-500 font-medium max-w-2xl italic">Managing {filteredModules.length} modular tracks across the {currentSchool.name} academic matrix.</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+             <button className="flex items-center gap-2 px-8 py-5 rounded-[2rem] bg-slate-900 text-white font-black text-sm hover:bg-indigo-600 transition-all shadow-2xl hover:-translate-y-1">
+                <Sparkles className="w-5 h-5 text-amber-400" /> AI Adaptive Builder
+             </button>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-8">
          {/* Left Side: Modular Hub */}
          <div className="col-span-12 xl:col-span-8 space-y-6">
-            <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-2xl overflow-hidden">
-               <div className="flex items-center justify-between mb-10">
+            <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-2xl overflow-hidden relative">
+               <div className="flex items-center justify-between mb-10 relative z-10">
                   <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg"><BookText className="w-5 h-5 text-white" /></div>
-                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">Curriculum Matrix</h2>
+                     <div className={`w-10 h-10 rounded-2xl ${currentSchool.bg} flex items-center justify-center shadow-lg`}>
+                        <BookText className={`w-5 h-5 ${currentSchool.color}`} />
+                     </div>
+                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">Institutional Matrix</h2>
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="flex items-center gap-2 px-6 py-3 bg-slate-50 border border-slate-100 rounded-[1.5rem]">
                      <Search className="w-4 h-4 text-slate-400" />
-                     <input type="text" placeholder="Search modules..." className="bg-transparent border-none focus:ring-0 text-xs font-bold text-slate-600 w-44" />
+                     <input 
+                       type="text" 
+                       placeholder="Filter curriculum..." 
+                       className="bg-transparent border-none focus:ring-0 text-xs font-bold text-slate-600 w-44" 
+                       value={searchTerm}
+                       onChange={(e) => setSearchTerm(e.target.value)}
+                     />
                   </div>
                </div>
 
-               <div className="space-y-4">
-                  {MODULES.filter(m => selectedSchool === 'all' || m.school === selectedSchool).map((m) => {
+               <div className="space-y-4 relative z-10">
+                  {filteredModules.map((m) => {
                      const sObj = SCHOOLS.find(s => s.id === m.school);
                      return (
                         <div key={m.id} className="group relative p-6 bg-white border border-slate-50 rounded-[2.5rem] hover:border-indigo-500 transition-all hover:shadow-2xl">
@@ -110,26 +133,25 @@ export default function StudentCourseBuilderPage() {
             {/* Specialization Orbit */}
             <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
                <h3 className="text-xl font-black mb-8 flex items-center gap-3">
-                 <Map className="w-6 h-6 text-indigo-400" /> Track Specialization
+                 <Map className="w-6 h-6 text-indigo-400" /> {currentSchool.name} Tracks
                </h3>
                
                <div className="space-y-4">
-                  {SCHOOLS.map((s, i) => (
-                     <button 
+                  {SCHOOLS.filter(s => currentSchool.id === 'atlas' || s.id === currentSchool.id).map((s, i) => (
+                     <div 
                         key={i} 
-                        onClick={() => setSelectedSchool(s.id)}
-                        className={`w-full p-5 rounded-[2rem] border transition-all text-left ${selectedSchool === s.id ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 opacity-50 hover:opacity-100"}`}
+                        className={`w-full p-6 rounded-[2rem] border bg-white/5 border-white/10 transition-all text-left`}
                      >
-                        <div className="flex items-center justify-between mb-3">
-                           <span className="text-xs font-black uppercase tracking-widest">{s.name}</span>
+                        <div className="flex items-center justify-between mb-4">
+                           <span className="text-xs font-black uppercase tracking-widest">{s.name} Capacity</span>
                            <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                           {s.tracks.map((t, j) => (
-                              <span key={j} className="text-[9px] font-black bg-white/5 px-2 py-0.5 rounded border border-white/5">{t}</span>
+                           {(s as any).tracks?.map((t: string, j: number) => (
+                              <span key={j} className="text-[9px] font-black bg-white/5 px-2 py-0.5 rounded border border-white/5 text-indigo-200">{t}</span>
                            ))}
                         </div>
-                     </button>
+                     </div>
                   ))}
                </div>
             </div>
@@ -140,14 +162,14 @@ export default function StudentCourseBuilderPage() {
                   <Sparkles className="w-8 h-8 text-amber-300 mb-6" />
                   <h3 className="text-2xl font-black leading-tight mb-2">AI Track Consultant</h3>
                   <p className="text-sm text-indigo-50 leading-relaxed mb-10 italic">
-                    "Detected high interest in AI/ML (uGDX). Recommending 'Generative Design 4.0' from ISDI for a tech-design cross-credit."
+                    "Syncing with {currentSchool.name} data pools. Recommending vertical-aligned credits."
                   </p>
                   
                   <div className="p-5 bg-white/10 rounded-[2rem] border border-white/10">
                      <div className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-3">Pre-requisite Audit</div>
                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-bold text-white">Python for Law</span>
-                        <span className="text-[10px] bg-rose-500 px-2 py-0.5 rounded-full font-black">Missing</span>
+                        <span className="text-xs font-bold text-white">System Protocol</span>
+                        <span className="text-[10px] bg-emerald-500 px-2 py-0.5 rounded-full font-black">Verified</span>
                      </div>
                      <button className="w-full py-3 rounded-xl bg-white/10 text-xs font-black hover:bg-white/20 transition-all border border-white/5">Auto-Schedule Prereq</button>
                   </div>
@@ -158,15 +180,14 @@ export default function StudentCourseBuilderPage() {
             {/* Program Health Chart (Mock) */}
             <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-xl relative overflow-hidden">
                <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-indigo-500" /> Professional Mastery
+                  <Award className="w-5 h-5 text-indigo-500" /> {currentSchool.name} Mastery
                </h3>
                
                <div className="space-y-6">
                   {[
                      { label: "Technical Proficiency", val: 82 },
-                     { label: "Design Thinking", val: 44 },
-                     { label: "Business Ethics", val: 92 },
-                     { label: "Law/Policy Compliance", val: 12 },
+                     { label: "Domain Expertise", val: 44 },
+                     { label: "Institutional Logic", val: 92 },
                   ].map((s, i) => (
                      <div key={i} className="space-y-1.5">
                         <div className="flex justify-between text-[10px] font-black uppercase text-slate-400">
@@ -174,7 +195,7 @@ export default function StudentCourseBuilderPage() {
                            <span className="text-slate-900">{s.val}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                           <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: `${s.val}%` }} />
+                           <div className={`h-full ${currentSchool.color.replace('text', 'bg')} rounded-full transition-all duration-1000`} style={{ width: `${s.val}%` }} />
                         </div>
                      </div>
                   ))}

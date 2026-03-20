@@ -318,7 +318,10 @@ const getIndicatorClasses = (status: string) => {
 };
 
 // ── Main Dashboard Page ───────────────────────────────────────────────────────
+import { useSchool } from "@/context/SchoolContext";
+
 export default function DashboardPage() {
+  const { currentSchool: school } = useSchool();
   const [telemetry, setTelemetry] = useState<TelemetryStats>(TELEMETRY_FALLBACK);
   const [communications, setCommunications] = useState<CommunicationsSnapshot>({ total: 0, delivered: 0, failed: 0, queued: 0 });
   const [loading, setLoading] = useState(true);
@@ -335,13 +338,31 @@ export default function DashboardPage() {
   const [liveAutomations, setLiveAutomations] = useState(0);
   const automationsBase = useRef(telemetry.automations_today);
 
+  const fetchTelemetry = useCallback(async (schoolId: string): Promise<TelemetryStats> => {
+    try {
+      const res = await fetch(`${API_BASE}/api/telemetry/stats?school=${schoolId}`, { cache: "no-store" });
+      if (!res.ok) return TELEMETRY_FALLBACK;
+      const data = (await res.json()) as TelemetryStats;
+      return {
+        ...TELEMETRY_FALLBACK,
+        ...data,
+        events: Array.isArray(data.events) && data.events.length ? data.events : TELEMETRY_FALLBACK.events,
+      };
+    } catch {
+      return TELEMETRY_FALLBACK;
+    }
+  }, []);
+
   const refresh = useCallback(async () => {
-    const [t, c] = await Promise.all([fetchTelemetry(), fetchCommunications()]);
+    const [t, c] = await Promise.all([
+        fetchTelemetry(school.id),
+        fetchCommunications()
+    ]);
     setTelemetry(t);
     setCommunications(c);
     automationsBase.current = t.automations_today;
     setLoading(false);
-  }, []);
+  }, [school.id, fetchTelemetry]);
 
   // Initial load
   useEffect(() => { refresh(); }, [refresh]);
@@ -383,13 +404,24 @@ export default function DashboardPage() {
 
   const activityEvents = telemetry.events.slice(0, 4);
 
+  // School-specific domain filtering
+  const SCHOOL_FILTER_MAP: Record<string, string[]> = {
+    'isme': ['admissions', 'hr', 'finance'],
+    'isdi': ['students', 'research', 'academics'],
+    'ugdx': ['research', 'academics', 'it'],
+    'law': ['admissions', 'research', 'finance']
+  };
+
+  const allowedDomains = school.id === 'atlas' ? null : SCHOOL_FILTER_MAP[school.id] || [];
+
   // Filtered + sorted domains
   const filteredDomains = DOMAINS.map(domain => ({
     ...domain,
     agents: domain.agents.filter(agent => {
       const matchesBadge = badgeFilter === "all" || agent.badge.toLowerCase() === badgeFilter;
       const matchesSearch = !search || agent.name.toLowerCase().includes(search.toLowerCase()) || domain.label.toLowerCase().includes(search.toLowerCase());
-      return matchesBadge && matchesSearch;
+      const matchesDomain = !allowedDomains || allowedDomains.includes(domain.key);
+      return matchesBadge && matchesSearch && matchesDomain;
     }),
   })).filter(d => d.agents.length > 0);
 
@@ -404,9 +436,8 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 p-8 overflow-y-auto w-full bg-slate-50 relative min-h-screen">
       {/* Dynamic Background Effects */}
-      <div className="absolute top-0 inset-x-0 h-[500px] bg-gradient-to-b from-indigo-50/80 via-white to-transparent pointer-events-none" />
-      <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full bg-indigo-400/5 blur-[120px] pointer-events-none" />
-      <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] rounded-full bg-emerald-400/5 blur-[100px] pointer-events-none" />
+      <div className={`absolute top-0 inset-x-0 h-[500px] ${school.bg} opacity-20 via-white to-transparent pointer-events-none`} />
+      <div className={`absolute top-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full ${school.bg} blur-[120px] pointer-events-none`} />
 
       {showDeploy && <DeployModal onClose={() => setShowDeploy(false)} onRefresh={refresh} />}
 
@@ -416,29 +447,21 @@ export default function DashboardPage() {
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 relative z-10">
           <div className="space-y-4 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-3 py-1 text-[10px] font-bold tracking-wider rounded-full bg-indigo-600 text-white uppercase shadow-[0_0_15px_rgba(79,70,229,0.4)]">
-                Production Node
+              <span className={`px-3 py-1 text-[10px] font-black tracking-wider rounded-full ${school.color.replace('text', 'bg')} text-white uppercase shadow-lg`}>
+                {school.name} Node
               </span>
-              <span className="px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider rounded-full bg-slate-200/80 backdrop-blur-md text-slate-700 uppercase border border-slate-300/50">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> System Stable
+              <span className="px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider rounded-full bg-white/80 backdrop-blur-md text-slate-700 uppercase border border-slate-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Global {school.id?.toUpperCase()} Pulse
               </span>
-              <span className="px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider rounded-full bg-orange-100/80 backdrop-blur-md text-orange-700 uppercase border border-orange-200/50">
-                <Cpu className="w-3 h-3 text-orange-500" /> Groq LLaMA-3.3 Powered
-              </span>
-              {liveAutomations > 0 && (
-                <span className="px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider rounded-full bg-violet-100/80 backdrop-blur-md text-violet-700 uppercase border border-violet-200/50 animate-in fade-in duration-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-                  +{liveAutomations} live runs
-                </span>
-              )}
             </div>
 
-            <h1 className="text-5xl md:text-5xl font-black tracking-tight text-slate-900 drop-shadow-sm">
-              Atlas <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Command Center</span>
+            <h1 className="text-7xl font-black tracking-tighter text-slate-900 drop-shadow-sm leading-none">
+              {school.name} <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Command Center</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-slate-600 font-medium leading-relaxed max-w-2xl">
-              Coordinating the high-frequency agentic ecosystem across ISME, ISDI, uGDX, and Law schools. Real-time institutional telemetry and multi-domain orchestration.
+            <p className="text-lg md:text-xl text-slate-600 font-medium leading-relaxed max-w-2xl italic">
+              Synchronizing the {school.name} agentic ecosystem with high-frequency L4 orchestration.
             </p>
           </div>
 
