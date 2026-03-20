@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
@@ -123,30 +123,35 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
 ]};
 
 function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean, pathname: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
   const isParentActive = pathname.startsWith(item.href) && (item.href !== "/" || pathname === "/");
+  const [isOpen, setIsOpen] = useState(isParentActive);
+  
+  // Only auto-open if it's a new active parent, don't force it open if user manually closed it
+  useEffect(() => {
+    if (isParentActive) setIsOpen(true);
+  }, [item.href]); // Only re-run when the item itself is determined (mount/change)
   
   const hasSubItems = item.subItems && item.subItems.length > 0;
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (hasSubItems && !collapsed) {
+      setIsOpen(!isOpen);
+    }
+    router.push(item.href);
+  };
 
   return (
     <div className="flex flex-col">
       <div
+        onClick={handleToggle}
         className={cn(
-          "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+          "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative cursor-pointer",
           isParentActive ? "bg-indigo-600/10 border border-indigo-500/20 text-white" : "hover:bg-white/5 text-slate-400 hover:text-slate-200"
         )}
       >
-        <Link 
-          href={item.href} 
-          className="flex items-center gap-3 flex-1 overflow-hidden pointer-events-auto"
-          onClick={(e) => {
-            // If we have sub-items and it's NOT collapsed, we still want to toggle the menu
-            // but the Link will handle the navigation.
-            if (hasSubItems && !collapsed) {
-               setIsOpen(true);
-            }
-          }}
-        >
+        <div className="flex items-center gap-3 flex-1 overflow-hidden pointer-events-auto">
           <item.icon className={cn("w-5 h-5 shrink-0 transition-colors", isParentActive ? "text-indigo-400" : item.color)} />
           <AnimatePresence>
             {!collapsed && (
@@ -160,24 +165,23 @@ function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean,
               </motion.span>
             )}
           </AnimatePresence>
-        </Link>
+        </div>
 
         {!collapsed && hasSubItems && (
-          <button 
+          <div 
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
               setIsOpen(!isOpen);
             }}
-            className="p-1 hover:bg-white/10 rounded-md transition-colors"
+            className="p-1 hover:bg-white/10 rounded-md transition-colors cursor-pointer"
           >
             <ChevronDown
               className={cn(
                 "w-4 h-4 transition-transform duration-200 text-slate-500",
-                isOpen ? "rotate-180 text-indigo-400" : ""
+                isOpen && "rotate-180"
               )}
             />
-          </button>
+          </div>
         )}
         
         {!collapsed && isParentActive && !hasSubItems && (
@@ -191,6 +195,7 @@ function NavItem({ item, collapsed, pathname }: { item: any, collapsed: boolean,
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="overflow-hidden"
           >
             <div className="pt-1 pb-2 pl-10 pr-3 flex flex-col gap-1 flex-1 relative">
