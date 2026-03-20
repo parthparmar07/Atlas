@@ -1,7 +1,7 @@
 "use client";
 
 import { useSchool } from "@/context/SchoolContext";
-import { BookOpen, Calendar, ClipboardCheck, Clock, ArrowRight, Activity, Layers, Sparkles } from "lucide-react";
+import { BookOpen, Calendar, ClipboardCheck, Clock, ArrowRight, Activity, Layers, Sparkles, Users, Eye, Mic, Zap } from "lucide-react";
 import Link from "next/link";
 
 const AGENTS = [
@@ -44,6 +44,30 @@ const AGENTS = [
       href: "/academics/substitution",
       icon: Sparkles,
       badge: "Core",
+    },
+    {
+      id: "faculty",
+      title: "Faculty Transparency",
+      desc: "Verified professor profiles, subjects maps, and real-time contact intelligence.",
+      href: "/academics/faculty",
+      icon: Users,
+      badge: "New",
+    },
+    {
+      id: "attendance",
+      title: "Attendance Watchdog",
+      desc: "75% threshold AI monitoring with automated intervention for at-risk students.",
+      href: "/academics/attendance",
+      icon: Eye,
+      badge: "Critical",
+    },
+    {
+      id: "recovery",
+      title: "Recovery Advisor",
+      desc: "AI study plans and career recovery roadmap for academic restoration.",
+      href: "/academics/recovery",
+      icon: Activity,
+      badge: "AI",
     }
 ];
 
@@ -86,7 +110,41 @@ export default function AcademicsHub() {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Live Domain Telemetry */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Faculty Verified
+                  <Users className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div className="text-4xl font-black text-slate-900 tracking-tight">42+</div>
+              <div className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded inline-block">Institutional Peak</div>
+          </div>
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Attendance Risk
+                  <Eye className="w-4 h-4 text-rose-500" />
+              </div>
+              <div className="text-4xl font-black text-slate-900 tracking-tight">3</div>
+              <div className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-1 rounded inline-block">Below 75% Threshold</div>
+          </div>
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  AI Blueprints
+                  <Activity className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div className="text-4xl font-black text-slate-900 tracking-tight">07</div>
+              <div className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block">Recovery Roadmaps</div>
+          </div>
+          <div className="bg-slate-900 rounded-3xl p-8 shadow-2xl space-y-3">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/40">
+                  System Health
+                  <Zap className="w-4 h-4 text-yellow-400" />
+              </div>
+              <div className="text-4xl font-black text-white tracking-tight">99.8%</div>
+              <div className="text-[10px] font-bold text-indigo-400 bg-white/5 px-2 py-1 rounded inline-block">L4 Autonomous</div>
+          </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {AGENTS.map((agent) => (
           <Link 

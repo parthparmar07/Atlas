@@ -58,7 +58,10 @@ const DOMAIN_GROUP = { group: "Platform Domains", items: [
       { title: "Exams", href: "/academics/exams" },
       { title: "Timetable", href: "/academics/timetable" },
       { title: "Curriculum", href: "/academics/curriculum" },
-      { title: "Substitution", href: "/academics/substitution" }
+      { title: "Substitution", href: "/academics/substitution" },
+      { title: "Faculty Transparency", href: "/academics/faculty" },
+      { title: "Attendance Watchdog", href: "/academics/attendance" },
+      { title: "Recovery Advisor", href: "/academics/recovery" }
     ]
   },
   { 

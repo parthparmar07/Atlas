@@ -22,6 +22,8 @@ export default function AuditLogsPage() {
   const [search, setSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [narrative, setNarrative] = useState<any>(null);
+  const [loadingNarrative, setLoadingNarrative] = useState(false);
 
   const loadLogs = async () => {
     setLoading(true);
@@ -29,6 +31,9 @@ export default function AuditLogsPage() {
     try {
       const data = await api<AuditLog[]>("/api/admin/audit?limit=300");
       setLogs(data ?? []);
+      
+      const nar = await api<any>("/api/academics/audit-narrative");
+      setNarrative(nar);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load audit logs.");
     } finally {
@@ -92,6 +97,60 @@ export default function AuditLogsPage() {
       </div>
 
       {error ? <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div> : null}
+
+      {narrative && (
+        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity">
+            <ShieldAlert className="w-24 h-24 text-white" />
+          </div>
+          <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase text-indigo-200 tracking-[0.2em] border border-white/5">
+                  AI Synthesis Engine
+                </span>
+                <span className="text-white/40 text-xs font-bold font-mono">
+                  Analysis of last 50 events
+                </span>
+              </div>
+              <h2 className="text-2xl font-black text-white leading-tight">
+                {narrative.narrative}
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {narrative.categories?.map((c: string) => (
+                  <span key={c} className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            <div className="w-full md:w-64 bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 flex flex-col items-center justify-center">
+              <div className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Risk Sentiment</div>
+              <div className="relative">
+                <svg className="w-24 h-24 transform -rotate-90">
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * narrative.risk_score) / 100} className={`${narrative.risk_score > 50 ? "text-rose-500" : "text-emerald-500"} transition-all duration-1000`} />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-black text-white leading-none">{narrative.risk_score}</span>
+                  <span className="text-[8px] font-bold text-white/40 uppercase mt-1">Score</span>
+                </div>
+              </div>
+              {narrative.anomalies?.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-white/5 w-full">
+                  <div className="text-[8px] font-black text-rose-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                    <ShieldAlert className="w-3 h-3" /> Anomalies Detect
+                  </div>
+                  <div className="text-[10px] text-white/80 font-medium leading-tight italic">
+                    {narrative.anomalies[0]}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden flex flex-col">
         <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex gap-4 flex-wrap">
