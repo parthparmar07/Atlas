@@ -11,20 +11,35 @@ export default function ProjectTrackerWorkflow({ onExecute, isExecuting }: Proje
   const [semester, setSemester] = useState("Even Sem 2025-26");
   const [department, setDepartment] = useState("Computer Science");
   const [milestone, setMilestone] = useState("Chapter-2 (Literature Review)");
+  const [attendanceCutoff, setAttendanceCutoff] = useState("75");
   const [projectSnapshot, setProjectSnapshot] = useState(
-    "Team A | Guide: Dr. Nair | Status: On Track | Last Update: 2d\n" +
-      "Team B | Guide: Dr. Mehta | Status: Delayed | Last Update: 16d\n" +
-      "Team C | Guide: Dr. Rao | Status: At Risk | Last Update: 11d"
+    "Team A | guide=Dr. Nair | status=On Track | progress=78 | last_update_days=2\n" +
+      "Team B | guide=Dr. Mehta | status=Delayed | progress=44 | last_update_days=16\n" +
+      "Team C | guide=Dr. Rao | status=At Risk | progress=52 | last_update_days=11"
   );
 
-  const run = (action: string) => {
+  const run = (action: string, requiredOutput: string) => {
     const context = [
       `Semester: ${semester}`,
       `Department: ${department}`,
       `Milestone Focus: ${milestone}`,
+      `Attendance Cutoff: ${attendanceCutoff}`,
+      "Projects[]:",
       "Project Snapshot:",
       projectSnapshot,
-      "Required Outputs: risk summary, escalation recommendations, and exam-cell ready notes.",
+      "Student Signals:",
+      "Rahul Verma | attendance=62 | project_status=Delayed | grievance=Open | internship=Not Allocated",
+      "Nisha Rao | attendance=84 | project_status=On Track | grievance=None | internship=Allocated",
+      "Grievances[]:",
+      "GR-102 | category=Academic | severity=high | sla=48h | owner=HOD",
+      "GR-119 | category=Infrastructure | severity=medium | sla=5d | owner=Admin",
+      "Internships[]:",
+      "STU-903 | company=Acme AI | status=In Progress | risk=Low",
+      "STU-997 | company=DataWave | status=Offer Pending | risk=Medium",
+      "Attendance[]:",
+      "STU-903 | attendance=62 | absences=7 | last_login=5d",
+      "STU-997 | attendance=84 | absences=1 | last_login=1d",
+      `Required Outputs: ${requiredOutput}`,
     ].join("\n");
 
     onExecute(action, context);
@@ -44,17 +59,23 @@ export default function ProjectTrackerWorkflow({ onExecute, isExecuting }: Proje
           <Input label="Milestone" value={milestone} setValue={setMilestone} />
         </div>
 
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <Input label="Attendance Cutoff (%)" value={attendanceCutoff} setValue={setAttendanceCutoff} />
+        </div>
+
         <div>
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Project Snapshot</label>
           <textarea value={projectSnapshot} onChange={(e) => setProjectSnapshot(e.target.value)} className="w-full min-h-[120px] bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm" />
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <ActionCard icon={<ClipboardList className="w-6 h-6 text-amber-600 mb-3" />} title="Track Projects" desc="Generate branch-wise lifecycle status summary." onClick={() => run("Track Projects")} disabled={isExecuting} />
-        <ActionCard icon={<AlertTriangle className="w-6 h-6 text-amber-600 mb-3" />} title="Flag Delays" desc="Identify milestone misses and escalation priority." onClick={() => run("Flag Delays")} disabled={isExecuting} />
-        <ActionCard icon={<FileSearch className="w-6 h-6 text-amber-600 mb-3" />} title="Synopsis Review" desc="Evaluate synopsis quality and feasibility signals." onClick={() => run("Synopsis Review")} disabled={isExecuting} />
-        <ActionCard icon={<FileText className="w-6 h-6 text-amber-600 mb-3" />} title="Generate Report" desc="Produce exam-cell semester project report." onClick={() => run("Generate Report")} disabled={isExecuting} />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <ActionCard icon={<ClipboardList className="w-6 h-6 text-amber-600 mb-3" />} title="Track Projects" desc="Generate branch-wise lifecycle status summary." onClick={() => run("Track Projects", "project health map, missed milestones, and owner recommendations") } disabled={isExecuting} />
+        <ActionCard icon={<AlertTriangle className="w-6 h-6 text-amber-600 mb-3" />} title="Flag Delays" desc="Identify milestone misses and escalation priority." onClick={() => run("Flag Delays", "delay queue, escalation reasons, and follow-up deadlines") } disabled={isExecuting} />
+        <ActionCard icon={<FileSearch className="w-6 h-6 text-amber-600 mb-3" />} title="Monitor Dropout Risk" desc="Cross-check project delays with student retention signals." onClick={() => run("Monitor Dropout Risk", "risk tiers, trigger evidence, and counselor routing") } disabled={isExecuting} />
+        <ActionCard icon={<FileText className="w-6 h-6 text-amber-600 mb-3" />} title="Manage Grievances" desc="Map active grievance load affecting project continuity." onClick={() => run("Manage Grievances", "category routing, sla watchlist, and escalation owners") } disabled={isExecuting} />
+        <ActionCard icon={<FileText className="w-6 h-6 text-amber-600 mb-3" />} title="Manage Internships" desc="Check internship overlap impact on team delivery." onClick={() => run("Manage Internships", "internship conflict matrix and mitigation suggestions") } disabled={isExecuting} />
+        <ActionCard icon={<FileText className="w-6 h-6 text-amber-600 mb-3" />} title="Generate Attendance Alerts" desc="Build attendance-linked intervention queue." onClick={() => run("Generate Attendance Alerts", "attendance alerts with severity and next best action") } disabled={isExecuting} />
       </div>
     </div>
   );

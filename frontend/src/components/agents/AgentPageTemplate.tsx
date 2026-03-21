@@ -24,6 +24,7 @@ import InterviewPrepWorkflow from "@/components/workflows/InterviewPrepWorkflow"
 import ResumeWorkflow from "@/components/workflows/ResumeWorkflow";
 import AlumniWorkflow from "@/components/workflows/AlumniWorkflow";
 import CurriculumWorkflow from "@/components/workflows/CurriculumWorkflow";
+import CourseBuilderWorkflow from "@/components/workflows/CourseBuilderWorkflow";
 import SubstitutionWorkflow from "@/components/workflows/SubstitutionWorkflow";
 import CalendarWorkflow from "@/components/workflows/CalendarWorkflow";
 import FeeCollectionWorkflow from "@/components/workflows/FeeCollectionWorkflow";
@@ -31,6 +32,8 @@ import BudgetWorkflow from "@/components/workflows/BudgetWorkflow";
 import AccreditationWorkflow from "@/components/workflows/AccreditationWorkflow";
 import ProcurementWorkflow from "@/components/workflows/ProcurementWorkflow";
 import InternshipWorkflow from "@/components/workflows/InternshipWorkflow";
+import EventsWorkflow from "@/components/workflows/EventsWorkflow";
+import WellbeingWorkflow from "@/components/workflows/WellbeingWorkflow";
 import ScholarshipWorkflow from "@/components/workflows/ScholarshipWorkflow";
 import ITSupportWorkflow from "@/components/workflows/ITSupportWorkflow";
 import ExamSchedulerWorkflow from "@/components/workflows/ExamSchedulerWorkflow";
@@ -100,6 +103,21 @@ const WORKFLOW_REGISTRY: Record<string, React.ComponentType<WorkflowProps>> = {
   ),
   "students-grievance": ({ config, onExecute, isExecuting }) => (
     <GrievanceWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-projects": ({ config, onExecute, isExecuting }) => (
+    <ProjectTrackerWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-internships": ({ config, onExecute, isExecuting }) => (
+    <InternshipWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-course-builder": ({ config, onExecute, isExecuting }) => (
+    <CourseBuilderWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-events": ({ config, onExecute, isExecuting }) => (
+    <EventsWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "students-wellbeing": ({ config, onExecute, isExecuting }) => (
+    <WellbeingWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
   ),
   "students-mentorship": ({ config, onExecute, isExecuting }) => (
     <CurriculumWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />

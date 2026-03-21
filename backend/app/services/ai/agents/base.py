@@ -192,11 +192,6 @@ class AgentBase(AgenticPipeline):
         free_text: List[str] = []
 
         for line in lines:
-            if ":" in line:
-                k, v = line.split(":", 1)
-                fields[self._normalize_key(k)] = v.strip()
-                continue
-
             if "|" in line:
                 row: Dict[str, Any] = {}
                 segments = [seg.strip() for seg in line.split("|") if seg.strip()]
@@ -204,10 +199,18 @@ class AgentBase(AgenticPipeline):
                     if "=" in seg:
                         rk, rv = seg.split("=", 1)
                         row[self._normalize_key(rk)] = rv.strip()
+                    elif ":" in seg:
+                        rk, rv = seg.split(":", 1)
+                        row[self._normalize_key(rk)] = rv.strip()
                     else:
                         row[f"field_{idx}"] = seg
                 if row:
                     records.append(row)
+                    continue
+
+            if ":" in line:
+                k, v = line.split(":", 1)
+                fields[self._normalize_key(k)] = v.strip()
                 continue
 
             free_text.append(line)
@@ -244,6 +247,24 @@ class AgentBase(AgenticPipeline):
         except Exception:
             return 0.0
 
+    def _split_values(self, text: str) -> List[str]:
+        if not text:
+            return []
+        return [token.strip() for token in re.split(r"[,;]", text) if token.strip()]
+
+    def _risk_tier(self, score: float) -> str:
+        if score >= 75:
+            return "Critical"
+        if score >= 50:
+            return "High"
+        if score >= 25:
+            return "Medium"
+        return "Low"
+
+    def _split_csv(self, value: str) -> List[str]:
+        text = str(value or "")
+        return [part.strip() for part in text.split(",") if part.strip()]
+
     def _rank_candidate_rows(self, rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         ranked: List[Dict[str, Any]] = []
         for row in rows:
@@ -276,6 +297,583 @@ class AgentBase(AgenticPipeline):
     ) -> Dict[str, Any]:
         action_l = action.lower()
         handler = str((contract or {}).get("handler") or "generic_handler")
+
+        if handler == "students_projects":
+            project_health = []
+            for idx, row in enumerate(rows[:20], start=1):
+                team = str(row.get("field_1") or row.get("project") or row.get("team") or f"Team {idx}")
+                guide = str(row.get("guide") or row.get("mentor") or "Not assigned")
+                progress = self._to_number(row.get("progress") or row.get("completion") or row.get("progress_percent"))
+                last_update_days = self._to_number(row.get("last_update_days") or row.get("last_update") or row.get("days_since_update"))
+                status_text = str(row.get("status") or "unknown").lower()
+                delayed = (
+                    "delay" in status_text
+                    or "risk" in status_text
+                    or last_update_days >= 10
+                    or (progress > 0 and progress < 50)
+                )
+                project_health.append(
+                    {
+                        "team": team,
+                        "guide": guide,
+                        "progress_percent": progress,
+                        "last_update_days": last_update_days,
+                        "status": "Delayed" if delayed else "On Track",
+                    }
+                )
+
+            if "flag delays" in action_l:
+                delayed_queue = [
+                    {
+                        "team": p["team"],
+                        "guide": p["guide"],
+                        "reason": "Milestone lag and stale updates",
+                        "severity": "High" if float(p.get("last_update_days", 0.0)) >= 14 else "Medium",
+                    }
+                    for p in project_health
+                    if p.get("status") == "Delayed"
+                ]
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "delayed_projects": delayed_queue,
+                    "summary": {
+                        "total_projects": len(project_health),
+                        "delayed_count": len(delayed_queue),
+                    },
+                    "next_actions": [
+                        "Assign mentor interventions for high-severity delays",
+                        "Create weekly checkpoint for delayed teams",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "project_health": project_health,
+                "summary": {
+                    "total_projects": len(project_health),
+                    "on_track": len([p for p in project_health if p.get("status") == "On Track"]),
+                    "delayed": len([p for p in project_health if p.get("status") == "Delayed"]),
+                },
+                "next_actions": [
+                    "Review delayed teams with department coordinator",
+                    "Publish milestone-wise action tracker",
+                ],
+            }
+
+        if handler == "students_dropout":
+            predictions = []
+            source_rows = rows[:30]
+            if not source_rows and fields:
+                source_rows = [fields]
+
+            for idx, row in enumerate(source_rows, start=1):
+                student = str(row.get("field_1") or row.get("student") or row.get("name") or f"Student {idx}")
+                attendance = self._to_number(row.get("attendance") or row.get("attendance_pct") or 75)
+                assignment_latency = self._to_number(row.get("assignment_latency") or row.get("pending_assignments") or 3)
+                fee_delay_days = self._to_number(row.get("fee_delay") or row.get("fee_delay_days") or 0)
+                lms_activity = self._to_number(row.get("lms_activity") or row.get("engagement") or row.get("last_login") or 70)
+                score = safe_round(
+                    max(
+                        0.0,
+                        min(
+                            100.0,
+                            ((100.0 - attendance) * 0.45)
+                            + (assignment_latency * 2.2)
+                            + (fee_delay_days * 1.6)
+                            + ((100.0 - lms_activity) * 0.25),
+                        ),
+                    ),
+                    2,
+                )
+                predictions.append(
+                    {
+                        "student": student,
+                        "risk_score": score,
+                        "tier": self._risk_tier(score),
+                        "drivers": {
+                            "attendance": attendance,
+                            "assignment_latency": assignment_latency,
+                            "fee_delay_days": fee_delay_days,
+                            "lms_activity": lms_activity,
+                        },
+                    }
+                )
+
+            predictions.sort(key=lambda x: float(x.get("risk_score", 0.0)), reverse=True)
+            critical = [p for p in predictions if p.get("tier") in {"Critical", "High"}]
+
+            if "early warning" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "early_warning_queue": critical,
+                    "count": len(critical),
+                    "next_actions": [
+                        "Assign counselor follow-up within 24 hours",
+                        "Trigger mentor outreach for critical cohort",
+                    ],
+                }
+
+            if "intervention plan" in action_l:
+                plan = []
+                for item in critical[:10]:
+                    plan.append(
+                        {
+                            "student": item.get("student"),
+                            "tier": item.get("tier"),
+                            "plan": "Counselor call, attendance contract, and weekly progress tracking",
+                        }
+                    )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "intervention_plan": plan,
+                    "next_actions": [
+                        "Share plan with student success office",
+                        "Review improvement after 7 days",
+                    ],
+                }
+
+            if "trend analysis" in action_l:
+                avg_score = safe_round(
+                    (sum(float(p.get("risk_score", 0.0)) for p in predictions) / max(1, len(predictions))),
+                    2,
+                )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "trend_summary": {
+                        "cohort_size": len(predictions),
+                        "average_risk_score": avg_score,
+                        "high_risk_count": len(critical),
+                    },
+                    "top_risk_students": predictions[:8],
+                    "next_actions": [
+                        "Compare with previous cycle baseline",
+                        "Target interventions for highest-risk segments",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "risk_predictions": predictions[:15],
+                "distribution": {
+                    "critical": len([p for p in predictions if p.get("tier") == "Critical"]),
+                    "high": len([p for p in predictions if p.get("tier") == "High"]),
+                    "medium": len([p for p in predictions if p.get("tier") == "Medium"]),
+                    "low": len([p for p in predictions if p.get("tier") == "Low"]),
+                },
+                "next_actions": [
+                    "Send risk summary to counselors",
+                    "Create retention action board",
+                ],
+            }
+
+        if handler == "students_grievance":
+            grievances = []
+            for idx, row in enumerate(rows[:40], start=1):
+                gid = str(row.get("field_1") or row.get("id") or f"GR-{100 + idx}")
+                category = str(row.get("category") or "Academic")
+                severity = str(row.get("severity") or "medium").lower()
+                owner = str(row.get("owner") or "Student Affairs")
+                sla = str(row.get("sla") or row.get("sla_target") or "5d")
+                status = str(row.get("status") or "open")
+                grievances.append(
+                    {
+                        "id": gid,
+                        "category": category,
+                        "severity": severity,
+                        "owner": owner,
+                        "sla": sla,
+                        "status": status,
+                    }
+                )
+
+            if "anonymise" in action_l:
+                category_count: Dict[str, int] = {}
+                for g in grievances:
+                    category_count[g["category"]] = category_count.get(g["category"], 0) + 1
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "anonymized_summary": {
+                        "total_cases": len(grievances),
+                        "category_distribution": category_count,
+                        "high_severity_cases": len([g for g in grievances if g.get("severity") in {"high", "critical"}]),
+                    },
+                    "next_actions": [
+                        "Share anonymized trends with quality council",
+                        "Track repeat categories for systemic fixes",
+                    ],
+                }
+
+            if "escalation report" in action_l:
+                escalations = [
+                    {
+                        "id": g.get("id"),
+                        "owner": g.get("owner"),
+                        "reason": "High severity or SLA pressure",
+                    }
+                    for g in grievances
+                    if g.get("severity") in {"high", "critical"} or "24" in str(g.get("sla", ""))
+                ]
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "escalation_queue": escalations,
+                    "count": len(escalations),
+                    "next_actions": [
+                        "Notify escalation owners",
+                        "Review unresolved escalations daily",
+                    ],
+                }
+
+            if "sla dashboard" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "sla_dashboard": {
+                        "total_cases": len(grievances),
+                        "open_cases": len([g for g in grievances if str(g.get("status", "")).lower() != "resolved"]),
+                        "critical_cases": len([g for g in grievances if g.get("severity") == "critical"]),
+                    },
+                    "cases": grievances[:12],
+                    "next_actions": [
+                        "Resolve oldest open cases first",
+                        "Escalate unresolved critical cases",
+                    ],
+                }
+
+            routed = []
+            owner_map = {
+                "academic": "HOD",
+                "administrative": "Registrar",
+                "faculty conduct": "Principal",
+                "ragging": "Anti-Ragging Committee",
+                "posh": "ICC",
+                "infrastructure": "Admin Office",
+            }
+            for g in grievances:
+                key = str(g.get("category", "")).strip().lower()
+                routed.append(
+                    {
+                        "id": g.get("id"),
+                        "category": g.get("category"),
+                        "routed_to": owner_map.get(key, g.get("owner")),
+                        "severity": g.get("severity"),
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "routed_grievances": routed,
+                "next_actions": [
+                    "Issue acknowledgements to complainants",
+                    "Track SLA adherence by owner",
+                ],
+            }
+
+        if handler == "students_internships":
+            internships = []
+            for idx, row in enumerate(rows[:30], start=1):
+                student = str(row.get("field_1") or row.get("student") or f"STU-{900 + idx}")
+                company = str(row.get("company") or row.get("partner") or "Partner TBD")
+                status = str(row.get("status") or "pipeline")
+                risk = str(row.get("risk") or "low")
+                fit = self._to_number(row.get("fit") or row.get("fit_score") or row.get("score") or 72)
+                internships.append(
+                    {
+                        "student": student,
+                        "company": company,
+                        "status": status,
+                        "risk": risk,
+                        "fit_score": fit,
+                    }
+                )
+
+            internships.sort(key=lambda x: float(x.get("fit_score", 0.0)), reverse=True)
+
+            if "add partner" in action_l:
+                partner_raw = fields.get("partner_details", fields.get("partner", "New Partner"))
+                domains = self._split_values(fields.get("target_domains", "AI/ML, Analytics"))
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "partner_profile": {
+                        "name": partner_raw,
+                        "domains": domains,
+                        "onboarding_status": "Draft Ready",
+                    },
+                    "next_actions": [
+                        "Initiate MOU review",
+                        "Assign partner relationship manager",
+                    ],
+                }
+
+            if "monthly reports" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "monthly_report": {
+                        "total_internships": len(internships),
+                        "completed": len([i for i in internships if "complete" in str(i.get("status", "")).lower()]),
+                        "at_risk": len([i for i in internships if str(i.get("risk", "")).lower() in {"high", "medium"}]),
+                    },
+                    "sample_records": internships[:10],
+                    "next_actions": [
+                        "Review at-risk internship cases",
+                        "Share monthly insights with placement office",
+                    ],
+                }
+
+            if "template library" in action_l:
+                template_type = fields.get("template_type", "general")
+                templates = [
+                    {"name": "Offer Acceptance Template", "type": "onboarding"},
+                    {"name": "Weekly Internship Log", "type": "progress"},
+                    {"name": "Mentor Feedback Form", "type": "evaluation"},
+                ]
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "template_type_requested": template_type,
+                    "templates": templates,
+                    "next_actions": [
+                        "Select required template bundle",
+                        "Distribute templates to active cohort",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "fit_matches": internships[:12],
+                "next_actions": [
+                    "Confirm top-fit student-company interviews",
+                    "Monitor risk flags weekly",
+                ],
+            }
+
+        if handler == "students_events":
+            event_name = fields.get("event", fields.get("event_name", "Campus Event"))
+            event_date = fields.get("date", fields.get("event_date", "TBD"))
+            venue = fields.get("venue", "TBD")
+            budget = self._to_number(fields.get("budget") or fields.get("event_budget") or 0)
+
+            if "plan event" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "event_plan": {
+                        "event": event_name,
+                        "date": event_date,
+                        "venue": venue,
+                        "budget": budget,
+                        "milestones": ["Venue lock", "Promotion kickoff", "Final logistics rehearsal"],
+                    },
+                    "next_actions": [
+                        "Assign owners for each milestone",
+                        "Confirm venue and vendor availability",
+                    ],
+                }
+
+            if "promote event" in action_l:
+                segments = self._split_values(fields.get("audience_segments", "Students, Alumni"))
+                channels = self._split_values(fields.get("channels", "Email, Social"))
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "promotion_strategy": {
+                        "segments": segments,
+                        "channels": channels,
+                        "estimated_reach": max(500, int(350 * max(1, len(segments)) * max(1, len(channels)))),
+                    },
+                    "next_actions": [
+                        "Publish campaign schedule",
+                        "Track conversion by channel",
+                    ],
+                }
+
+            if "risk" in action_l or "logistics" in action_l:
+                checklist = self._split_values(fields.get("event_checklist", "Permissions, Security, Medical"))
+                risks = [{"item": c, "risk": "Open", "mitigation": "Assign owner and confirm completion"} for c in checklist[:8]]
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "risk_logistics_report": {
+                        "event": event_name,
+                        "venue": venue,
+                        "open_risks": len(risks),
+                        "items": risks,
+                    },
+                    "next_actions": [
+                        "Close high-priority risk items",
+                        "Run final logistics readiness check",
+                    ],
+                }
+
+            attendance_values = [self._to_number(v) for v in self._split_values(fields.get("attendance", ""))]
+            avg_attendance = safe_round(sum(attendance_values) / max(1, len(attendance_values)), 2) if attendance_values else 0.0
+            budget_actual = self._to_number(fields.get("budget_actual") or budget)
+            return {
+                "action": action,
+                "handler": handler,
+                "event_report": {
+                    "event": event_name,
+                    "average_attendance": avg_attendance,
+                    "budget": budget,
+                    "actual_spend": budget_actual,
+                    "variance": safe_round(budget - budget_actual, 2),
+                },
+                "next_actions": [
+                    "Share final report with student council",
+                    "Capture lessons for next event cycle",
+                ],
+            }
+
+        if handler == "wellbeing_support":
+            issue = fields.get("student_issue", fields.get("issue", "General wellbeing request"))
+            priority = fields.get("priority", "medium")
+
+            if "connect with a counselor" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "counselor_route": {
+                        "issue": issue,
+                        "priority": priority,
+                        "assigned_queue": "Wellbeing Counseling Desk",
+                        "sla": "24h" if str(priority).lower() in {"high", "critical"} else "72h",
+                    },
+                    "next_actions": [
+                        "Notify assigned counselor",
+                        "Schedule first follow-up touchpoint",
+                    ],
+                }
+
+            if "support group" in action_l:
+                groups = [
+                    {"name": "Peer Support Circle", "fit": "High"},
+                    {"name": "Exam Stress Group", "fit": "Medium"},
+                    {"name": "Mentor Connect", "fit": "High"},
+                ]
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "recommended_groups": groups,
+                    "next_actions": [
+                        "Share group schedule with student",
+                        "Track participation for 2 weeks",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "self_help_pack": [
+                    "Guided breathing and reset routine",
+                    "Weekly stress reflection worksheet",
+                    "Sleep and study structure template",
+                ],
+                "next_actions": [
+                    "Check adherence after 7 days",
+                    "Escalate to counselor if no improvement",
+                ],
+            }
+
+        if handler == "students_attendance":
+            alerts = []
+            for idx, row in enumerate(rows[:25], start=1):
+                student = str(row.get("field_1") or row.get("student") or f"STU-{idx}")
+                attendance = self._to_number(row.get("attendance") or row.get("attendance_pct") or 75)
+                absences = self._to_number(row.get("absences") or row.get("absent_days") or 0)
+                severity = "High" if attendance < 65 else "Medium" if attendance < 75 else "Low"
+                alerts.append(
+                    {
+                        "student": student,
+                        "attendance": attendance,
+                        "absences": absences,
+                        "severity": severity,
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "attendance_alerts": alerts,
+                "next_actions": [
+                    "Notify mentor for high-severity cases",
+                    "Initiate attendance recovery plan",
+                ],
+            }
+
+        if handler == "academics_curriculum" and (
+            "design course outline" in action_l
+            or "find learning resources" in action_l
+            or "create assessment" in action_l
+        ):
+            course = fields.get("course", "Course")
+            topic = fields.get("topic", "Core Topic")
+            outcomes = self._split_values(fields.get("outcomes", ""))
+
+            if "design course outline" in action_l:
+                modules = []
+                for idx, row in enumerate(rows[:8], start=1):
+                    modules.append(
+                        {
+                            "module": row.get("field_1") or f"Module {idx}",
+                            "title": row.get("title") or "Topic Block",
+                            "hours": self._to_number(row.get("hours") or 8),
+                            "assessment": row.get("assessment") or "Quiz",
+                        }
+                    )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "course_outline": {
+                        "course": course,
+                        "outcomes": outcomes,
+                        "modules": modules,
+                    },
+                    "next_actions": [
+                        "Validate outline with programme coordinator",
+                        "Finalize weekly delivery calendar",
+                    ],
+                }
+
+            if "find learning resources" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "resource_recommendations": [
+                        {"topic": topic, "resource": "Foundations Handbook", "level": "Core"},
+                        {"topic": topic, "resource": "Applied Case Repository", "level": "Intermediate"},
+                        {"topic": topic, "resource": "Capstone Implementation Guide", "level": "Advanced"},
+                    ],
+                    "next_actions": [
+                        "Share curated list with faculty",
+                        "Tag resources to weekly sessions",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "assessment_blueprint": {
+                    "course": course,
+                    "components": [
+                        {"type": "Quiz", "weight": 20},
+                        {"type": "Lab", "weight": 35},
+                        {"type": "Project", "weight": 45},
+                    ],
+                },
+                "next_actions": [
+                    "Publish rubric to LMS",
+                    "Align assessment dates with course calendar",
+                ],
+            }
 
         if "screen" in action_l and ("cv" in action_l or "candidate" in action_l or "recruit" in action_l):
             ranked = self._rank_candidate_rows(rows)
@@ -458,7 +1056,41 @@ class AgentBase(AgenticPipeline):
         h_val = hashlib.sha256(raw_hash.encode()).hexdigest()
         generated_output = self._extract_generated_output(state)
         output_preview = {
-            k: v for k, v in generated_output.items() if k in {"action", "handler", "shortlist", "decisions", "appraisal_summary", "load_analysis", "job_posting"}
+            k: v
+            for k, v in generated_output.items()
+            if k
+            in {
+                "action",
+                "handler",
+                "shortlist",
+                "decisions",
+                "appraisal_summary",
+                "load_analysis",
+                "job_posting",
+                "project_health",
+                "delayed_projects",
+                "risk_predictions",
+                "early_warning_queue",
+                "intervention_plan",
+                "routed_grievances",
+                "escalation_queue",
+                "sla_dashboard",
+                "fit_matches",
+                "partner_profile",
+                "monthly_report",
+                "templates",
+                "event_plan",
+                "promotion_strategy",
+                "risk_logistics_report",
+                "event_report",
+                "counselor_route",
+                "recommended_groups",
+                "self_help_pack",
+                "attendance_alerts",
+                "course_outline",
+                "resource_recommendations",
+                "assessment_blueprint",
+            }
         }
         
         artifact: Dict[str, Any] = {
