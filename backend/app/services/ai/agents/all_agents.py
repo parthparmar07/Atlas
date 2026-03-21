@@ -7,6 +7,7 @@ from app.modules.career_advisor.agent import CareerAdvisorAgent
 from app.modules.resume_intelligence.agent import ResumeIntelligenceAgent
 from app.modules.alumni_network.agent import AlumniNetworkAgent
 from app.modules.recruiter_comms.agent import RecruiterCommsAgent
+from app.modules.recruitment_pipeline.agent import RecruitmentPipelineAgent
 from app.modules.interview_prep.agent import InterviewPrepAgent
 from app.modules.timetable_ai.agent import TimetableAIAgent
 from app.modules.substitution.agent import SubstitutionAgent
@@ -66,7 +67,7 @@ ALL_AGENTS: dict[str, AgentBase] = {
     # HR
     "hr-load-balancer": FacultyLoadBalancerAgent(),
     "hr-appraisal": AppraisalAgent(),
-    "hr-recruitment": RecruiterCommsAgent(),
+    "hr-recruitment": RecruitmentPipelineAgent(),
     "hr-bot": HROperationsBotAgent(),
     "hr-leave-manager": LeaveManagerAgent(),
 

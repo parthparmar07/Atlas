@@ -6,7 +6,7 @@ import os
 import json
 import re
 import time
-from typing import Any, Dict, List, Callable, Optional, TypeVar, Union, cast
+from typing import Any, Dict, List, Callable, Optional, cast
 
 # ── Import Fallbacks & Mocks for Linter ─────────────────────────────────────────
 try:
@@ -73,22 +73,76 @@ class AgentBase(AgenticPipeline):
 
     # ── Required Pipeline Methods (Fixes Instantiation Error) ─────────────────
     async def perceive(self, state: AgentState) -> Dict[str, Any]:
-        return {"input_context": state.context, "timestamp": datetime.datetime.now().isoformat()}
+        parsed_context = self._parse_context(state.context)
+        return {
+            "input_context": state.context,
+            "parsed": parsed_context,
+            "timestamp": datetime.datetime.now().isoformat(),
+        }
 
     async def reason(self, state: AgentState) -> str:
-        return f"Analyzing request to '{state.goal}' within the {self.domain} domain."
+        parsed = cast(Dict[str, Any], state.perception_data.get("parsed") or {})
+        fields = cast(Dict[str, str], parsed.get("fields") or {})
+        records = cast(List[Dict[str, Any]], parsed.get("records") or [])
+        free_text = cast(List[str], parsed.get("free_text") or [])
+        return (
+            f"Analyzing '{state.goal}' for {self.domain}. "
+            f"Detected {len(fields)} structured fields, {len(records)} structured rows, "
+            f"and {len(free_text)} free-text lines."
+        )
 
     async def plan(self, state: AgentState) -> List[str]:
-        return [f"Initialize {self.agent_name} pipeline", "Process domain logic", "Verify success criteria"]
+        contract = self._resolve_action_contract(state.goal) or {}
+        required_inputs = cast(List[str], contract.get("required_inputs") or [])
+        return [
+            f"Validate inputs for action '{state.goal}'",
+            "Apply contract-aware domain reasoning",
+            "Generate structured operational output",
+            f"Verify success criteria against {len(required_inputs)} contract requirements",
+        ]
 
     async def execute(self, state: AgentState) -> List[Any]:
         contract = self._resolve_action_contract(state.goal)
-        if contract:
-            return [json.loads(self._contract_driven_output(contract, {}, [], state.goal, "Execution"))]
-        return [{"status": "Completed"}]
+        parsed = cast(Dict[str, Any], state.perception_data.get("parsed") or {})
+        fields = cast(Dict[str, str], parsed.get("fields") or {})
+        rows = cast(List[Dict[str, Any]], parsed.get("records") or [])
+        free_text = cast(List[str], parsed.get("free_text") or [])
+
+        required_inputs = cast(List[str], (contract or {}).get("required_inputs") or [])
+        missing_hints = self._estimate_missing_inputs(fields, required_inputs)
+
+        generated = self._build_action_output(state.goal, fields, rows, free_text, contract)
+        confidence = self._estimate_confidence(fields, rows, required_inputs)
+
+        return [
+            {
+                "status": "input_validated",
+                "goal": state.goal,
+                "agent": self.agent_id,
+                "structured_fields": fields,
+                "record_count": len(rows),
+                "free_text_lines": len(free_text),
+            },
+            {
+                "status": "contract_resolved",
+                "handler": (contract or {}).get("handler", "generic_handler"),
+                "required_inputs": required_inputs,
+                "missing_input_hints": missing_hints,
+            },
+            {
+                "status": "output_generated",
+                "output": generated,
+            },
+            {
+                "status": "completed",
+                "confidence": confidence,
+                "next_actions": generated.get("next_actions", []),
+            },
+        ]
 
     async def reflect(self, state: AgentState) -> str:
-        return f"Successfully processed {state.goal}."
+        steps = cast(List[Any], state.execution_results or [])
+        return f"Successfully processed {state.goal} with {len(steps)} execution steps and structured output."
 
     # ── Internal Logic ──────────────────────────────────────────────────────────
     def _load_long_term_memory(self) -> Dict[str, Any]:
@@ -126,6 +180,248 @@ class AgentBase(AgenticPipeline):
     def _resolve_action_contract(self, goal: str) -> Dict[str, Any] | None:
         return get_action_contract(self.agent_id, goal)
 
+    def _normalize_key(self, raw: str) -> str:
+        key = re.sub(r"[^a-zA-Z0-9_]+", "_", raw.strip().lower())
+        key = re.sub(r"_+", "_", key).strip("_")
+        return key or "field"
+
+    def _parse_context(self, context: str) -> Dict[str, Any]:
+        lines = [line.strip() for line in (context or "").splitlines() if line.strip()]
+        fields: Dict[str, str] = {}
+        records: List[Dict[str, Any]] = []
+        free_text: List[str] = []
+
+        for line in lines:
+            if ":" in line:
+                k, v = line.split(":", 1)
+                fields[self._normalize_key(k)] = v.strip()
+                continue
+
+            if "|" in line:
+                row: Dict[str, Any] = {}
+                segments = [seg.strip() for seg in line.split("|") if seg.strip()]
+                for idx, seg in enumerate(segments, start=1):
+                    if "=" in seg:
+                        rk, rv = seg.split("=", 1)
+                        row[self._normalize_key(rk)] = rv.strip()
+                    else:
+                        row[f"field_{idx}"] = seg
+                if row:
+                    records.append(row)
+                continue
+
+            free_text.append(line)
+
+        return {
+            "fields": fields,
+            "records": records,
+            "free_text": free_text,
+            "line_count": len(lines),
+        }
+
+    def _estimate_missing_inputs(self, fields: Dict[str, str], required_inputs: List[str]) -> List[str]:
+        missing: List[str] = []
+        if not required_inputs:
+            return missing
+
+        lowered_field_keys = {k.lower() for k in fields.keys()}
+        for req in required_inputs:
+            req_key = self._normalize_key(str(req).replace("[]", "").replace("(optional)", ""))
+            req_tokens = [token for token in req_key.split("_") if token]
+            if not req_tokens:
+                continue
+            if not any(token in lowered_field_keys for token in req_tokens):
+                missing.append(req)
+        return missing
+
+    def _to_number(self, value: Any) -> float:
+        text = str(value or "").strip()
+        match = re.search(r"-?\d+(?:\.\d+)?", text)
+        if not match:
+            return 0.0
+        try:
+            return float(match.group(0))
+        except Exception:
+            return 0.0
+
+    def _rank_candidate_rows(self, rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        ranked: List[Dict[str, Any]] = []
+        for row in rows:
+            name = str(row.get("field_1") or row.get("name") or "Candidate")
+            exp = self._to_number(row.get("exp") or row.get("experience") or row.get("experience_years"))
+            publications = self._to_number(row.get("publications") or row.get("research_output"))
+            teaching = str(row.get("teaching") or "").lower()
+            teaching_score = 20.0 if "strong" in teaching else 12.0 if "moderate" in teaching else 8.0
+            score = safe_round((exp * 5.0) + (publications * 2.0) + teaching_score)
+            ranked.append(
+                {
+                    "name": name,
+                    "score": score,
+                    "experience_years": exp,
+                    "publications": publications,
+                    "teaching_signal": teaching or "unknown",
+                    "reason": "Weighted on experience, publications, and teaching strength",
+                }
+            )
+        ranked.sort(key=lambda x: float(x.get("score", 0.0)), reverse=True)
+        return ranked
+
+    def _build_action_output(
+        self,
+        action: str,
+        fields: Dict[str, str],
+        rows: List[Dict[str, Any]],
+        free_text: List[str],
+        contract: Dict[str, Any] | None,
+    ) -> Dict[str, Any]:
+        action_l = action.lower()
+        handler = str((contract or {}).get("handler") or "generic_handler")
+
+        if "screen" in action_l and ("cv" in action_l or "candidate" in action_l or "recruit" in action_l):
+            ranked = self._rank_candidate_rows(rows)
+            shortlist = ranked[:5]
+            return {
+                "action": action,
+                "handler": handler,
+                "input_snapshot": {
+                    "role": fields.get("role", "Not provided"),
+                    "department": fields.get("department", "Not provided"),
+                    "candidate_count": len(rows),
+                },
+                "shortlist": shortlist,
+                "next_actions": [
+                    "Schedule panel interviews for top 3 candidates",
+                    "Collect publication verification for shortlisted profiles",
+                ],
+            }
+
+        if "post job" in action_l:
+            role = fields.get("role", "Faculty Role")
+            dept = fields.get("department", "General")
+            openings = fields.get("openings", "1")
+            return {
+                "action": action,
+                "handler": handler,
+                "job_posting": {
+                    "title": role,
+                    "department": dept,
+                    "openings": openings,
+                    "must_have": fields.get("must_have_criteria", fields.get("must_have", "As per policy")),
+                },
+                "next_actions": ["Publish to portal", "Push posting to referral channels"],
+            }
+
+        if "schedule interview" in action_l:
+            ranked = self._rank_candidate_rows(rows)
+            top = ranked[:3]
+            schedule = []
+            for idx, cand in enumerate(top, start=1):
+                schedule.append(
+                    {
+                        "candidate": cand.get("name"),
+                        "slot": f"Day {idx}, 10:{idx}0 AM",
+                        "panel": "HoD + Subject Expert + HR",
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "interview_schedule": schedule,
+                "next_actions": ["Send call letters", "Attach evaluation rubric to each panel"],
+            }
+
+        if "generate offer" in action_l:
+            return {
+                "action": action,
+                "handler": handler,
+                "offer_pack": {
+                    "candidate": fields.get("candidate_name", fields.get("candidate", "Selected Candidate")),
+                    "role": fields.get("role", "Assistant Professor"),
+                    "department": fields.get("department", "Academic"),
+                    "status": "Draft Ready",
+                },
+                "next_actions": ["Legal review", "Send digital signature request"],
+            }
+
+        if "leave" in action_l:
+            approvals = []
+            for idx, row in enumerate(rows[:5], start=1):
+                name = row.get("field_1") or row.get("name") or f"Employee {idx}"
+                leave_days = self._to_number(row.get("leave_days") or row.get("days") or 1)
+                balance = self._to_number(row.get("leave_balance") or 10)
+                decision = "APPROVE" if balance >= leave_days else "CONDITIONAL"
+                approvals.append(
+                    {
+                        "employee": name,
+                        "leave_days": leave_days,
+                        "balance": balance,
+                        "decision": decision,
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "decisions": approvals or [{"employee": "No rows", "decision": "NEEDS_INPUT"}],
+                "next_actions": ["Notify HoD", "Trigger substitution where required"],
+            }
+
+        if "appraisal" in action_l:
+            faculty_raw = fields.get("faculty_batch") or fields.get("faculty_ids") or "FAC-1001"
+            faculty_ids = [f.strip() for f in faculty_raw.split(",") if f.strip()]
+            summaries = []
+            for idx, fid in enumerate(faculty_ids[:8], start=1):
+                score = safe_round(72 + idx * 3.4)
+                band = "Outstanding" if score >= 90 else "Very Good" if score >= 82 else "Good"
+                summaries.append({"faculty_id": fid, "score": score, "band": band})
+            return {
+                "action": action,
+                "handler": handler,
+                "cycle": fields.get("cycle", "Current Cycle"),
+                "appraisal_summary": summaries,
+                "next_actions": ["Calibration review", "Draft faculty communications"],
+            }
+
+        if "analyse load" in action_l or "recommend changes" in action_l:
+            findings = []
+            for idx, row in enumerate(rows[:8], start=1):
+                name = row.get("field_1") or row.get("name") or f"Faculty {idx}"
+                teaching = self._to_number(row.get("teaching") or row.get("teaching_hours") or 0)
+                load_flag = "overloaded" if teaching > 20 else "underloaded" if teaching < 8 else "balanced"
+                findings.append({"faculty": name, "teaching_hours": teaching, "load_flag": load_flag})
+            return {
+                "action": action,
+                "handler": handler,
+                "load_analysis": findings,
+                "next_actions": ["Publish reallocation suggestions", "Send HoD review packet"],
+            }
+
+        return {
+            "action": action,
+            "handler": handler,
+            "input_snapshot": {
+                "field_count": len(fields),
+                "record_count": len(rows),
+                "free_text_lines": len(free_text),
+            },
+            "extracted_fields": fields,
+            "next_actions": ["Review generated output", "Proceed with operational approval"],
+        }
+
+    def _estimate_confidence(self, fields: Dict[str, str], rows: List[Dict[str, Any]], required_inputs: List[str]) -> float:
+        base = 0.55
+        richness = min(0.3, len(fields) * 0.03 + len(rows) * 0.04)
+        requirement_bonus = min(0.15, len(required_inputs) * 0.01)
+        confidence = base + richness + requirement_bonus
+        return safe_round(max(0.45, min(0.97, confidence)), 2)
+
+    def _extract_generated_output(self, state: AgentState) -> Dict[str, Any]:
+        for step in cast(List[Any], state.execution_results or []):
+            if isinstance(step, dict) and step.get("status") == "output_generated":
+                output = step.get("output")
+                if isinstance(output, dict):
+                    return output
+        return {}
+
     def _contract_driven_output(self, contract: Dict[str, Any], payload: Dict[str, Any], rows: List[Dict[str, Any]], goal: str, step: str) -> str:
         handler = str(contract.get("handler") or "")
         # High-Fidelity Mocking for UI previews (User Requested)
@@ -160,6 +456,10 @@ class AgentBase(AgenticPipeline):
         
         raw_hash = f"{action}{summary_val}{a_id}"
         h_val = hashlib.sha256(raw_hash.encode()).hexdigest()
+        generated_output = self._extract_generated_output(state)
+        output_preview = {
+            k: v for k, v in generated_output.items() if k in {"action", "handler", "shortlist", "decisions", "appraisal_summary", "load_analysis", "job_posting"}
+        }
         
         artifact: Dict[str, Any] = {
             "title": f"{a_name} Report: {action}",
@@ -167,7 +467,9 @@ class AgentBase(AgenticPipeline):
             "agent_id": a_id,
             "hash": str(h_val[0:10]).upper(),
             "digital_signature": "ATLAS-CERTIFIED-AI-OUTPUT",
-            "verification_status": "VERIFIED"
+            "verification_status": "VERIFIED",
+            "goal": action,
+            "output_preview": output_preview,
         }
         if a_id == "students-dropout":
             artifact.update({"type": "STUDENT_RISK_DOSSIER", "risk_score": 75, "intervention_status": "Pending"})
@@ -180,6 +482,7 @@ class AgentBase(AgenticPipeline):
 
     async def run(self, action: str, context: str = "", step_callback: Optional[Callable] = None) -> Dict[str, Any]:
         await self.publish_chatter(f"Executing goal: {action}")
+        start_ts = time.time()
         state = await super().run(goal=action, context=context, step_callback=step_callback)
         st = cast(Any, state)
         artifact = self._compile_artifact(action, state)
@@ -189,12 +492,13 @@ class AgentBase(AgenticPipeline):
         
         log = f"## {self.agent_name} Execution\n\n**Goal:** {action}\n**Reflection:** {refl_str}\n"
         await self.post_run(action, context, log)
+        duration_ms = int((time.time() - start_ts) * 1000)
         
         return {
             "status": "SUCCESS" if str(getattr(st, 'status', '')) == "SUCCESS" else "ERROR",
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "result": artifact,
-            "telemetry": {"duration": 250, "steps": len(plan_list)},
+            "telemetry": {"duration": duration_ms, "steps": len(plan_list)},
             "cascades": self._check_cascades(action, state),
             "execution_details": getattr(st, 'execution_results', [])
         }

@@ -315,36 +315,81 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
   const [opsLoading, setOpsLoading] = useState(true);
   const [opsRecords, setOpsRecords] = useState<any[]>([]);
   const [opsCount, setOpsCount] = useState(0);
+  const [actionHistory, setActionHistory] = useState<any[]>([]);
+  const [commHistory, setCommHistory] = useState<any[]>([]);
   const [provenance, setProvenance] = useState<any>(null);
+  const [contracts, setContracts] = useState<Record<string, { handler?: string; required_inputs?: string[] }>>({});
   const [newTitle, setNewTitle] = useState("");
   const [newSource, setNewSource] = useState("manual");
   const [channel, setChannel] = useState("email");
   const [recipient, setRecipient] = useState("");
   const [message, setMessage] = useState("");
+  const [commSending, setCommSending] = useState(false);
+  const [commStatus, setCommStatus] = useState<string | null>(null);
 
   const loadOpsData = async () => {
     setOpsLoading(true);
     try {
-      const [recordsRes, provRes] = await Promise.all([
+      const [recordsRes, provRes, actionsRes, commsRes, contractsRes] = await Promise.all([
         fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`),
-        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/provenance`)
+        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/provenance`),
+        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/actions`),
+        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/communications`),
+        fetch(`${backendBase}/api/agent-exec/agents/${config.agentId}/contracts`),
       ]);
+
       if (recordsRes.ok) {
         const data = await recordsRes.json();
         const records = Array.isArray(data) ? data : (data?.records || []);
         setOpsRecords(records);
         setOpsCount(records.length);
       }
+
+      if (actionsRes.ok) {
+        const data = await actionsRes.json();
+        setActionHistory(Array.isArray(data?.actions) ? data.actions : []);
+      }
+
+      if (commsRes.ok) {
+        const data = await commsRes.json();
+        setCommHistory(Array.isArray(data?.communications) ? data.communications : []);
+      }
+
       if (provRes.ok) setProvenance(await provRes.json());
-    } catch { } finally { setOpsLoading(false); }
+
+      if (contractsRes.ok) {
+        const data = await contractsRes.json();
+        setContracts(data?.contracts || {});
+      } else {
+        setContracts({});
+      }
+    } catch {
+      setContracts({});
+    } finally { setOpsLoading(false); }
   };
 
-  useEffect(() => { loadOpsData(); }, []);
+  useEffect(() => { loadOpsData(); }, [config.agentId]);
+
+  const persistActionEvent = async (action: string, context: string) => {
+    try {
+      await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, context }),
+      });
+    } catch {
+      // Best-effort persistence for workflow sync timeline.
+    }
+  };
 
   const executeAction = async (action: string, context: string) => {
     setRunningAction(action);
     setError(null);
+    setCommStatus(null);
     setDrawerResult(null);
+
+    let actionStatus = "ERROR";
+    let actionContext = context;
     try {
       const res = await fetch(`${backendBase}/api/agent-exec/run`, {
         method: "POST",
@@ -353,6 +398,7 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
       });
       if (res.ok) {
         const data = await res.json();
+        actionStatus = data?.status || "SUCCESS";
         setDrawerResult({
           action,
           status: data.status,
@@ -377,23 +423,79 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
           }
         }
         setError(errorDetail);
+        actionContext = `${context}\n\nExecution Error: ${errorDetail}`;
       }
-    } catch (e: any) { setError(e.message); } finally { setRunningAction(null); }
+    } catch (e: any) {
+      const fallbackError = e?.message || "Network error during execution.";
+      setError(fallbackError);
+      actionContext = `${context}\n\nExecution Error: ${fallbackError}`;
+    } finally {
+      await persistActionEvent(action, `[${actionStatus}] ${actionContext}`);
+      await loadOpsData();
+      setRunningAction(null);
+    }
+  };
+
+  const addRecord = async () => {
+    if (!newTitle.trim()) {
+      setError("Record title is required.");
+      return;
+    }
+    await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTitle.trim(), source: newSource }),
+    });
+    setNewTitle("");
+    loadOpsData();
   };
 
   const removeRecord = async (id: number) => {
-     await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/${id}`, { method: "DELETE" });
-     loadOpsData();
+    await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/${id}`, { method: "DELETE" });
+    loadOpsData();
+  };
+
+  const retryCommunication = async (id: number) => {
+    setCommStatus(null);
+    await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/communications/${id}/retry`, { method: "POST" });
+    loadOpsData();
   };
 
   const sendCommunication = async () => {
-     // Mock send
-     alert(`Sent ${channel} to ${recipient}`);
+    if (!recipient.trim() || !message.trim()) {
+      setError("Recipient and message are required for communication.");
+      return;
+    }
+
+    setCommSending(true);
+    setCommStatus(null);
+    setError(null);
+    try {
+      const res = await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/communications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel, recipient: recipient.trim(), message: message.trim() }),
+      });
+
+      if (!res.ok) {
+        const errorPayload = await res.text();
+        throw new Error(errorPayload || `Communication failed (${res.status})`);
+      }
+
+      const payload = await res.json();
+      setCommStatus(payload?.message || "Communication submitted.");
+      setMessage("");
+      await loadOpsData();
+    } catch (e: any) {
+      setError(e?.message || "Communication request failed.");
+    } finally {
+      setCommSending(false);
+    }
   };
 
   const renderWorkflow = () => {
     const Workflow = WORKFLOW_REGISTRY[config.agentId] || DefaultWorkflow;
-    return <Workflow config={config} onExecute={executeAction} isExecuting={!!runningAction} />;
+    return <Workflow config={config} contracts={contracts} onExecute={executeAction} isExecuting={!!runningAction} />;
   };
 
   return (
@@ -444,7 +546,12 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
         </div>
         <div className="col-span-12 lg:col-span-4 space-y-6">
            <div className="bg-white/80 border border-slate-200 rounded-3xl p-6 shadow-xl">
-              <h3 className="text-xl font-black mb-4">Live Workbench</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-black">Live Workbench</h3>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  {opsLoading ? "Syncing" : `${opsCount} records`}
+                </span>
+              </div>
               <div className="space-y-3 mb-6">
                  <input value={newTitle} onChange={(e)=>setNewTitle(e.target.value)} placeholder="New operational item" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm" />
                  <div className="grid grid-cols-2 gap-2">
@@ -452,21 +559,98 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
                        <option value="manual">Manual</option>
                        <option value="api">API</option>
                     </select>
-                    <button onClick={async()=> { 
-                       await fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({title: newTitle, source: newSource}) });
-                       setNewTitle(""); loadOpsData();
-                    }} className="bg-slate-900 text-white rounded-xl text-sm font-bold">Add</button>
+                    <button onClick={addRecord} className="bg-slate-900 text-white rounded-xl text-sm font-bold">Add</button>
                  </div>
               </div>
-              <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+                 {opsRecords.length === 0 ? (
+                    <div className="text-xs text-slate-500 border border-dashed border-slate-200 rounded-xl p-4">No records yet. Add one to seed the workflow.</div>
+                 ) : null}
                  {opsRecords.map(r => (
-                    <div key={r.id} className="p-3 bg-white border border-slate-100 rounded-xl flex items-center justify-between">
-                       <div><div className="text-sm font-bold">{r.title}</div><div className="text-[10px] text-slate-400">{r.source}</div></div>
+                    <div key={r.id} className="p-3 bg-white border border-slate-100 rounded-xl flex items-center justify-between gap-2">
+                       <div className="min-w-0">
+                         <div className="text-sm font-bold truncate">{r.title}</div>
+                         <div className="text-[10px] text-slate-400 uppercase tracking-wider">{r.source} • {r.status || "new"}</div>
+                       </div>
                        <button onClick={()=>removeRecord(r.id)}><Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-500" /></button>
                     </div>
                  ))}
               </div>
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600 font-semibold">
+                Dataset: {provenance?.dataset || `${domainSlug}.${moduleSlug}`} • Actions: {provenance?.total_actions ?? actionHistory.length} • Comms: {provenance?.total_communications ?? commHistory.length}
+              </div>
            </div>
+
+           <div className="bg-white/80 border border-slate-200 rounded-3xl p-6 shadow-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-4 h-4 text-slate-500" />
+                <h3 className="text-lg font-black">Action Timeline</h3>
+              </div>
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                {actionHistory.length === 0 ? (
+                  <div className="text-xs text-slate-500 border border-dashed border-slate-200 rounded-xl p-4">No action history yet. Run any action to start automation logs.</div>
+                ) : null}
+                {actionHistory.slice(0, 8).map((item) => (
+                  <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="text-xs font-bold text-slate-800">{item.action}</div>
+                    <div className="text-[10px] text-slate-500 mt-1 line-clamp-2">{item.context || "No context"}</div>
+                    <div className="text-[10px] text-slate-400 mt-1">{item.created_at ? new Date(item.created_at).toLocaleString() : "just now"}</div>
+                  </div>
+                ))}
+              </div>
+           </div>
+
+           <div className="bg-white/80 border border-slate-200 rounded-3xl p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-black">Communications</h3>
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Mail className="w-4 h-4" />
+                  <Phone className="w-4 h-4" />
+                </div>
+              </div>
+
+              {commStatus ? (
+                <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{commStatus}</div>
+              ) : null}
+
+              <div className="space-y-2 mb-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <select value={channel} onChange={(e) => setChannel(e.target.value)} className="col-span-1 px-3 py-2 rounded-xl border border-slate-200 text-sm">
+                    <option value="email">Email</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="sms">SMS</option>
+                    <option value="call">Call</option>
+                  </select>
+                  <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Recipient" className="col-span-2 px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                </div>
+                <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Message to send" className="w-full min-h-[84px] px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                <button onClick={sendCommunication} disabled={commSending} className="w-full bg-slate-900 text-white rounded-xl text-sm font-bold py-2.5 disabled:opacity-60">
+                  {commSending ? "Sending..." : "Send Communication"}
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                {commHistory.length === 0 ? (
+                  <div className="text-xs text-slate-500 border border-dashed border-slate-200 rounded-xl p-4">No communication attempts yet.</div>
+                ) : null}
+                {commHistory.slice(0, 6).map((item) => (
+                  <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs font-bold text-slate-800">{item.channel?.toUpperCase()} • {item.recipient}</div>
+                      <span className={`text-[10px] font-bold uppercase ${item.status === "delivered" ? "text-emerald-600" : item.status === "queued" ? "text-amber-600" : "text-rose-600"}`}>{item.status}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1 line-clamp-2">{item.message}</div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-[10px] text-slate-400">Attempts: {item.attempts || 1}</div>
+                      {item.status !== "delivered" ? (
+                        <button onClick={() => retryCommunication(item.id)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700">Retry</button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+           </div>
+
            <div className="bg-white/80 border border-slate-200 rounded-3xl p-8 shadow-xl">
               <h3 className="text-xl font-black mb-6">Quick Actions</h3>
               <div className="grid gap-3">

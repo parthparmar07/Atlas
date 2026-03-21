@@ -53,9 +53,10 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "Notify Faculty": {"handler": "hr_appraisal", "required_inputs": ["faculty[]"]},
     },
     "hr-recruitment": {
-        "Screen Candidates": {"handler": "hr_recruitment", "required_inputs": ["candidates[]"]},
-        "Generate Interview Questions": {"handler": "placement_interview", "required_inputs": ["candidate_profile", "role"]},
-        "Draft Call Letters": {"handler": "hr_recruitment", "required_inputs": ["shortlisted_candidates[]"]},
+        "Post Job": {"handler": "hr_recruitment", "required_inputs": ["role", "department", "openings", "must_have_criteria"]},
+        "Screen CVs": {"handler": "hr_recruitment", "required_inputs": ["candidates[]", "role", "department"]},
+        "Schedule Interviews": {"handler": "hr_recruitment", "required_inputs": ["shortlisted_candidates[]", "panel[]", "time_slots[]"]},
+        "Generate Offer": {"handler": "hr_recruitment", "required_inputs": ["candidate.name", "candidate.role", "candidate.ctc"]},
     },
     "academics-timetable": {
         "Parse Timetable Constraints": {"handler": "academics_constraints", "required_inputs": ["constraint_text"]},

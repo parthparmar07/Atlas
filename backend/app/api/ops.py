@@ -344,6 +344,23 @@ async def run_action(domain: str, module: str, body: ActionRunRequest):
     return action_event
 
 
+@router.get("/{domain}/{module}/actions")
+async def list_actions(domain: str, module: str):
+    path = _data_file(domain, module)
+    payload = _read_payload(path)
+    actions = payload.get("actions", [])
+
+    actions_sorted = sorted(
+        actions,
+        key=lambda x: x.get("created_at") or "",
+        reverse=True,
+    )
+    return {
+        "actions": actions_sorted,
+        "count": len(actions_sorted),
+    }
+
+
 @router.post("/{domain}/{module}/communications")
 async def send_communication(domain: str, module: str, body: CommunicationRequest):
     path = _data_file(domain, module)
@@ -381,6 +398,27 @@ async def send_communication(domain: str, module: str, body: CommunicationReques
         message = f"{channel.upper()} delivery failed for {body.recipient}"
 
     return {"message": message, "communication": item}
+
+
+@router.get("/{domain}/{module}/communications")
+async def list_communications(domain: str, module: str, status: str | None = None):
+    path = _data_file(domain, module)
+    payload = _read_payload(path)
+    comms = payload.get("communications", [])
+
+    if status:
+        status_value = status.strip().lower()
+        comms = [c for c in comms if str(c.get("status", "")).lower() == status_value]
+
+    comms_sorted = sorted(
+        comms,
+        key=lambda x: x.get("created_at") or "",
+        reverse=True,
+    )
+    return {
+        "communications": comms_sorted,
+        "count": len(comms_sorted),
+    }
 
 
 @router.post("/{domain}/{module}/communications/{communication_id}/retry")
