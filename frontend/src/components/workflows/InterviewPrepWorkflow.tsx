@@ -12,12 +12,23 @@ export default function InterviewPrepWorkflow({ onExecute, isExecuting }: Interv
   const [targetRole, setTargetRole] = useState("Software Engineer");
   const [jdSnippet, setJdSnippet] = useState("Python, DSA, SQL, system design basics, communication");
 
-  const context = [
-    `Student ID: ${student}`,
-    `Target Role: ${targetRole}`,
-    `JD Snippet: ${jdSnippet}`,
-    "Need: role-specific interview prep artifacts with feedback and improvement tips.",
-  ].join("\n");
+  const buildContext = (action: string, requiredOutput: string) => {
+    return [
+      `Student ID: ${student}`,
+      `Target Role: ${targetRole}`,
+      `JD Snippet: ${jdSnippet}`,
+      "Student Profile:",
+      `${student} | target_role=${targetRole} | mock_score=68 | communication=Medium | problem_solving=Strong | system_design=Weak`,
+      "Question Bank[]:",
+      "Q1 | type=DSA | difficulty=Medium | topic=Sliding Window",
+      "Q2 | type=System Design | difficulty=High | topic=URL Shortener",
+      "Answer Samples[]:",
+      "A1 | quality=Moderate | structure=STAR | confidence=72",
+      "A2 | quality=Weak | structure=Unstructured | confidence=54",
+      `Action: ${action}`,
+      `Required Outputs: ${requiredOutput}`,
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -28,9 +39,27 @@ export default function InterviewPrepWorkflow({ onExecute, isExecuting }: Interv
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <ActionCard icon={<ClipboardList className="w-6 h-6 text-emerald-600 mb-3" />} title="Generate Questions" desc="Generate role-specific mock interview set." onClick={() => onExecute("Generate Questions", context)} disabled={isExecuting} />
-        <ActionCard icon={<MessageSquareQuote className="w-6 h-6 text-emerald-600 mb-3" />} title="Review Answers" desc="Score and critique candidate responses." onClick={() => onExecute("Review Answers", context)} disabled={isExecuting} />
-        <ActionCard icon={<Lightbulb className="w-6 h-6 text-emerald-600 mb-3" />} title="Provide Tips" desc="Generate focused improvement guidance." onClick={() => onExecute("Provide Tips", context)} disabled={isExecuting} />
+        <ActionCard
+          icon={<ClipboardList className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Generate Questions"
+          desc="Generate role-specific mock interview set."
+          onClick={() => onExecute("Generate Questions", buildContext("Generate Questions", "question set by round with scoring rubric"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<MessageSquareQuote className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Review Answers"
+          desc="Score and critique candidate responses."
+          onClick={() => onExecute("Review Answers", buildContext("Review Answers", "answer review report with strengths, weaknesses, and score"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<Lightbulb className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Provide Tips"
+          desc="Generate focused improvement guidance."
+          onClick={() => onExecute("Provide Tips", buildContext("Provide Tips", "priority coaching plan with 7-day practice tasks"))}
+          disabled={isExecuting}
+        />
       </div>
     </div>
   );

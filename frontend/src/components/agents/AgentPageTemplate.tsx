@@ -125,8 +125,14 @@ const WORKFLOW_REGISTRY: Record<string, React.ComponentType<WorkflowProps>> = {
   "placement-intelligence": ({ config, onExecute, isExecuting }) => (
     <PlacementIntelligenceWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
   ),
+  "placement-interview-prep": ({ config, onExecute, isExecuting }) => (
+    <InterviewPrepWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
   "placement-training": ({ config, onExecute, isExecuting }) => (
     <InterviewPrepWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "placement-resume": ({ config, onExecute, isExecuting }) => (
+    <ResumeWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
   ),
   "placement-alumni": ({ config, onExecute, isExecuting }) => (
     <AlumniWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
@@ -139,6 +145,9 @@ const WORKFLOW_REGISTRY: Record<string, React.ComponentType<WorkflowProps>> = {
   ),
   "finance-procurement": ({ config, onExecute, isExecuting }) => (
     <ProcurementWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
+  ),
+  "finance-accreditation": ({ config, onExecute, isExecuting }) => (
+    <AccreditationWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />
   ),
   "it-support": ({ config, onExecute, isExecuting }) => (
     <ITSupportWorkflow agentId={config.agentId} onExecute={onExecute} isExecuting={isExecuting} />

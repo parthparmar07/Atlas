@@ -161,6 +161,9 @@ AGENT_ACTION_CONTRACTS: Dict[str, Dict[str, Dict[str, Any]]] = {
     },
     "finance-fees": {
         "Collect Dues": {"handler": "finance_fee", "required_inputs": ["fees[]"]},
+        "Send Reminders": {"handler": "finance_fee", "required_inputs": ["fees[]", "channels[]"]},
+        "Defaulter Report": {"handler": "finance_fee", "required_inputs": ["fees[]"]},
+        "Recovery Plan": {"handler": "finance_fee", "required_inputs": ["fees[]", "policy_rules(optional)"]},
         "NAAC Readiness Check": {"handler": "finance_naac", "required_inputs": ["criteria_data[]"]},
         "Monitor Budgets": {"handler": "finance_budget", "required_inputs": ["budgets[]"]},
         "Track Grants": {"handler": "finance_grants", "required_inputs": ["grants[]"]},

@@ -12,12 +12,23 @@ export default function PlacementIntelligenceWorkflow({ onExecute, isExecuting }
   const [companies, setCompanies] = useState("TCS, Infosys, Wipro, Accenture, Capgemini");
   const [skills, setSkills] = useState("DSA, SQL, Python, OOP, React, Cloud Basics");
 
-  const context = [
-    `Batch: ${batch}`,
-    `Target Companies: ${companies}`,
-    `Current Skill Profile: ${skills}`,
-    "Need: JD analysis, company matching, skill-gap intelligence, resume review, interview prep, and outreach strategy.",
-  ].join("\n");
+  const buildContext = (action: string, requiredOutput: string) => {
+    return [
+      `Batch: ${batch}`,
+      `Target Companies: ${companies}`,
+      `Current Skill Profile: ${skills}`,
+      "JD Library[]:",
+      "JD-101 | role=Software Engineer | company=TCS | must_have=DSA, Java, SQL | bonus=System Design",
+      "JD-117 | role=Data Analyst | company=Accenture | must_have=SQL, Python, BI | bonus=Statistics",
+      "JD-133 | role=Backend Engineer | company=Infosys | must_have=API, OOP, DBMS | bonus=Cloud",
+      "Student Profiles[]:",
+      "Aarav Nair | cgpa=8.4 | skills=Python, SQL, React | mock_score=71 | preferred_role=Software Engineer",
+      "Nisha Patel | cgpa=8.9 | skills=Python, BI, Statistics | mock_score=79 | preferred_role=Data Analyst",
+      "Rahul Menon | cgpa=7.8 | skills=Java, API, DBMS | mock_score=65 | preferred_role=Backend Engineer",
+      `Action: ${action}`,
+      `Required Outputs: ${requiredOutput}`,
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -32,42 +43,72 @@ export default function PlacementIntelligenceWorkflow({ onExecute, isExecuting }
           icon={<FileSearch className="w-6 h-6 text-emerald-600 mb-3" />}
           title="Analyse Job Descriptions"
           desc="Extract skills, qualifications, screen criteria and map to curriculum coverage score."
-          onClick={() => onExecute("Analyse Job Descriptions", context)}
+          onClick={() =>
+            onExecute(
+              "Analyse Job Descriptions",
+              buildContext("Analyse Job Descriptions", "jd analysis matrix, role skill weights, and screening checklist")
+            )
+          }
           disabled={isExecuting}
         />
         <ActionCard
           icon={<Users className="w-6 h-6 text-emerald-600 mb-3" />}
           title="Match Students to Jobs"
           desc="Score each student 0–100 per active opening. Surface top 3 fits with reasoning."
-          onClick={() => onExecute("Match Students to Jobs", context)}
+          onClick={() =>
+            onExecute(
+              "Match Students to Jobs",
+              buildContext("Match Students to Jobs", "ranked job matches with score drivers and confidence")
+            )
+          }
           disabled={isExecuting}
         />
         <ActionCard
           icon={<BarChart2 className="w-6 h-6 text-emerald-600 mb-3" />}
           title="Analyse Batch Skill Gaps"
           desc="Identify top 5 high-demand skills missing from batch. Recommend workshops to close gaps."
-          onClick={() => onExecute("Analyse Batch Skill Gaps", context)}
+          onClick={() =>
+            onExecute(
+              "Analyse Batch Skill Gaps",
+              buildContext("Analyse Batch Skill Gaps", "skill-gap report, impact estimate, and workshop plan")
+            )
+          }
           disabled={isExecuting}
         />
         <ActionCard
           icon={<BookOpen className="w-6 h-6 text-emerald-600 mb-3" />}
           title="Review Resumes"
           desc="Score resumes, rewrite weak bullet points, check ATS keyword compatibility."
-          onClick={() => onExecute("Review Resumes", context)}
+          onClick={() =>
+            onExecute(
+              "Review Resumes",
+              buildContext("Review Resumes", "resume scorecards, keyword gaps, and rewrite recommendations")
+            )
+          }
           disabled={isExecuting}
         />
         <ActionCard
           icon={<Star className="w-6 h-6 text-emerald-600 mb-3" />}
           title="Prepare for Interviews"
           desc="Generate role-specific Q&A packs, STAR answers, and weak-point coaching."
-          onClick={() => onExecute("Prepare for Interviews", context)}
+          onClick={() =>
+            onExecute(
+              "Prepare for Interviews",
+              buildContext("Prepare for Interviews", "question set, answer rubric, and coaching plan")
+            )
+          }
           disabled={isExecuting}
         />
         <ActionCard
           icon={<Building2 className="w-6 h-6 text-emerald-600 mb-3" />}
           title="Manage Company Pipeline"
           desc="Tier companies, generate outreach letters, track season progress and offers."
-          onClick={() => onExecute("Manage Company Pipeline", context)}
+          onClick={() =>
+            onExecute(
+              "Manage Company Pipeline",
+              buildContext("Manage Company Pipeline", "pipeline health board, outreach priorities, and risk flags")
+            )
+          }
           disabled={isExecuting}
         />
       </div>

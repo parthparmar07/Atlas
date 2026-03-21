@@ -12,12 +12,21 @@ export default function AlumniWorkflow({ onExecute, isExecuting }: AlumniWorkflo
   const [studentGroup, setStudentGroup] = useState("Final Year CSE");
   const [campaignTheme, setCampaignTheme] = useState("Referral drive for product + service companies");
 
-  const context = [
-    `Target Domain: ${targetDomain}`,
-    `Student Group: ${studentGroup}`,
-    `Campaign Theme: ${campaignTheme}`,
-    "Need: mentorship mapping, alumni outreach, and referral-channel activation.",
-  ].join("\n");
+  const buildContext = (action: string, requiredOutput: string) => {
+    return [
+      `Target Domain: ${targetDomain}`,
+      `Student Group: ${studentGroup}`,
+      `Campaign Theme: ${campaignTheme}`,
+      "Alumni[]:",
+      "Rohan Das | company=Amazon | role=SDE-2 | domain=Software Engineering | mentor_capacity=4 | response_rate=82",
+      "Anjali Rao | company=Microsoft | role=Data Engineer | domain=Data Engineering | mentor_capacity=3 | response_rate=77",
+      "Karan Mehta | company=Infosys | role=Lead Consultant | domain=Software Engineering | mentor_capacity=2 | response_rate=68",
+      "Student Goals[]:",
+      "Batch CSE Final | goal=Product roles | preferred_companies=Amazon, Microsoft",
+      `Action: ${action}`,
+      `Required Outputs: ${requiredOutput}`,
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -28,9 +37,27 @@ export default function AlumniWorkflow({ onExecute, isExecuting }: AlumniWorkflo
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <ActionCard icon={<Users className="w-6 h-6 text-emerald-600 mb-3" />} title="Find Mentors" desc="Map best-fit alumni mentors for student cluster." onClick={() => onExecute("Find Mentors", context)} disabled={isExecuting} />
-        <ActionCard icon={<Send className="w-6 h-6 text-emerald-600 mb-3" />} title="Post Job Opening" desc="Draft alumni-facing opportunity/referral brief." onClick={() => onExecute("Post Job Opening", context)} disabled={isExecuting} />
-        <ActionCard icon={<Network className="w-6 h-6 text-emerald-600 mb-3" />} title="Organize Networking Event" desc="Plan alumni-student networking event agenda." onClick={() => onExecute("Organize Networking Event", context)} disabled={isExecuting} />
+        <ActionCard
+          icon={<Users className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Find Mentors"
+          desc="Map best-fit alumni mentors for student cluster."
+          onClick={() => onExecute("Find Mentors", buildContext("Find Mentors", "mentor shortlist with fit scores and availability"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<Send className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Post Job Opening"
+          desc="Draft alumni-facing opportunity/referral brief."
+          onClick={() => onExecute("Post Job Opening", buildContext("Post Job Opening", "referral campaign brief with segment targets"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<Network className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Organize Networking Event"
+          desc="Plan alumni-student networking event agenda."
+          onClick={() => onExecute("Organize Networking Event", buildContext("Organize Networking Event", "event plan with agenda, invite list, and owners"))}
+          disabled={isExecuting}
+        />
       </div>
     </div>
   );

@@ -12,12 +12,19 @@ export default function FeeCollectionWorkflow({ onExecute, isExecuting }: FeeCol
   const [programme, setProgramme] = useState("All Programmes");
   const [overdueBand, setOverdueBand] = useState("7-30 days");
 
-  const context = [
-    `Fee Term: ${term}`,
-    `Programme Scope: ${programme}`,
-    `Overdue Segment: ${overdueBand}`,
-    "Need: dues summary, reminder sequencing, recovery strategy and compliance-safe notices.",
-  ].join("\n");
+  const buildContext = (action: string, requiredOutput: string) => {
+    return [
+      `Fee Term: ${term}`,
+      `Programme Scope: ${programme}`,
+      `Overdue Segment: ${overdueBand}`,
+      "Fees[]:",
+      "Arjun Rao | program=CSE S6 | amount_due=42500 | due_date=2026-03-25 | status=Paid | channel=WhatsApp",
+      "Ritika Das | program=ECE S4 | amount_due=38000 | due_date=2026-03-22 | status=Reminder Sent | channel=Email",
+      "Sanjay Kumar | program=ME S2 | amount_due=46500 | due_date=2026-03-18 | status=Escalated | channel=SMS",
+      `Action: ${action}`,
+      `Required Outputs: ${requiredOutput}`,
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -28,10 +35,34 @@ export default function FeeCollectionWorkflow({ onExecute, isExecuting }: FeeCol
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <ActionCard icon={<ReceiptIndianRupee className="w-6 h-6 text-red-600 mb-3" />} title="Collect Dues" desc="Compute paid/partial/default cohorts and amount due." onClick={() => onExecute("Collect Dues", context)} disabled={isExecuting} />
-        <ActionCard icon={<BellRing className="w-6 h-6 text-red-600 mb-3" />} title="Send Reminders" desc="Draft segmented reminder messages with payment links." onClick={() => onExecute("Send Reminders", context)} disabled={isExecuting} />
-        <ActionCard icon={<Calculator className="w-6 h-6 text-red-600 mb-3" />} title="Defaulter Report" desc="Generate finance committee defaulter intelligence report." onClick={() => onExecute("Defaulter Report", context)} disabled={isExecuting} />
-        <ActionCard icon={<Scale className="w-6 h-6 text-red-600 mb-3" />} title="Recovery Plan" desc="Create chronic defaulter recovery and legal timeline." onClick={() => onExecute("Recovery Plan", context)} disabled={isExecuting} />
+        <ActionCard
+          icon={<ReceiptIndianRupee className="w-6 h-6 text-red-600 mb-3" />}
+          title="Collect Dues"
+          desc="Compute paid/partial/default cohorts and amount due."
+          onClick={() => onExecute("Collect Dues", buildContext("Collect Dues", "dues summary by status, channel, and aging bucket"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<BellRing className="w-6 h-6 text-red-600 mb-3" />}
+          title="Send Reminders"
+          desc="Draft segmented reminder messages with payment links."
+          onClick={() => onExecute("Send Reminders", buildContext("Send Reminders", "reminder queue with channel strategy and urgency"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<Calculator className="w-6 h-6 text-red-600 mb-3" />}
+          title="Defaulter Report"
+          desc="Generate finance committee defaulter intelligence report."
+          onClick={() => onExecute("Defaulter Report", buildContext("Defaulter Report", "defaulter ranking with risk score and owner"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<Scale className="w-6 h-6 text-red-600 mb-3" />}
+          title="Recovery Plan"
+          desc="Create chronic defaulter recovery and legal timeline."
+          onClick={() => onExecute("Recovery Plan", buildContext("Recovery Plan", "recovery plan with timeline and escalation path"))}
+          disabled={isExecuting}
+        />
       </div>
     </div>
   );

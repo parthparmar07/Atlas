@@ -12,12 +12,21 @@ export default function ResumeWorkflow({ onExecute, isExecuting }: ResumeWorkflo
   const [targetRole, setTargetRole] = useState("Data Analyst");
   const [resumeSummary, setResumeSummary] = useState("Projects in SQL and Python, internship in analytics, basic dashboarding");
 
-  const context = [
-    `Student ID: ${student}`,
-    `Target Role: ${targetRole}`,
-    `Resume Summary: ${resumeSummary}`,
-    "Need: ATS scoring, keyword gap analysis, and role-optimized rewrite guidance.",
-  ].join("\n");
+  const buildContext = (action: string, requiredOutput: string) => {
+    return [
+      `Student ID: ${student}`,
+      `Target Role: ${targetRole}`,
+      `Resume Summary: ${resumeSummary}`,
+      "Resumes[]:",
+      `${student} | target_role=${targetRole} | sections=Education,Projects,Skills | ats_score=68 | keyword_hit=54 | version=V2`,
+      "S-2026-188 | target_role=Business Analyst | sections=Education,Experience,Skills | ats_score=72 | keyword_hit=62 | version=V3",
+      "S-2026-204 | target_role=Data Engineer | sections=Education,Projects | ats_score=61 | keyword_hit=48 | version=V1",
+      "JD Text:",
+      "Role requires SQL, Python, dashboarding, analytics storytelling, and stakeholder communication.",
+      `Action: ${action}`,
+      `Required Outputs: ${requiredOutput}`,
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -28,10 +37,34 @@ export default function ResumeWorkflow({ onExecute, isExecuting }: ResumeWorkflo
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <ActionCard icon={<FileCheck2 className="w-6 h-6 text-emerald-600 mb-3" />} title="Score Resumes" desc="Run ATS score + weakness diagnostics." onClick={() => onExecute("Score Resumes", context)} disabled={isExecuting} />
-        <ActionCard icon={<Sparkles className="w-6 h-6 text-emerald-600 mb-3" />} title="Optimise Resume" desc="Generate high-impact resume rewrite suggestions." onClick={() => onExecute("Optimise Resume", context)} disabled={isExecuting} />
-        <ActionCard icon={<FileSearch className="w-6 h-6 text-emerald-600 mb-3" />} title="Bulk Audit" desc="Batch-level resume readiness assessment." onClick={() => onExecute("Bulk Audit", context)} disabled={isExecuting} />
-        <ActionCard icon={<Target className="w-6 h-6 text-emerald-600 mb-3" />} title="JD Matcher" desc="Role-specific keyword and fit checklist." onClick={() => onExecute("JD Matcher", context)} disabled={isExecuting} />
+        <ActionCard
+          icon={<FileCheck2 className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Score Resumes"
+          desc="Run ATS score + weakness diagnostics."
+          onClick={() => onExecute("Score Resumes", buildContext("Score Resumes", "resume scorecards with ATS and keyword coverage"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<Sparkles className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Optimise Resume"
+          desc="Generate high-impact resume rewrite suggestions."
+          onClick={() => onExecute("Optimise Resume", buildContext("Optimise Resume", "rewrite suggestions and impact statements"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<FileSearch className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="Bulk Audit"
+          desc="Batch-level resume readiness assessment."
+          onClick={() => onExecute("Bulk Audit", buildContext("Bulk Audit", "cohort readiness summary with risk tiers"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<Target className="w-6 h-6 text-emerald-600 mb-3" />}
+          title="JD Matcher"
+          desc="Role-specific keyword and fit checklist."
+          onClick={() => onExecute("JD Matcher", buildContext("JD Matcher", "keyword fit map and missing skill checklist"))}
+          disabled={isExecuting}
+        />
       </div>
     </div>
   );

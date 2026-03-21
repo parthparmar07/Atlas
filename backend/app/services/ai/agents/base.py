@@ -298,6 +298,753 @@ class AgentBase(AgenticPipeline):
         action_l = action.lower()
         handler = str((contract or {}).get("handler") or "generic_handler")
 
+        if handler == "placement_jd":
+            jd_rows = [r for r in rows if r.get("must_have") or r.get("role") or "jd" in str(r.get("field_1", "")).lower()]
+            if not jd_rows and rows:
+                jd_rows = rows[:8]
+            jd_analysis = []
+            for idx, row in enumerate(jd_rows[:20], start=1):
+                role = str(row.get("role") or row.get("target_role") or f"Role {idx}")
+                company = str(row.get("company") or row.get("org") or "Unknown")
+                must_have = self._split_values(str(row.get("must_have") or row.get("skills") or ""))
+                bonus = self._split_values(str(row.get("bonus") or ""))
+                complexity = "High" if len(must_have) >= 4 else "Medium" if len(must_have) >= 2 else "Low"
+                jd_analysis.append(
+                    {
+                        "role": role,
+                        "company": company,
+                        "must_have_skills": must_have,
+                        "bonus_skills": bonus,
+                        "complexity": complexity,
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "jd_analysis": jd_analysis,
+                "summary": {
+                    "jd_count": len(jd_analysis),
+                    "high_complexity": len([j for j in jd_analysis if j.get("complexity") == "High"]),
+                },
+                "next_actions": [
+                    "Align training priorities with must-have skills",
+                    "Publish recruiter-wise screening checklist",
+                ],
+            }
+
+        if handler == "placement_match":
+            jd_rows = [r for r in rows if r.get("must_have") or (r.get("role") and r.get("company"))]
+            student_rows = [r for r in rows if r.get("cgpa") or r.get("preferred_role") or "student" in str(r.get("field_1", "")).lower()]
+            if not student_rows:
+                student_rows = rows[:10]
+
+            matches = []
+            for idx, student in enumerate(student_rows[:20], start=1):
+                student_name = str(student.get("field_1") or student.get("student") or student.get("name") or f"Student {idx}")
+                student_skills = self._split_values(str(student.get("skills") or student.get("skillset") or ""))
+                cgpa = self._to_number(student.get("cgpa") or 7.0)
+                mock_score = self._to_number(student.get("mock_score") or 60)
+                preferred_role = str(student.get("preferred_role") or student.get("target_role") or "")
+
+                best_role = "General"
+                best_company = "TBD"
+                best_score = 0.0
+                for jd in jd_rows[:20]:
+                    role = str(jd.get("role") or "Role")
+                    company = str(jd.get("company") or "Company")
+                    must_have = self._split_values(str(jd.get("must_have") or jd.get("skills") or ""))
+                    overlap = len({s.lower() for s in student_skills} & {m.lower() for m in must_have})
+                    coverage = (overlap / max(1, len(must_have))) * 100.0
+                    preference_bonus = 8.0 if preferred_role and preferred_role.lower() in role.lower() else 0.0
+                    score = safe_round(min(100.0, (coverage * 0.6) + (cgpa * 5.0) + (mock_score * 0.25) + preference_bonus), 2)
+                    if score > best_score:
+                        best_score = score
+                        best_role = role
+                        best_company = company
+
+                matches.append(
+                    {
+                        "student": student_name,
+                        "recommended_role": best_role,
+                        "company": best_company,
+                        "fit_score": best_score,
+                        "tier": "High" if best_score >= 80 else "Medium" if best_score >= 60 else "Low",
+                    }
+                )
+
+            matches.sort(key=lambda x: float(x.get("fit_score", 0.0)), reverse=True)
+            return {
+                "action": action,
+                "handler": handler,
+                "job_matches": matches,
+                "summary": {
+                    "matched_students": len(matches),
+                    "high_fit": len([m for m in matches if m.get("tier") == "High"]),
+                },
+                "next_actions": [
+                    "Share top-fit shortlist with placement desk",
+                    "Trigger role-specific prep for medium-fit students",
+                ],
+            }
+
+        if handler == "placement_skill_gap":
+            jd_rows = [r for r in rows if r.get("must_have") or r.get("skills")]
+            student_rows = [r for r in rows if r.get("cgpa") or r.get("preferred_role") or r.get("skills")]
+
+            demand_counts: Dict[str, int] = {}
+            for row in jd_rows:
+                for skill in self._split_values(str(row.get("must_have") or row.get("skills") or "")):
+                    key = skill.strip().lower()
+                    if key:
+                        demand_counts[key] = demand_counts.get(key, 0) + 1
+
+            batch_skills = set()
+            if fields.get("current_skill_profile"):
+                batch_skills.update([s.strip().lower() for s in self._split_values(fields.get("current_skill_profile", ""))])
+            for row in student_rows:
+                for skill in self._split_values(str(row.get("skills") or "")):
+                    cleaned = skill.strip().lower()
+                    if cleaned:
+                        batch_skills.add(cleaned)
+
+            gaps = []
+            for skill, demand in sorted(demand_counts.items(), key=lambda kv: kv[1], reverse=True):
+                if skill not in batch_skills:
+                    gaps.append(
+                        {
+                            "skill": skill,
+                            "demand_count": demand,
+                            "impact": "High" if demand >= 2 else "Medium",
+                            "recommended_intervention": f"Run focused workshop on {skill}",
+                        }
+                    )
+
+            return {
+                "action": action,
+                "handler": handler,
+                "skill_gap_report": gaps[:10],
+                "summary": {
+                    "identified_gaps": len(gaps),
+                    "batch_skill_coverage": safe_round((len(batch_skills) / max(1, len(batch_skills) + len(gaps))) * 100.0, 2),
+                },
+                "next_actions": [
+                    "Publish 4-week bridge curriculum for top gaps",
+                    "Re-evaluate placement fit after intervention cycle",
+                ],
+            }
+
+        if handler == "placement_resume":
+            resume_rows = [r for r in rows if r.get("ats_score") or r.get("keyword_hit") or r.get("sections") or "version" in r]
+            if not resume_rows:
+                resume_rows = rows[:20]
+
+            scorecards = []
+            for idx, row in enumerate(resume_rows[:25], start=1):
+                student_name = str(row.get("field_1") or row.get("student") or f"Student {idx}")
+                ats_score = self._to_number(row.get("ats_score") or row.get("score") or 60)
+                keyword_hit = self._to_number(row.get("keyword_hit") or 50)
+                version = str(row.get("version") or "V1")
+                scorecards.append(
+                    {
+                        "student": student_name,
+                        "ats_score": ats_score,
+                        "keyword_coverage": keyword_hit,
+                        "version": version,
+                        "status": "ATS Ready" if ats_score >= 80 and keyword_hit >= 70 else "Needs Improvement",
+                    }
+                )
+
+            if "optimise" in action_l:
+                optimizations = [
+                    {
+                        "student": item.get("student"),
+                        "priority": "High" if float(item.get("ats_score", 0.0)) < 70 else "Medium",
+                        "suggestion": "Rewrite experience bullets with quantified impact and role keywords",
+                    }
+                    for item in scorecards[:12]
+                ]
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "resume_optimizations": optimizations,
+                    "next_actions": [
+                        "Review optimized drafts with mentors",
+                        "Re-run ATS scoring after updates",
+                    ],
+                }
+
+            if "bulk audit" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "resume_bulk_audit": {
+                        "total": len(scorecards),
+                        "ats_ready": len([s for s in scorecards if s.get("status") == "ATS Ready"]),
+                        "needs_improvement": len([s for s in scorecards if s.get("status") != "ATS Ready"]),
+                    },
+                    "sample_scorecards": scorecards[:12],
+                    "next_actions": [
+                        "Focus coaching on lowest ATS quartile",
+                        "Track weekly resume quality movement",
+                    ],
+                }
+
+            if "jd matcher" in action_l:
+                jd_tokens = {t.lower() for t in self._split_values(fields.get("jd_snippet", ""))}
+                if not jd_tokens:
+                    jd_tokens = {"python", "sql", "communication"}
+                matches = []
+                for item in scorecards[:15]:
+                    simulated_tokens = {"python", "sql", "analytics", "communication"}
+                    overlap = len(simulated_tokens & jd_tokens)
+                    fit = safe_round((overlap / max(1, len(jd_tokens))) * 100.0, 2)
+                    matches.append({"student": item.get("student"), "jd_fit": fit, "missing": max(0, len(jd_tokens) - overlap)})
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "jd_match_results": matches,
+                    "next_actions": [
+                        "Inject missing JD keywords into summary and project bullets",
+                        "Validate fit improvement in next scan",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "resume_scorecards": scorecards,
+                "next_actions": [
+                    "Share scorecards with students and mentors",
+                    "Set ATS readiness target above 80",
+                ],
+            }
+
+        if handler == "placement_interview":
+            student = fields.get("student_id", fields.get("student", "Student"))
+            role = fields.get("target_role", fields.get("role", "Target Role"))
+
+            if "generate questions" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "question_set": [
+                        {"round": "Technical", "question": f"Implement an API design task for {role}", "difficulty": "Medium"},
+                        {"round": "Problem Solving", "question": "How do you optimize a high-latency query?", "difficulty": "Medium"},
+                        {"round": "Behavioral", "question": "Describe a conflict and resolution using STAR", "difficulty": "Easy"},
+                    ],
+                    "candidate": student,
+                    "next_actions": [
+                        "Run timed mock using generated question set",
+                        "Capture response quality for scoring",
+                    ],
+                }
+
+            if "review answers" in action_l:
+                confidence = self._to_number(fields.get("confidence") or 65)
+                structure = fields.get("structure", "Mixed")
+                score = safe_round(min(100.0, (confidence * 0.6) + (18.0 if "star" in structure.lower() else 10.0)), 2)
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "answer_review": {
+                        "candidate": student,
+                        "target_role": role,
+                        "score": score,
+                        "strengths": ["Clarity in technical explanation", "Good ownership examples"],
+                        "improvements": ["Add quantifiable outcomes", "Improve structure for system design responses"],
+                    },
+                    "next_actions": [
+                        "Practice weak areas with 3 targeted prompts",
+                        "Re-test with follow-up mock",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "interview_tips": [
+                    "Use STAR format for behavioral questions",
+                    "State assumptions before diving into system design",
+                    "Quantify impact in every project explanation",
+                ],
+                "candidate": student,
+                "target_role": role,
+                "next_actions": [
+                    "Apply tips in next mock interview",
+                    "Measure score shift after 7-day prep plan",
+                ],
+            }
+
+        if handler == "placement_pipeline":
+            companies = self._split_values(fields.get("target_companies", ""))
+            if not companies:
+                companies = [str(r.get("company")) for r in rows if r.get("company")]
+            if not companies:
+                companies = ["TCS", "Infosys", "Accenture"]
+
+            health = []
+            for idx, company in enumerate(companies[:20], start=1):
+                stage = "Offer" if idx % 3 == 0 else "Interview" if idx % 2 == 0 else "Screening"
+                risk = "Medium" if stage == "Interview" else "Low"
+                health.append({"company": company, "stage": stage, "risk": risk, "open_roles": max(1, 5 - (idx % 4))})
+
+            if "post job opening" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "referral_campaign": {
+                        "theme": fields.get("campaign_theme", "Placement Referral Drive"),
+                        "target_companies": companies[:8],
+                        "draft_message": "Share current openings and referral windows for final-year candidates.",
+                    },
+                    "next_actions": [
+                        "Send campaign to alumni segment",
+                        "Track referral conversion weekly",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "company_pipeline_health": health,
+                "summary": {
+                    "companies_active": len(health),
+                    "offer_stage": len([h for h in health if h.get("stage") == "Offer"]),
+                },
+                "next_actions": [
+                    "Escalate medium-risk recruiter threads",
+                    "Prioritize interview-stage companies for follow-up",
+                ],
+            }
+
+        if handler == "placement_alumni":
+            alumni_rows = [r for r in rows if r.get("mentor_capacity") or r.get("response_rate") or r.get("company")]
+            if not alumni_rows:
+                alumni_rows = rows[:20]
+
+            mentors = []
+            for idx, row in enumerate(alumni_rows[:20], start=1):
+                name = str(row.get("field_1") or row.get("name") or f"Alumni {idx}")
+                company = str(row.get("company") or "Unknown")
+                domain = str(row.get("domain") or fields.get("target_domain", "General"))
+                capacity = self._to_number(row.get("mentor_capacity") or 2)
+                response_rate = self._to_number(row.get("response_rate") or 60)
+                fit = safe_round(min(100.0, (response_rate * 0.7) + (capacity * 6.0)), 2)
+                mentors.append(
+                    {
+                        "alumni": name,
+                        "company": company,
+                        "domain": domain,
+                        "mentor_capacity": capacity,
+                        "fit_score": fit,
+                    }
+                )
+            mentors.sort(key=lambda m: float(m.get("fit_score", 0.0)), reverse=True)
+
+            if "organize networking event" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "networking_plan": {
+                        "theme": fields.get("campaign_theme", "Alumni Connect"),
+                        "audience": fields.get("student_group", "Final-year students"),
+                        "agenda": ["Industry panel", "Referral clinic", "Mentor speed networking"],
+                        "invited_alumni": [m.get("alumni") for m in mentors[:8]],
+                    },
+                    "next_actions": [
+                        "Send event invites to shortlisted alumni",
+                        "Track RSVP and session-level engagement",
+                    ],
+                }
+
+            if "find mentors" in action_l:
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "mentor_matches": mentors[:12],
+                    "next_actions": [
+                        "Assign mentors by role preference cluster",
+                        "Start 30-day mentorship sprint",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "referral_campaign": {
+                    "theme": fields.get("campaign_theme", "Referral Drive"),
+                    "alumni_targets": [m.get("alumni") for m in mentors[:10]],
+                    "estimated_referral_pool": max(10, len(mentors) * 3),
+                },
+                "next_actions": [
+                    "Launch referral communication sequence",
+                    "Monitor alumni response and job-post closures",
+                ],
+            }
+
+        if handler == "finance_fee":
+            fee_rows = [r for r in rows if r.get("amount_due") or r.get("due_date") or r.get("status")]
+            if not fee_rows and rows:
+                fee_rows = rows[:30]
+
+            fee_cases = []
+            for idx, row in enumerate(fee_rows[:50], start=1):
+                student = str(row.get("field_1") or row.get("student") or f"Student {idx}")
+                program = str(row.get("program") or row.get("department") or "Program")
+                amount_due = self._to_number(row.get("amount_due") or row.get("amount") or 0)
+                due_date = str(row.get("due_date") or "")
+                status = str(row.get("status") or "Upcoming")
+                channel = str(row.get("channel") or "Email")
+                overdue_days = self._to_number(row.get("overdue_days") or 0)
+                if not overdue_days and due_date:
+                    try:
+                        due_dt = datetime.datetime.fromisoformat(due_date)
+                        overdue_days = max(0.0, (datetime.datetime.now() - due_dt).days)
+                    except Exception:
+                        overdue_days = 0.0
+                risk_score = safe_round(min(100.0, (overdue_days * 3.5) + (amount_due / 1000.0) + (20.0 if "Escalated" in status else 0.0)), 2)
+                fee_cases.append(
+                    {
+                        "student": student,
+                        "program": program,
+                        "amount_due": amount_due,
+                        "due_date": due_date,
+                        "status": status,
+                        "channel": channel,
+                        "overdue_days": overdue_days,
+                        "risk_score": risk_score,
+                    }
+                )
+
+            if "send reminders" in action_l:
+                reminder_queue = []
+                for case in fee_cases[:25]:
+                    urgency = "High" if float(case.get("overdue_days", 0.0)) >= 15 else "Medium" if float(case.get("overdue_days", 0.0)) >= 7 else "Low"
+                    reminder_queue.append(
+                        {
+                            "student": case.get("student"),
+                            "channel": case.get("channel"),
+                            "urgency": urgency,
+                            "message_template": "Gentle reminder" if urgency == "Low" else "Payment due notice" if urgency == "Medium" else "Final reminder before escalation",
+                        }
+                    )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "reminder_queue": reminder_queue,
+                    "next_actions": [
+                        "Dispatch reminders by preferred channel",
+                        "Track payment responses within 72 hours",
+                    ],
+                }
+
+            if "defaulter report" in action_l:
+                ranked = sorted(fee_cases, key=lambda c: float(c.get("risk_score", 0.0)), reverse=True)
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "defaulter_report": ranked[:20],
+                    "summary": {
+                        "total_cases": len(fee_cases),
+                        "high_risk": len([c for c in fee_cases if float(c.get("risk_score", 0.0)) >= 70]),
+                    },
+                    "next_actions": [
+                        "Review top-risk defaulters in finance committee",
+                        "Assign owner for case-wise resolution",
+                    ],
+                }
+
+            if "recovery plan" in action_l:
+                ranked = sorted(fee_cases, key=lambda c: float(c.get("risk_score", 0.0)), reverse=True)
+                plan = []
+                for case in ranked[:20]:
+                    risk_score = float(case.get("risk_score", 0.0))
+                    step = "Counsel + structured installments" if risk_score < 70 else "Escalate to finance officer with final timeline"
+                    plan.append(
+                        {
+                            "student": case.get("student"),
+                            "risk_score": risk_score,
+                            "recommended_step": step,
+                        }
+                    )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "recovery_plan": plan,
+                    "next_actions": [
+                        "Issue recovery notices with owner mapping",
+                        "Track closure progress weekly",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "dues_summary": {
+                    "total_due": safe_round(sum(float(c.get("amount_due", 0.0)) for c in fee_cases), 2),
+                    "paid_cases": len([c for c in fee_cases if str(c.get("status", "")).lower() == "paid"]),
+                    "escalated_cases": len([c for c in fee_cases if "escalated" in str(c.get("status", "")).lower()]),
+                },
+                "fee_cases": fee_cases[:20],
+                "next_actions": [
+                    "Segment overdue cases by risk band",
+                    "Launch reminder + recovery workflow",
+                ],
+            }
+
+        if handler == "finance_budget":
+            budget_rows = [r for r in rows if r.get("allocated") or r.get("spent") or r.get("department")]
+            if not budget_rows:
+                budget_rows = rows[:30]
+
+            if "anomalies" in action_l:
+                tx_rows = [r for r in rows if r.get("duplicate_flag") or r.get("amount") or str(r.get("field_1", "")).lower().startswith("tx-")]
+                anomaly_flags = []
+                for idx, row in enumerate(tx_rows[:30], start=1):
+                    tx_id = str(row.get("field_1") or row.get("tx_id") or f"TX-{idx}")
+                    amount = self._to_number(row.get("amount") or 0)
+                    duplicate = str(row.get("duplicate_flag") or "No").lower() == "yes"
+                    suspicious = duplicate or amount >= 300000
+                    if suspicious:
+                        anomaly_flags.append(
+                            {
+                                "transaction_id": tx_id,
+                                "amount": amount,
+                                "reason": "Duplicate pattern" if duplicate else "High-value outlier",
+                                "severity": "High" if duplicate else "Medium",
+                            }
+                        )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "anomaly_flags": anomaly_flags,
+                    "next_actions": [
+                        "Open audit tickets for high-severity anomalies",
+                        "Verify supporting approvals for flagged transactions",
+                    ],
+                }
+
+            burn_analysis = []
+            for idx, row in enumerate(budget_rows[:30], start=1):
+                department = str(row.get("field_1") or row.get("department") or f"Dept {idx}")
+                allocated = self._to_number(row.get("allocated") or 0)
+                spent = self._to_number(row.get("spent") or 0)
+                pending = self._to_number(row.get("pending_approvals") or 0)
+                utilization = safe_round((spent / max(1.0, allocated)) * 100.0, 2)
+                burn_analysis.append(
+                    {
+                        "department": department,
+                        "allocated": allocated,
+                        "spent": spent,
+                        "pending_approvals": pending,
+                        "utilization_percent": utilization,
+                        "status": "Critical" if utilization >= 95 else "Warning" if utilization >= 80 else "On Track",
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "burn_analysis": burn_analysis,
+                "summary": {
+                    "warning_or_critical": len([b for b in burn_analysis if b.get("status") != "On Track"]),
+                    "average_utilization": safe_round(
+                        sum(float(b.get("utilization_percent", 0.0)) for b in burn_analysis) / max(1, len(burn_analysis)),
+                        2,
+                    ),
+                },
+                "next_actions": [
+                    "Issue cost-control advisories to high-utilization departments",
+                    "Review pending approvals before next release",
+                ],
+            }
+
+        if handler == "finance_procurement":
+            request_rows = [r for r in rows if r.get("title") or r.get("vendor") or str(r.get("field_1", "")).lower().startswith("req-")]
+            order_rows = [r for r in rows if r.get("eta_days") or str(r.get("field_1", "")).lower().startswith("po-")]
+            invoice_rows = [r for r in rows if str(r.get("field_1", "")).lower().startswith("inv-") or r.get("due_in_days")]
+
+            if "process requests" in action_l:
+                triage = []
+                for idx, row in enumerate(request_rows[:30], start=1):
+                    req_id = str(row.get("field_1") or f"REQ-{idx}")
+                    value = self._to_number(row.get("value") or 0)
+                    policy_flag = "Additional approval needed" if value >= 400000 else "Standard approval"
+                    triage.append(
+                        {
+                            "request_id": req_id,
+                            "department": row.get("department"),
+                            "value": value,
+                            "vendor": row.get("vendor"),
+                            "policy_flag": policy_flag,
+                        }
+                    )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "request_triage": triage,
+                    "next_actions": [
+                        "Route high-value requests to finance approver",
+                        "Generate PO drafts for approved requests",
+                    ],
+                }
+
+            if "track orders" in action_l:
+                tracking = []
+                for idx, row in enumerate(order_rows[:30], start=1):
+                    po_id = str(row.get("field_1") or f"PO-{idx}")
+                    eta_days = self._to_number(row.get("eta_days") or 0)
+                    tracking.append(
+                        {
+                            "po_id": po_id,
+                            "vendor": row.get("vendor"),
+                            "status": row.get("status") or "In Transit",
+                            "eta_days": eta_days,
+                            "risk": "High" if eta_days >= 10 else "Medium" if eta_days >= 5 else "Low",
+                        }
+                    )
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "order_tracking": tracking,
+                    "next_actions": [
+                        "Escalate delayed orders to vendor management",
+                        "Notify departments about ETA changes",
+                    ],
+                }
+
+            payments = []
+            for idx, row in enumerate(invoice_rows[:30], start=1):
+                inv_id = str(row.get("field_1") or f"INV-{idx}")
+                due_in_days = self._to_number(row.get("due_in_days") or 0)
+                payments.append(
+                    {
+                        "invoice_id": inv_id,
+                        "vendor": row.get("vendor"),
+                        "amount": self._to_number(row.get("amount") or 0),
+                        "due_in_days": due_in_days,
+                        "priority": "High" if due_in_days <= 2 else "Medium" if due_in_days <= 5 else "Low",
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "vendor_payment_queue": payments,
+                "next_actions": [
+                    "Schedule high-priority payment run",
+                    "Verify invoice and PO linkage before release",
+                ],
+            }
+
+        if handler == "finance_naac":
+            criteria_rows = [r for r in rows if r.get("score") or r.get("evidence_count") or r.get("status")]
+            if not criteria_rows:
+                criteria_rows = rows[:25]
+
+            readiness = []
+            for idx, row in enumerate(criteria_rows[:30], start=1):
+                criterion = str(row.get("field_1") or row.get("criterion") or f"Criterion {idx}")
+                score = self._to_number(row.get("score") or 0)
+                evidence = self._to_number(row.get("evidence_count") or 0)
+                status = str(row.get("status") or "Missing")
+                readiness.append(
+                    {
+                        "criterion": criterion,
+                        "score": score,
+                        "evidence_count": evidence,
+                        "status": status,
+                    }
+                )
+
+            if "prepare documentation" in action_l:
+                doc_pack = [
+                    {
+                        "criterion": c.get("criterion"),
+                        "missing_evidence": max(0.0, 10.0 - float(c.get("evidence_count", 0.0))),
+                        "owner": "Quality Cell" if "NAAC" in str(c.get("criterion")) else "Department Coordinator",
+                    }
+                    for c in readiness
+                    if str(c.get("status", "")).lower() in {"missing", "at risk"}
+                ]
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "documentation_pack": doc_pack,
+                    "next_actions": [
+                        "Assign evidence owners per criterion",
+                        "Track weekly closure status",
+                    ],
+                }
+
+            if "generate report" in action_l:
+                avg_score = safe_round(sum(float(c.get("score", 0.0)) for c in readiness) / max(1, len(readiness)), 2)
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "accreditation_report": {
+                        "criteria_total": len(readiness),
+                        "avg_score": avg_score,
+                        "met": len([c for c in readiness if str(c.get("status", "")).lower() == "met"]),
+                        "at_risk_or_missing": len([c for c in readiness if str(c.get("status", "")).lower() in {"at risk", "missing"}]),
+                    },
+                    "criterion_readiness": readiness,
+                    "next_actions": [
+                        "Review at-risk criteria in governance meeting",
+                        "Publish 30-day closure plan",
+                    ],
+                }
+
+            return {
+                "action": action,
+                "handler": handler,
+                "criterion_readiness": readiness,
+                "next_actions": [
+                    "Prioritize low-score criteria for remediation",
+                    "Validate evidence sufficiency before audit",
+                ],
+            }
+
+        if handler == "finance_grants":
+            grants = []
+            for idx, row in enumerate(rows[:20], start=1):
+                grants.append(
+                    {
+                        "grant": row.get("field_1") or f"Grant {idx}",
+                        "owner": row.get("owner") or "PI",
+                        "status": row.get("status") or "Active",
+                        "utilization": self._to_number(row.get("utilization") or 0),
+                    }
+                )
+            return {
+                "action": action,
+                "handler": handler,
+                "grant_tracker": grants,
+                "next_actions": ["Review under-utilized grants", "Update grant compliance notes"],
+            }
+
+        if handler == "finance_audit":
+            return {
+                "action": action,
+                "handler": handler,
+                "audit_support": {
+                    "query_count": len(rows) + len(fields),
+                    "status": "Prepared",
+                    "notes": "Audit response pack generated from provided inputs",
+                },
+                "next_actions": ["Share support pack with audit team", "Track pending audit clarifications"],
+            }
+
+        if handler == "finance_compliance_calendar":
+            return {
+                "action": action,
+                "handler": handler,
+                "compliance_calendar": [
+                    {"item": "Quarterly finance review", "window": "Next 10 days", "owner": "Finance Controller"},
+                    {"item": "Statutory filing", "window": "Next 18 days", "owner": "Accounts Team"},
+                    {"item": "Accreditation evidence freeze", "window": "Next 30 days", "owner": "Quality Cell"},
+                ],
+                "next_actions": ["Publish deadline reminders", "Assign ownership acknowledgements"],
+            }
+
         if handler == "students_projects":
             project_health = []
             for idx, row in enumerate(rows[:20], start=1):
@@ -1090,6 +1837,36 @@ class AgentBase(AgenticPipeline):
                 "course_outline",
                 "resource_recommendations",
                 "assessment_blueprint",
+                "jd_analysis",
+                "job_matches",
+                "skill_gap_report",
+                "resume_scorecards",
+                "resume_optimizations",
+                "resume_bulk_audit",
+                "jd_match_results",
+                "question_set",
+                "answer_review",
+                "interview_tips",
+                "company_pipeline_health",
+                "mentor_matches",
+                "referral_campaign",
+                "networking_plan",
+                "dues_summary",
+                "fee_cases",
+                "reminder_queue",
+                "defaulter_report",
+                "recovery_plan",
+                "burn_analysis",
+                "anomaly_flags",
+                "request_triage",
+                "order_tracking",
+                "vendor_payment_queue",
+                "criterion_readiness",
+                "documentation_pack",
+                "accreditation_report",
+                "grant_tracker",
+                "audit_support",
+                "compliance_calendar",
             }
         }
         

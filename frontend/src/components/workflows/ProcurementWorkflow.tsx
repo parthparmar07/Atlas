@@ -12,12 +12,25 @@ export default function ProcurementWorkflow({ onExecute, isExecuting }: Procurem
   const [category, setCategory] = useState("Lab Equipment");
   const [budgetBand, setBudgetBand] = useState("2L - 5L");
 
-  const context = [
-    `Requesting Department: ${department}`,
-    `Purchase Category: ${category}`,
-    `Budget Band: ${budgetBand}`,
-    "Need: request processing, PO lifecycle, vendor payment queue and approval traceability.",
-  ].join("\n");
+  const buildContext = (action: string, requiredOutput: string) => {
+    return [
+      `Requesting Department: ${department}`,
+      `Purchase Category: ${category}`,
+      `Budget Band: ${budgetBand}`,
+      "Requests[]:",
+      "REQ-410 | department=Computer Science | title=50 Lab Monitors | value=420000 | vendor=TechCore | status=Raised",
+      "REQ-422 | department=Chemistry | title=Reagents | value=96000 | vendor=LabLink | status=In Review",
+      "REQ-436 | department=Mechanical | title=Tool Set | value=185000 | vendor=InduMart | status=Approved",
+      "Orders[]:",
+      "PO-1045 | vendor=TechCore | eta_days=7 | status=Dispatched",
+      "PO-1068 | vendor=LabLink | eta_days=3 | status=Packed",
+      "Invoices[]:",
+      "INV-770 | vendor=TechCore | amount=210000 | due_in_days=5 | status=Pending",
+      "INV-781 | vendor=InduMart | amount=92500 | due_in_days=2 | status=Approved",
+      `Action: ${action}`,
+      `Required Outputs: ${requiredOutput}`,
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -28,9 +41,27 @@ export default function ProcurementWorkflow({ onExecute, isExecuting }: Procurem
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <ActionCard icon={<ClipboardCheck className="w-6 h-6 text-violet-600 mb-3" />} title="Process Requests" desc="Validate requisitions and issue POs." onClick={() => onExecute("Process Requests", context)} disabled={isExecuting} />
-        <ActionCard icon={<PackageSearch className="w-6 h-6 text-violet-600 mb-3" />} title="Track Orders" desc="Track delivery timelines and exceptions." onClick={() => onExecute("Track Orders", context)} disabled={isExecuting} />
-        <ActionCard icon={<WalletCards className="w-6 h-6 text-violet-600 mb-3" />} title="Pay Vendors" desc="Prepare payment run with approvals and invoice checks." onClick={() => onExecute("Pay Vendors", context)} disabled={isExecuting} />
+        <ActionCard
+          icon={<ClipboardCheck className="w-6 h-6 text-violet-600 mb-3" />}
+          title="Process Requests"
+          desc="Validate requisitions and issue POs."
+          onClick={() => onExecute("Process Requests", buildContext("Process Requests", "request triage, policy checks, and PO recommendations"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<PackageSearch className="w-6 h-6 text-violet-600 mb-3" />}
+          title="Track Orders"
+          desc="Track delivery timelines and exceptions."
+          onClick={() => onExecute("Track Orders", buildContext("Track Orders", "order tracking board with ETA risk and blockers"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<WalletCards className="w-6 h-6 text-violet-600 mb-3" />}
+          title="Pay Vendors"
+          desc="Prepare payment run with approvals and invoice checks."
+          onClick={() => onExecute("Pay Vendors", buildContext("Pay Vendors", "vendor payment queue and approval sequence"))}
+          disabled={isExecuting}
+        />
       </div>
 
       <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5 flex items-start gap-3">

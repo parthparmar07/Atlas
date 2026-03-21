@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DollarSign, FileText, AlertTriangle, TrendingDown } from "lucide-react";
+import { TrendingDown, AlertTriangle } from "lucide-react";
 
 interface BudgetWorkflowProps {
   agentId: string;
@@ -7,65 +7,69 @@ interface BudgetWorkflowProps {
   isExecuting: boolean;
 }
 
-export default function BudgetWorkflow({ agentId, onExecute, isExecuting }: BudgetWorkflowProps) {
+export default function BudgetWorkflow({ onExecute, isExecuting }: BudgetWorkflowProps) {
   const [department, setDepartment] = useState("All Departments");
   const [quarter, setQuarter] = useState("Q3 2026");
 
-  const runAction = (action: string) => {
-    const context = `Department: ${department}\nQuarter: ${quarter}`;
-    onExecute(action, context);
+  const buildContext = (action: string, requiredOutput: string) => {
+    return [
+      `Department: ${department}`,
+      `Quarter: ${quarter}`,
+      "Budget Lines[]:",
+      "Computer Science | allocated=12000000 | spent=8900000 | pending_approvals=2 | status=On Track",
+      "ECE | allocated=8600000 | spent=7800000 | pending_approvals=1 | status=Warning",
+      "Central Facilities | allocated=6400000 | spent=6400000 | pending_approvals=3 | status=Critical",
+      "Transactions[]:",
+      "TX-1901 | dept=Computer Science | amount=420000 | category=Lab | duplicate_flag=No",
+      "TX-1936 | dept=ECE | amount=96000 | category=Consumables | duplicate_flag=No",
+      "TX-1982 | dept=Central Facilities | amount=185000 | category=Maintenance | duplicate_flag=Yes",
+      `Action: ${action}`,
+      `Required Outputs: ${requiredOutput}`,
+    ].join("\n");
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-6 items-end mb-8">
-          <div className="flex-1 w-full">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Target Department</label>
-            <select 
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option>All Departments</option>
-              <option>Computer Science</option>
-              <option>Mechanical Engineering</option>
-              <option>Library</option>
-            </select>
-          </div>
-          <div className="w-full md:w-48">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Quarter</label>
-            <input 
-              type="text" 
-              value={quarter}
-              onChange={(e) => setQuarter(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-        </div>
+    <div className="space-y-8">
+      <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30 grid grid-cols-2 gap-4">
+        <Input label="Department" value={department} setValue={setDepartment} />
+        <Input label="Quarter" value={quarter} setValue={setQuarter} />
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <button
-            onClick={() => runAction("Analyze Burn Rate")}
-            disabled={isExecuting}
-            className="flex flex-col items-start p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all disabled:opacity-50 group text-left"
-          >
-            <TrendingDown className="w-8 h-8 text-emerald-500 mb-4 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-slate-900 dark:text-white text-lg">Analyze Burn Rate</span>
-            <span className="text-sm text-slate-500 dark:text-slate-400 mt-2">Evaluate current expenditure vs allocated limits</span>
-          </button>
-
-          <button
-            onClick={() => runAction("Detect Anomalies")}
-            disabled={isExecuting}
-            className="flex flex-col items-start p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all disabled:opacity-50 group text-left"
-          >
-            <AlertTriangle className="w-8 h-8 text-emerald-500 mb-4 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-slate-900 dark:text-white text-lg">Detect Anomalies</span>
-            <span className="text-sm text-slate-500 dark:text-slate-400 mt-2">Scan transaction logs for duplicate or suspicious invoices</span>
-          </button>
-        </div>
+      <div className="grid grid-cols-2 gap-4">
+        <ActionCard
+          icon={<TrendingDown className="w-6 h-6 text-blue-600 mb-3" />}
+          title="Analyze Burn Rate"
+          desc="Evaluate spend behavior against allocations."
+          onClick={() => onExecute("Analyze Burn Rate", buildContext("Analyze Burn Rate", "burn analysis, variance table, and runway estimate"))}
+          disabled={isExecuting}
+        />
+        <ActionCard
+          icon={<AlertTriangle className="w-6 h-6 text-blue-600 mb-3" />}
+          title="Detect Anomalies"
+          desc="Detect suspicious or duplicate transaction patterns."
+          onClick={() => onExecute("Detect Anomalies", buildContext("Detect Anomalies", "anomaly flags with confidence and control actions"))}
+          disabled={isExecuting}
+        />
       </div>
     </div>
+  );
+}
+
+function Input({ label, value, setValue }: { label: string; value: string; setValue: (v: string) => void }) {
+  return (
+    <div>
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{label}</label>
+      <input value={value} onChange={(e) => setValue(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm" />
+    </div>
+  );
+}
+
+function ActionCard({ icon, title, desc, onClick, disabled }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void; disabled: boolean }) {
+  return (
+    <button onClick={onClick} disabled={disabled} className="bg-white border border-slate-200 p-5 rounded-2xl hover:border-blue-400 transition-colors text-left disabled:opacity-60">
+      {icon}
+      <h3 className="font-bold text-slate-900 mb-1">{title}</h3>
+      <p className="text-xs text-slate-500">{desc}</p>
+    </button>
   );
 }
