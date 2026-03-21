@@ -3,7 +3,11 @@ import io
 import json
 import re
 from typing import Any
+
 import pdfplumber
+import pytesseract
+from PIL import Image
+
 from app.services.ai.gemini import gemini_client
 from app.services.ai.groq_service import groq_client
 from app.core.config import settings
@@ -53,9 +57,41 @@ class AdmissionsService:
             return gemini_client
         return None
 
-    def _extract_text(self, file_bytes: bytes, mime_type: str) -> str:
-        if not file_bytes:
+    def _ocr_pdf_text(self, file_bytes: bytes, max_pages: int = 6) -> str:
+        """Run OCR on PDF pages for scanned/non-selectable PDFs."""
+        try:
+            import pypdfium2 as pdfium
+        except Exception:
             return ""
+
+        texts: list[str] = []
+        try:
+            pdf = pdfium.PdfDocument(file_bytes)
+            total_pages = len(pdf)
+            for page_idx in range(min(total_pages, max_pages)):
+                page = pdf.get_page(page_idx)
+                pil_image = page.render(scale=2.5).to_pil()
+                text = pytesseract.image_to_string(pil_image)
+                if text and text.strip():
+                    texts.append(text)
+                page.close()
+        except Exception:
+            return ""
+
+        return "\n".join(texts).strip()
+
+    def _ocr_image_text(self, file_bytes: bytes) -> str:
+        """Run OCR on image bytes using Tesseract."""
+        try:
+            image = Image.open(io.BytesIO(file_bytes))
+            text = pytesseract.image_to_string(image)
+            return text.strip() if text else ""
+        except Exception:
+            return ""
+
+    def _extract_text(self, file_bytes: bytes, mime_type: str) -> tuple[str, str]:
+        if not file_bytes:
+            return "", "empty"
 
         low_mime = (mime_type or "").lower()
 
@@ -63,22 +99,47 @@ class AdmissionsService:
             try:
                 with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
                     chunks = [p.extract_text() or "" for p in pdf.pages]
-                return "\n".join(c.strip() for c in chunks if c and c.strip())
+                plain_text = "\n".join(c.strip() for c in chunks if c and c.strip()).strip()
+                # If PDF text is sparse, treat as scanned PDF and OCR rendered pages.
+                if len(plain_text) >= 80:
+                    return plain_text, "pdf-text"
+
+                ocr_text = self._ocr_pdf_text(file_bytes)
+                if len(ocr_text) >= len(plain_text):
+                    return ocr_text, "pdf-ocr"
+                return plain_text, "pdf-text-sparse"
             except Exception:
-                return ""
+                ocr_text = self._ocr_pdf_text(file_bytes)
+                if ocr_text:
+                    return ocr_text, "pdf-ocr"
+                return "", "pdf-error"
+
+        if "image" in low_mime:
+            ocr_text = self._ocr_image_text(file_bytes)
+            if ocr_text:
+                return ocr_text, "image-ocr"
+            return "", "image-ocr-empty"
 
         if "text" in low_mime or "json" in low_mime:
             try:
-                return file_bytes.decode("utf-8", errors="ignore")
+                return file_bytes.decode("utf-8", errors="ignore"), "plain-text"
             except Exception:
-                return ""
+                return "", "plain-text-error"
 
         # Some image uploads still contain text-like binary chunks from OCR/export pipelines.
         try:
             raw = file_bytes.decode("utf-8", errors="ignore")
         except Exception:
             raw = ""
-        return re.sub(r"\s+", " ", raw).strip()
+        compact = re.sub(r"\s+", " ", raw).strip()
+        if compact:
+            return compact, "binary-decode"
+
+        # Last attempt: OCR as image for unknown MIME uploads.
+        ocr_text = self._ocr_image_text(file_bytes)
+        if ocr_text:
+            return ocr_text, "fallback-image-ocr"
+        return "", "unreadable"
 
     def _extract_percentage(self, text: str, label_patterns: list[str]) -> float:
         if not text:
@@ -139,7 +200,7 @@ class AdmissionsService:
         return []
 
     def _rule_parse_document(self, file_bytes: bytes, mime_type: str) -> dict[str, Any]:
-        text = self._extract_text(file_bytes, mime_type)
+        text, text_source = self._extract_text(file_bytes, mime_type)
         compact = re.sub(r"\s+", " ", text).strip()
 
         email_match = self._EMAIL_RE.search(compact)
@@ -218,6 +279,7 @@ class AdmissionsService:
             "gaps_in_education": gaps,
             "certifications": certifications,
             "parser_mode": "rules",
+            "text_source": text_source,
             "text_length": len(compact),
             "doc_bytes": len(file_bytes),
             "mime_type": mime_type,

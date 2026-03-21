@@ -74,6 +74,7 @@ class DocumentService:
                 "class_12_percent": parsed.get("class_12_percent", 0),
                 "skills": parsed.get("skills", [])[:8],
                 "parser_mode": parsed.get("parser_mode", "rules"),
+                "text_source": parsed.get("text_source", "unknown"),
                 "text_length": text_len,
             },
         }

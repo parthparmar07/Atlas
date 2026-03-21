@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Mail, MessageSquare, Phone, RefreshCw, Send, ShieldAlert, Trash2, UserPlus } from "lucide-react";
+import { Mail, MessageSquare, Phone, RefreshCw, Send, ShieldAlert, Trash2, UserPlus, Play, X, CheckCircle } from "lucide-react";
 import { api } from "@/lib/api";
+import ExecutionTrace from "@/components/agents/ExecutionTrace";
 
 type Lead = {
   id: number;
@@ -129,6 +130,38 @@ export default function LeadNurturePage() {
     }
   };
 
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentResult, setAgentResult] = useState<any>(null);
+
+  const runAutonomousAgent = async () => {
+    setAgentRunning(true);
+    setError("");
+    setAgentResult(null);
+    try {
+      const data = await api<any>("/api/agent-exec/run", {
+        method: "POST",
+        body: JSON.stringify({
+          agent_id: "admissions-leads",
+          action: "Check Drop-offs",
+          context: JSON.stringify({
+            stale_days: 14,
+            drop_days: 30,
+            active_leads: leads.length,
+            channel,
+            source_mix: provenance?.source_mix ?? {},
+            generated_at: new Date().toISOString(),
+          }),
+        }),
+      });
+      setAgentResult(data);
+      await loadData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to run agent.");
+    } finally {
+      setAgentRunning(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -140,6 +173,9 @@ export default function LeadNurturePage() {
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Leads are persisted in backend DB, with real source provenance and interaction history.</p>
         </div>
         <div className="flex gap-3">
+          <button onClick={runAutonomousAgent} disabled={agentRunning} className="bg-indigo-600 border border-indigo-500 shadow-lg shadow-indigo-500/20 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700 flex items-center gap-2 transition disabled:opacity-50">
+            <RefreshCw className={`h-5 w-5 ${agentRunning ? "animate-spin" : ""}`} /> Run Autonomous Pipeline
+          </button>
           <button onClick={() => void loadData()} className="bg-white border border-slate-200 text-slate-700 px-4 py-3 rounded-xl font-bold hover:bg-slate-50 flex items-center gap-2 transition">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
@@ -253,6 +289,34 @@ export default function LeadNurturePage() {
           </div>
         </div>
       ) : null}
+
+      {agentResult && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Play className="h-5 w-5 text-indigo-500" /> Agent Execution Result
+              </h2>
+              <button onClick={() => setAgentResult(null)} className="text-slate-400 hover:text-slate-600 transition">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
+                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Summary</h3>
+                <p className="text-slate-700 dark:text-slate-300">{agentResult.result?.summary}</p>
+              </div>
+
+              {agentResult.execution_details && agentResult.execution_details.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Execution Pipeline</h3>
+                  <ExecutionTrace steps={agentResult.execution_details} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -35,6 +35,7 @@ import ScholarshipWorkflow from "@/components/workflows/ScholarshipWorkflow";
 import ITSupportWorkflow from "@/components/workflows/ITSupportWorkflow";
 import ExamSchedulerWorkflow from "@/components/workflows/ExamSchedulerWorkflow";
 import ResearchWorkflow from "@/components/workflows/ResearchWorkflow";
+import ExecutionTrace from "@/components/agents/ExecutionTrace";
 
 export interface AgentConfig {
   name: string;
@@ -140,7 +141,7 @@ const toSlug = (value: string) => value.toLowerCase().replace(/[^a-z0-9\-]+/g, "
 
 // ── Result Drawer ─────────────────────────────────────────────────────────────
 interface DrawerProps {
-  result: { action: string; status: string; result: any; timestamp: string; telemetry?: any } | null;
+  result: { action: string; status: string; result: any; timestamp: string; telemetry?: any; execution_details?: any[] } | null;
   onClose: () => void;
 }
 
@@ -270,6 +271,18 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
                     </div>
                  </div>
               </div>
+            ) : (result?.execution_details && result.execution_details.length > 0) ? (
+              <div className="space-y-6">
+                 <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-8">
+                       <div>
+                          <h3 className="text-xl font-black text-slate-900 tracking-tight underline decoration-indigo-200 decoration-4">Autonomous Execution Trace</h3>
+                          <p className="text-xs text-slate-400 mt-1 font-bold italic">Generated via AI Pipeline</p>
+                       </div>
+                    </div>
+                      <ExecutionTrace steps={result.execution_details} />
+                 </div>
+              </div>
             ) : (
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <pre className="text-[13px] leading-6 text-slate-700 whitespace-pre-wrap font-mono">
@@ -298,7 +311,6 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [drawerResult, setDrawerResult] = useState<DrawerProps["result"]>(null);
   const [error, setError] = useState<string | null>(null);
-  const [opsMode, setOpsMode] = useState(false);
 
   const [opsLoading, setOpsLoading] = useState(true);
   const [opsRecords, setOpsRecords] = useState<any[]>([]);
@@ -315,7 +327,7 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
     try {
       const [recordsRes, provRes] = await Promise.all([
         fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}`),
-        fetch(`${backendBase}/api/ops/provenance/${domainSlug}/${moduleSlug}`)
+        fetch(`${backendBase}/api/ops/${domainSlug}/${moduleSlug}/provenance`)
       ]);
       if (recordsRes.ok) {
         const data = await recordsRes.json();
@@ -341,9 +353,30 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setDrawerResult({ action, status: data.status, result: data.result, timestamp: data.timestamp, telemetry: data.telemetry });
+        setDrawerResult({
+          action,
+          status: data.status,
+          result: data.result,
+          timestamp: data.timestamp,
+          telemetry: data.telemetry,
+          execution_details: data.execution_details,
+        });
       } else {
-         setOpsMode(true);
+        let errorDetail = `Execution failed with status ${res.status}.`;
+        try {
+          const payload = await res.json();
+          if (payload?.detail?.message) {
+            errorDetail = payload.detail.message;
+          } else if (payload?.detail) {
+            errorDetail = typeof payload.detail === "string" ? payload.detail : JSON.stringify(payload.detail);
+          }
+        } catch {
+          const fallbackText = await res.text();
+          if (fallbackText) {
+            errorDetail = fallbackText;
+          }
+        }
+        setError(errorDetail);
       }
     } catch (e: any) { setError(e.message); } finally { setRunningAction(null); }
   };
@@ -365,6 +398,11 @@ export default function AgentPageTemplate({ config }: { config: AgentConfig }) {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-8">
+      {error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 shadow-sm">
+          {error}
+        </div>
+      ) : null}
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8 space-y-6">
           <div className="flex items-center gap-4 text-sm font-bold">

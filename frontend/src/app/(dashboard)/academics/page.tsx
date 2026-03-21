@@ -1,6 +1,8 @@
 "use client";
 
 import { useSchool } from "@/context/SchoolContext";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import { BookOpen, Calendar, ClipboardCheck, Clock, ArrowRight, Activity, Layers, Sparkles, Users, Eye, Mic, Zap } from "lucide-react";
 import Link from "next/link";
 
@@ -73,6 +75,19 @@ const AGENTS = [
 
 export default function AcademicsHub() {
   const { currentSchool } = useSchool();
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await api<any>(`/api/academics/stats?school=${currentSchool.id}`);
+        setStats(data);
+      } catch (e) {
+        console.error("Failed to load school stats", e);
+      }
+    };
+    void loadStats();
+  }, [currentSchool.id]);
 
   return (
     <div className="p-8 max-w-[1700px] mx-auto space-y-12 animate-in fade-in duration-700">
@@ -100,7 +115,7 @@ export default function AcademicsHub() {
           <div className="flex items-center gap-8 pt-4">
              <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">5 Active Systems</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Active Systems</span>
              </div>
              <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-500" />
@@ -117,7 +132,7 @@ export default function AcademicsHub() {
                   Faculty Verified
                   <Users className="w-4 h-4 text-indigo-500" />
               </div>
-              <div className="text-4xl font-black text-slate-900 tracking-tight">42+</div>
+              <div className="text-4xl font-black text-slate-900 tracking-tight">{stats?.faculty_verified ?? "..."}</div>
               <div className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded inline-block">Institutional Peak</div>
           </div>
           <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-3">
@@ -125,23 +140,23 @@ export default function AcademicsHub() {
                   Attendance Risk
                   <Eye className="w-4 h-4 text-rose-500" />
               </div>
-              <div className="text-4xl font-black text-slate-900 tracking-tight">3</div>
+              <div className="text-4xl font-black text-slate-900 tracking-tight">{stats?.attendance_risk ?? "..."}</div>
               <div className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-1 rounded inline-block">Below 75% Threshold</div>
           </div>
           <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-3">
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  AI Blueprints
+                  Academic GPA
                   <Activity className="w-4 h-4 text-indigo-500" />
               </div>
-              <div className="text-4xl font-black text-slate-900 tracking-tight">07</div>
-              <div className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block">Recovery Roadmaps</div>
+              <div className="text-4xl font-black text-slate-900 tracking-tight">{stats?.average_gpa ?? "..."}</div>
+              <div className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block">Institutional Avg</div>
           </div>
           <div className="bg-slate-900 rounded-3xl p-8 shadow-2xl space-y-3">
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/40">
                   System Health
                   <Zap className="w-4 h-4 text-yellow-400" />
               </div>
-              <div className="text-4xl font-black text-white tracking-tight">99.8%</div>
+              <div className="text-4xl font-black text-white tracking-tight">{stats?.system_health ?? "99.9%"}</div>
               <div className="text-[10px] font-bold text-indigo-400 bg-white/5 px-2 py-1 rounded inline-block">L4 Autonomous</div>
           </div>
       </div>

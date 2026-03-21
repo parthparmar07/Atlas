@@ -173,7 +173,7 @@ class AgentBase(AgenticPipeline):
             artifact.update({"type": "STUDENT_RISK_DOSSIER", "risk_score": 75, "intervention_status": "Pending"})
         elif a_id == "hr-bot":
             artifact.update({"type": "ONBOARDING_PACK", "employee_tier": "Faculty", "onboarding_progress": 0})
-        elif a_id == "admissions-intelligence":
+        elif a_id == "admissions-intelligence-mock":
             artifact.update({"type": "MERIT_MATRIX", "enrollment_probability": 0.82})
             
         return artifact
@@ -195,7 +195,8 @@ class AgentBase(AgenticPipeline):
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "result": artifact,
             "telemetry": {"duration": 250, "steps": len(plan_list)},
-            "cascades": self._check_cascades(action, state)
+            "cascades": self._check_cascades(action, state),
+            "execution_details": getattr(st, 'execution_results', [])
         }
 
     def _check_cascades(self, action: str, state: AgentState) -> List[Dict[str, Any]]:

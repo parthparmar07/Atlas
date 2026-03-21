@@ -1,8 +1,9 @@
 "use client";
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle, FileSearch, FileText, RefreshCw, ScanLine, Search, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle, FileSearch, FileText, RefreshCw, ScanLine, Search, UploadCloud, Play, X } from "lucide-react";
 import { api, fetchWithAuth } from "@/lib/api";
+import ExecutionTrace from "@/components/agents/ExecutionTrace";
 
 type Lead = {
   id: number;
@@ -19,6 +20,13 @@ type Doc = {
   uploaded_at: string | null;
 };
 
+const DOCUMENT_AGENT_ACTIONS = [
+  { value: "Verify Batch", label: "Verify Batch" },
+  { value: "Flag Issues", label: "Flag Issues" },
+  { value: "Generate Checklist", label: "Generate Checklist" },
+  { value: "Push to ERP", label: "Push to ERP" },
+];
+
 export default function DocumentVerifierPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<string>("");
@@ -30,12 +38,15 @@ export default function DocumentVerifierPage() {
   const [query, setQuery] = useState("");
   const [docType, setDocType] = useState("resume");
 
-  const loadLeads = async () => {
+  const loadLeads = async (): Promise<string> => {
     const leadData = await api<Lead[]>("/api/admissions/leads");
     setLeads(leadData ?? []);
     if (!selectedLeadId && leadData?.length) {
-      setSelectedLeadId(String(leadData[0].id));
+      const defaultLeadId = String(leadData[0].id);
+      setSelectedLeadId(defaultLeadId);
+      return defaultLeadId;
     }
+    return selectedLeadId;
   };
 
   const loadDocs = async (leadId: string) => {
@@ -51,7 +62,10 @@ export default function DocumentVerifierPage() {
     setLoading(true);
     setError("");
     try {
-      await loadLeads();
+      const activeLeadId = await loadLeads();
+      if (activeLeadId) {
+        await loadDocs(activeLeadId);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load document data.");
     } finally {
@@ -118,6 +132,52 @@ export default function DocumentVerifierPage() {
     }
   };
 
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentResult, setAgentResult] = useState<any>(null);
+  const [agentAction, setAgentAction] = useState<string>(DOCUMENT_AGENT_ACTIONS[0].value);
+
+  const buildAgentContext = (action: string) => {
+    const verifiedCount = docs.filter((d) => d.verified).length;
+    const pendingCount = docs.length - verifiedCount;
+    return {
+      action,
+      lead_id: selectedLeadId ? Number(selectedLeadId) : null,
+      lead_name: selectedLeadName,
+      doc_type: docType,
+      total_docs_for_lead: docs.length,
+      verified_docs_for_lead: verifiedCount,
+      pending_docs_for_lead: pendingCount,
+      limit: Math.max(5, Math.min(30, docs.length || 8)),
+      generated_at: new Date().toISOString(),
+    };
+  };
+
+  const runAutonomousAgent = async () => {
+    setAgentRunning(true);
+    setError("");
+    setAgentResult(null);
+    try {
+      const context = buildAgentContext(agentAction);
+      const data = await api<any>("/api/agent-exec/run", {
+        method: "POST",
+        body: JSON.stringify({
+          agent_id: "admissions-documents",
+          action: agentAction,
+          context: JSON.stringify(context),
+        }),
+      });
+      setAgentResult(data);
+      await loadAll();
+      if (selectedLeadId) {
+        await loadDocs(selectedLeadId);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to run bulk OCR agent.");
+    } finally {
+      setAgentRunning(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -128,9 +188,23 @@ export default function DocumentVerifierPage() {
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Upload lead documents, run OCR verification, and track extracted metadata.</p>
         </div>
-        <button onClick={() => void loadAll()} className="px-4 py-3 rounded-xl border bg-white flex items-center gap-2 font-bold">
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </button>
+        <div className="flex gap-3">
+          <select
+            value={agentAction}
+            onChange={(e) => setAgentAction(e.target.value)}
+            className="px-3 py-3 rounded-xl border bg-white text-sm font-bold text-slate-700"
+          >
+            {DOCUMENT_AGENT_ACTIONS.map((action) => (
+              <option key={action.value} value={action.value}>{action.label}</option>
+            ))}
+          </select>
+          <button onClick={runAutonomousAgent} disabled={agentRunning} className="bg-indigo-600 border border-indigo-500 shadow-lg shadow-indigo-500/20 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700 flex items-center gap-2 transition disabled:opacity-50">
+            <RefreshCw className={`h-5 w-5 ${agentRunning ? "animate-spin" : ""}`} /> {agentRunning ? "Running..." : `Run ${agentAction}`}
+          </button>
+          <button onClick={() => void loadAll()} className="px-4 py-3 rounded-xl border bg-white flex items-center gap-2 font-bold">
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+        </div>
       </div>
 
       {error ? <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div> : null}
@@ -212,6 +286,34 @@ export default function DocumentVerifierPage() {
           </table>
         </div>
       </div>
+
+      {agentResult && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Play className="h-5 w-5 text-indigo-500" /> Agent Execution Result
+              </h2>
+              <button onClick={() => setAgentResult(null)} className="text-slate-400 hover:text-slate-600 transition">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
+                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Summary</h3>
+                <p className="text-slate-700 dark:text-slate-300">{agentResult.result?.summary}</p>
+              </div>
+
+              {agentResult.execution_details && agentResult.execution_details.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Execution Pipeline</h3>
+                  <ExecutionTrace steps={agentResult.execution_details} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

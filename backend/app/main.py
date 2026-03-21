@@ -60,23 +60,54 @@ async def seed_data():
     
     try:
         async with async_session_maker() as db:
+            from sqlalchemy import delete
+            # Clear existing logic-heavy data to ensure robust multi-tenant refresh
+            await db.execute(delete(AuditLog))
+            await db.execute(delete(Course))
+            await db.execute(delete(Student))
+            await db.execute(delete(Faculty))
+            await db.commit()
+            print("Cleanup complete. Regenerating institutional fabric...")
+
             # 1. Seed Faculty
             f_result = await db.execute(select(Faculty).limit(1))
             if not f_result.scalar_one_or_none():
                 faculty_seeds = [
                     {"name": "Dr. Aarav Mehta", "email": "aarav.m@atlas.edu.in", "qualification": "Ph.D. in Strategic Design, MIT", "exp": 15, "achievements": "Lead Researcher for Urban Mobility 2025.", "school": "atlas", "dept": "Strategic Design"},
                     {"name": "Prof. Ishani Gupta", "email": "ishani.g@isme.in", "qualification": "MBA, Harvard Business School", "exp": 12, "achievements": "Winner of National Teaching Excellence 2023.", "school": "isme", "dept": "Management"},
+                    {"name": "Ar. Vikram Singh", "email": "vikram.s@isdi.edu.in", "qualification": "M.Arch, AA London", "exp": 20, "achievements": "Red Dot Design Award Winner.", "school": "isdi", "dept": "Architecture"},
+                    {"name": "Kyra Chen", "email": "kyra.c@dot.tech", "qualification": "M.S. in AI, Stanford", "exp": 8, "achievements": "Creator of the 'Nexus' Neural Engine.", "school": "dot", "dept": "Advanced Tech"},
+                    {"name": "Father Joseph", "email": "joseph@vgs.edu.in", "qualification": "M.Ed, Cambridge", "exp": 25, "achievements": "Educational Reformist with 30+ schools under management.", "school": "vgs", "dept": "Pedagogy"},
+                    {"name": "Sophia Rodriguez", "email": "sophia.r@ischool.in", "qualification": "B.Ed, NYU", "exp": 6, "achievements": "Early Childhood Specialist.", "school": "isdi_ischool", "dept": "Foundations"}
                 ]
                 for f in faculty_seeds:
-                    db.add(Faculty(name=f["name"], email=f["email"], qualification=f["qualification"], experience_years=f["exp"], achievements=f["achievements"], school_id=f["school"], department=f["dept"]))
-                print("Faculty seeded.")
+                    fac_obj = Faculty(name=f["name"], email=f["email"], qualification=f["qualification"], experience_years=f["exp"], achievements=f["achievements"], school_id=f["school"], department=f["dept"])
+                    db.add(fac_obj)
+                    await db.flush() # Get ID for course assignment
+                    
+                    # Add a default course
+                    db.add(Course(name=f"Advanced {f['dept']}", code=f"{str(f['school']).upper()}-101", credit_hours=4, faculty_id=fac_obj.id))
+                
+                print("Faculty & Courses seeded.")
 
             # 2. Seed Students
             s_result = await db.execute(select(Student).limit(1))
             if not s_result.scalar_one_or_none():
                 student_seeds = [
+                    # ATLAS
                     {"name": "Rahul Verma", "email": "rahul.v@student.atlas.edu.in", "roll": "AT2024-001", "level": StudentLevel.UNDERGRADUATE, "school": "atlas", "attendance": 64.5, "gpa": 6.8, "risk": 45, "prog": "B.Des (UI/UX)"},
+                    {"name": "Ananya Iyer", "email": "ananya.i@student.atlas.edu.in", "roll": "AT2024-002", "level": StudentLevel.UNDERGRADUATE, "school": "atlas", "attendance": 92.1, "gpa": 9.4, "risk": 5, "prog": "B.Des (Fashion)"},
+                    # ISME
                     {"name": "Priya Sharma", "email": "priya.s@student.isme.in", "roll": "IS2024-042", "level": StudentLevel.UNDERGRADUATE, "school": "isme", "attendance": 68.2, "gpa": 5.2, "risk": 78, "prog": "MBA (Global)"},
+                    {"name": "Karan Malhotra", "email": "karan.m@student.isme.in", "roll": "IS2024-043", "level": StudentLevel.POSTGRADUATE, "school": "isme", "attendance": 85.0, "gpa": 8.1, "risk": 12, "prog": "PGDM (Finance)"},
+                    # ISDI
+                    {"name": "Zoya Khan", "email": "zoya.k@student.isdi.in", "roll": "ID2024-101", "level": StudentLevel.UNDERGRADUATE, "school": "isdi", "attendance": 71.5, "gpa": 7.3, "risk": 30, "prog": "Communication Design"},
+                    # DOT
+                    {"name": "Leo Zhang", "email": "leo.z@student.dot.tech", "roll": "DT2024-999", "level": StudentLevel.EXECUTIVE, "school": "dot", "attendance": 45.0, "gpa": 8.5, "risk": 90, "prog": "AI & Robotics Boot Camp"},
+                    # VGS
+                    {"name": "Master Arjun", "email": "arjun@vgs.edu.in", "roll": "VGS-501", "level": StudentLevel.UNDERGRADUATE, "school": "vgs", "attendance": 99.0, "gpa": 9.8, "risk": 0, "prog": "Grade 10 - ICSE"},
+                    # iSchool
+                    {"name": "Baby Diya", "email": "diya@ischool.in", "roll": "IS-001", "level": StudentLevel.UNDERGRADUATE, "school": "isdi_ischool", "attendance": 100.0, "gpa": 10.0, "risk": 0, "prog": "Pre-K"}
                 ]
                 for s in student_seeds:
                     db.add(Student(name=s["name"], email=s["email"], roll_number=s["roll"], level=s["level"], school_id=s["school"], attendance_rate=s["attendance"], gpa=s["gpa"], risk_score=float(s["risk"]), programme=s["prog"]))
@@ -104,13 +135,17 @@ async def seed_data():
             a_result = await db.execute(select(AuditLog).limit(1))
             if not a_result.scalar_one_or_none():
                 audit_seeds = [
-                    {"user_id": admin_id, "action": "LOGIN_SUCCESS", "resource": "AuthService", "ip": "192.168.1.1", "status": "SUCCESS"},
-                    {"user_id": admin_id, "action": "UPDATE_STUDENT_PROFILE", "resource": "StudentService", "ip": "192.168.1.1", "status": "SUCCESS"},
-                    {"user_id": admin_id, "action": "SUBMIT_LEAVE_REQUEST", "resource": "AcademicService", "ip": "192.168.1.42", "status": "SUCCESS"},
-                    {"user_id": admin_id, "action": "UNAUTHORIZED_ACCESS_ATTEMPT", "resource": "AdminSettings", "ip": "10.0.0.5", "status": "FAILED"},
+                    {"user_id": admin_id, "action": "LOGIN_SUCCESS", "resource": "AuthService", "ip": "192.168.1.1", "status": "SUCCESS", "school": "atlas"},
+                    {"user_id": admin_id, "action": "UPDATE_STUDENT_PROFILE", "resource": "StudentService", "ip": "192.168.1.1", "status": "SUCCESS", "school": "atlas"},
+                    {"user_id": admin_id, "action": "SUBMIT_LEAVE_REQUEST", "resource": "AcademicService", "ip": "192.168.1.42", "status": "SUCCESS", "school": "isme"},
+                    {"user_id": admin_id, "action": "UNAUTHORIZED_ACCESS_ATTEMPT", "resource": "AdminSettings", "ip": "10.0.0.5", "status": "FAILED", "school": "isme"},
+                    {"user_id": admin_id, "action": "DEPLOY_AI_AGENT", "resource": "Orchestrator", "ip": "10.0.0.10", "status": "SUCCESS", "school": "dot"},
+                    {"user_id": admin_id, "action": "ACCESS_FACULTY_PORTAL", "resource": "FacultyService", "ip": "192.168.1.100", "status": "SUCCESS", "school": "isdi"},
+                    {"user_id": admin_id, "action": "SYNC_PEDAGOGY_MODEL", "resource": "VGS-Core", "ip": "172.16.0.5", "status": "SUCCESS", "school": "vgs"},
+                    {"user_id": admin_id, "action": "INITIALIZE_FOUNDATION", "resource": "iSchool-Sync", "ip": "172.16.0.12", "status": "SUCCESS", "school": "isdi_ischool"},
                 ]
                 for a in audit_seeds:
-                    db.add(AuditLog(user_id=a["user_id"], action=a["action"], resource=a["resource"], ip_address=a["ip"], status=a["status"]))
+                    db.add(AuditLog(user_id=a["user_id"], action=a["action"], resource=a["resource"], ip_address=a["ip"], status=a["status"], school_id=a["school"]))
                 print("Audit logs seeded.")
 
             await db.commit()

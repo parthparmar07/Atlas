@@ -1,4 +1,7 @@
 from app.modules.admissions_chat.agent import AdmissionsChatAgent
+from app.modules.admissions_intel.agent import AdmissionsIntelligenceAgent
+from app.modules.lead_nurture.agent import LeadNurtureAgent
+from app.modules.document_verifier.agent import DocumentVerifierAgent
 from app.modules.scholarship_matcher.agent import ScholarshipMatcherAgent
 from app.modules.career_advisor.agent import CareerAdvisorAgent
 from app.modules.alumni_network.agent import AlumniNetworkAgent
@@ -26,6 +29,9 @@ from app.services.ai.agents.base import AgentBase
 
 ALL_AGENTS: list[AgentBase] = [
     AdmissionsChatAgent(),
+    AdmissionsIntelligenceAgent(),
+    LeadNurtureAgent(),
+    DocumentVerifierAgent(),
     ScholarshipMatcherAgent(),
     CareerAdvisorAgent(),
     AlumniNetworkAgent(),

@@ -17,8 +17,8 @@ const ACTIONS = [
     label: "Qualify Leads",
     desc: "Score all leads (0–100), tier as Hot/Warm/Cold, generate counsellor briefings for top 5.",
     fields: [
-      { id: "batch", label: "Batch / Cohort", placeholder: "e.g. BATCH-2026-A", defaultValue: "BATCH-2026-A" },
-      { id: "programme", label: "Programme Filter", placeholder: "e.g. B.Tech CSE or All", defaultValue: "All Programmes" },
+      { id: "batch_size", label: "Batch Size", placeholder: "e.g. 20", defaultValue: "20" },
+      { id: "programme_filter", label: "Programme Filter", placeholder: "e.g. B.Tech CSE or All", defaultValue: "All" },
     ],
   },
   {
@@ -28,8 +28,8 @@ const ACTIONS = [
     label: "Parse Documents",
     desc: "Extract academic scores, skills, certifications from uploaded marksheets, CVs, certificates.",
     fields: [
-      { id: "doc_type", label: "Document Type", placeholder: "Marksheet / CV / Certificate", defaultValue: "Marksheet" },
-      { id: "source", label: "Upload Source", placeholder: "e.g. CRM upload or email attachment", defaultValue: "CRM Upload" },
+      { id: "doc_type", label: "Document Type", placeholder: "Marksheet / Resume / Certificate", defaultValue: "Marksheet" },
+      { id: "limit", label: "Documents Limit", placeholder: "e.g. 10", defaultValue: "10" },
     ],
   },
   {
@@ -39,8 +39,8 @@ const ACTIONS = [
     label: "Track Funnel",
     desc: "Show stage counts, conversion rates, stalled leads >5 days, top 10 today's priority leads.",
     fields: [
-      { id: "cycle", label: "Admission Cycle", placeholder: "e.g. 2026-27", defaultValue: "2026-27" },
-      { id: "programme", label: "Programme", placeholder: "e.g. All or B.Tech CSE", defaultValue: "All Programmes" },
+      { id: "stale_after_days", label: "Stale Threshold (days)", placeholder: "e.g. 5", defaultValue: "5" },
+      { id: "programme_filter", label: "Programme Focus", placeholder: "e.g. All or B.Tech CSE", defaultValue: "All" },
     ],
   },
   {
@@ -61,8 +61,8 @@ const ACTIONS = [
     label: "Match Scholarships",
     desc: "Match students against Central, Maharashtra state, and institutional scholarship schemes.",
     fields: [
-      { id: "category", label: "Student Category", placeholder: "e.g. SC/ST, OBC, General", defaultValue: "All Categories" },
-      { id: "min_income", label: "Income Limit (₹/yr)", placeholder: "e.g. 800000", defaultValue: "800000" },
+      { id: "min_score", label: "Minimum Score", placeholder: "e.g. 60", defaultValue: "60" },
+      { id: "limit", label: "Lead Limit", placeholder: "e.g. 10", defaultValue: "10" },
     ],
   },
   {
@@ -73,7 +73,7 @@ const ACTIONS = [
     desc: "Pre-call briefings: academic strength, programme fit, objections, talking points, red flags.",
     fields: [
       { id: "counsellor", label: "Counsellor Name", placeholder: "e.g. Ms. Sharma or All", defaultValue: "All Counsellors" },
-      { id: "date", label: "Call Date", placeholder: "e.g. Today", defaultValue: "Today" },
+      { id: "limit", label: "Lead Limit", placeholder: "e.g. 8", defaultValue: "8" },
     ],
   },
 ];
@@ -104,6 +104,12 @@ export default function AdmissionsScoringWorkflow({ onExecute, isExecuting }: Ad
 
   const action = ACTIONS[selected];
 
+  const toPositiveInt = (value: string, fallback: number) => {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+    return parsed;
+  };
+
   const getField = (idx: number, fid: string) =>
     fieldValues[idx]?.[fid] ?? action.fields.find((f) => f.id === fid)?.defaultValue ?? "";
 
@@ -114,17 +120,42 @@ export default function AdmissionsScoringWorkflow({ onExecute, isExecuting }: Ad
     }));
 
   const handleRun = () => {
-    const fieldLines = action.fields
-      .map((f) => `${f.label}: ${getField(selected, f.id)}`)
-      .join("\n");
+    const fieldValues = action.fields.reduce<Record<string, string>>((acc, field) => {
+      acc[field.id] = getField(selected, field.id);
+      return acc;
+    }, {});
 
-    const context = [
-      `Action: ${action.key}`,
-      fieldLines,
-      customContext ? `Additional instructions: ${customContext}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const payload: Record<string, unknown> = {
+      action: action.key,
+      generated_at: new Date().toISOString(),
+    };
+
+    if (action.key === "Qualify Leads") {
+      payload.batch_size = toPositiveInt(fieldValues.batch_size || "", 20);
+      payload.programme_filter = fieldValues.programme_filter || "All";
+    } else if (action.key === "Parse Documents") {
+      payload.doc_type = fieldValues.doc_type || "marksheet";
+      payload.limit = toPositiveInt(fieldValues.limit || "", 10);
+    } else if (action.key === "Track Funnel") {
+      payload.stale_after_days = toPositiveInt(fieldValues.stale_after_days || "", 5);
+      payload.programme_filter = fieldValues.programme_filter || "All";
+    } else if (action.key === "Generate Follow-Up Messages") {
+      const channelRaw = (fieldValues.channel || "whatsapp").toLowerCase();
+      payload.channel = channelRaw === "both" ? "whatsapp" : channelRaw;
+      payload.days_stale = toPositiveInt(fieldValues.days_stale || "", 3);
+    } else if (action.key === "Match Scholarships") {
+      payload.min_score = toPositiveInt(fieldValues.min_score || "", 60);
+      payload.limit = toPositiveInt(fieldValues.limit || "", 10);
+    } else if (action.key === "Brief Counsellors") {
+      payload.counsellor = fieldValues.counsellor || "All Counsellors";
+      payload.limit = toPositiveInt(fieldValues.limit || "", 8);
+    }
+
+    if (customContext.trim()) {
+      payload.additional_instructions = customContext.trim();
+    }
+
+    const context = JSON.stringify(payload);
 
     setLastRan(action.key);
     onExecute(action.key, context);

@@ -1,4 +1,5 @@
 from app.modules.admissions_chat.agent import AdmissionsChatAgent
+from app.modules.admissions_intel.agent import AdmissionsIntelligenceAgent
 from app.modules.lead_nurture.agent import LeadNurtureAgent
 from app.modules.document_verifier.agent import DocumentVerifierAgent
 from app.modules.scholarship_matcher.agent import ScholarshipMatcherAgent
@@ -37,7 +38,7 @@ from app.services.ai.agents.base import AgentBase
 
 ALL_AGENTS: dict[str, AgentBase] = {
     # Admissions
-    "admissions-intelligence": AdmissionsChatAgent(),
+    "admissions-intelligence": AdmissionsIntelligenceAgent(),
     "admissions-leads": LeadNurtureAgent(),
     "admissions-scholarship": ScholarshipMatcherAgent(),
     "admissions-documents": DocumentVerifierAgent(),
