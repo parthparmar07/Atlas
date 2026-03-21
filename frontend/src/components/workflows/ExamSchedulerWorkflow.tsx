@@ -21,7 +21,18 @@ export default function ExamSchedulerWorkflow({ onExecute, isExecuting }: ExamSc
   const [lastRan, setLastRan] = useState<string | null>(null);
 
   const run = (actionKey: string) => {
-    const context = `Exam Type: ${examType}\nCourses: ${courses}\nAction: ${actionKey}`;
+    const context = JSON.stringify({
+      action: actionKey,
+      school_id: "atlas",
+      exam_type: examType,
+      course_scope: courses,
+      exam_cycle: examType,
+      halls: [
+        { name: "Hall A", capacity: 120 },
+        { name: "Hall B", capacity: 90 },
+        { name: "Lab 1", capacity: 60 },
+      ],
+    });
     setLastRan(actionKey);
     onExecute(actionKey, context);
   };

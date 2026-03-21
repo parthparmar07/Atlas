@@ -82,12 +82,58 @@ export default function TimetableWorkflow({ onExecute, isExecuting }: TimetableW
   const [lastRan, setLastRan] = useState<string | null>(null);
 
   const runAction = (actionKey: string) => {
-    const context = [
-      `Department: ${department}`,
-      `Semester: ${semester}`,
-      customContext ? `Instructions: ${customContext}` : "",
-      `Action: ${actionKey}`
-    ].filter(Boolean).join("\n");
+    const actionPayload: Record<string, unknown> = {
+      action: actionKey,
+      school_id: "atlas",
+      department,
+      semester,
+      instructions: customContext,
+    };
+
+    if (actionKey === "Parse Timetable Constraints") {
+      actionPayload.constraint_text = customContext || "No faculty should be double booked; lab classes must use lab rooms.";
+      actionPayload.constraints = [
+        "No faculty should be double booked in the same slot",
+        "Final year labs must be scheduled in specialized labs",
+        "Avoid 4+ consecutive periods for the same faculty",
+      ];
+    }
+
+    if (actionKey === "Detect Conflicts") {
+      actionPayload.scope = "all_published_slots";
+      actionPayload.conflict_scan = ["faculty", "room", "section", "consecutive_load"];
+    }
+
+    if (actionKey === "Manage Substitutions") {
+      actionPayload.absent_faculty = "Dr. Reddy";
+      actionPayload.reason = "Medical leave";
+      actionPayload.day = "Thursday";
+    }
+
+    if (actionKey === "Audit Curriculum Coverage") {
+      actionPayload.programme = department;
+      actionPayload.benchmarks = ["NEP 2020", "Outcome Based Education", "Industry Skill Trends"];
+    }
+
+    if (actionKey === "Generate Academic Calendar") {
+      actionPayload.start_date = "2026-07-01";
+      actionPayload.end_date = "2026-11-30";
+      actionPayload.holidays = [
+        { name: "Independence Day", date: "2026-08-15" },
+        { name: "Gandhi Jayanti", date: "2026-10-02" },
+      ];
+    }
+
+    if (actionKey === "Schedule Examinations") {
+      actionPayload.exam_cycle = "End Semester";
+      actionPayload.halls = [
+        { name: "Hall A", capacity: 120 },
+        { name: "Hall B", capacity: 90 },
+        { name: "Lab 1", capacity: 60 },
+      ];
+    }
+
+    const context = JSON.stringify(actionPayload);
     
     setLastRan(actionKey);
     onExecute(actionKey, context);

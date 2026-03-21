@@ -3,7 +3,7 @@
 import { useSchool } from "@/context/SchoolContext";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { BookOpen, Calendar, ClipboardCheck, Clock, ArrowRight, Activity, Layers, Sparkles, Users, Eye, Mic, Zap } from "lucide-react";
+import { BookOpen, Calendar, ClipboardCheck, Clock, ArrowRight, Activity, Layers, Sparkles, Users, Eye, Mic, Zap, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 const AGENTS = [
@@ -76,6 +76,34 @@ const AGENTS = [
 export default function AcademicsHub() {
   const { currentSchool } = useSchool();
   const [stats, setStats] = useState<any>(null);
+  const [automationRuns, setAutomationRuns] = useState<any[]>([]);
+  const [automationBusy, setAutomationBusy] = useState(false);
+  const [automationError, setAutomationError] = useState("");
+
+  const loadAutomationRuns = async () => {
+    try {
+      const data = await api<{ runs: any[] }>(`/api/academics/automation/runs?school=${currentSchool.id}&limit=5`);
+      setAutomationRuns(data.runs ?? []);
+    } catch (e) {
+      setAutomationError(e instanceof Error ? e.message : "Failed to load automation runs.");
+    }
+  };
+
+  const runAutomation = async () => {
+    setAutomationBusy(true);
+    setAutomationError("");
+    try {
+      await api("/api/academics/automation/run", {
+        method: "POST",
+        body: JSON.stringify({ school: currentSchool.id, trigger_type: "manual", trigger_ref: "hub-runner" }),
+      });
+      await loadAutomationRuns();
+    } catch (e) {
+      setAutomationError(e instanceof Error ? e.message : "Automation run failed.");
+    } finally {
+      setAutomationBusy(false);
+    }
+  };
 
   useEffect(() => {
     const loadStats = async () => {
@@ -87,6 +115,7 @@ export default function AcademicsHub() {
       }
     };
     void loadStats();
+    void loadAutomationRuns();
   }, [currentSchool.id]);
 
   return (
@@ -160,6 +189,46 @@ export default function AcademicsHub() {
               <div className="text-[10px] font-bold text-indigo-400 bg-white/5 px-2 py-1 rounded inline-block">L4 Autonomous</div>
           </div>
       </div>
+
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.22em]">Phase 4 Automation</div>
+            <h2 className="text-2xl font-black text-slate-900 mt-1">Academic Guardrail Cycle</h2>
+            <p className="text-sm text-slate-500 font-medium mt-1">Runs conflict, exam, calendar, and curriculum guardrails in one autonomous pass.</p>
+          </div>
+          <button
+            onClick={() => void runAutomation()}
+            disabled={automationBusy}
+            className="px-6 py-3 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all disabled:opacity-60 inline-flex items-center gap-2"
+          >
+            {automationBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-400" />}
+            Run Automation Cycle
+          </button>
+        </div>
+
+        {automationError ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{automationError}</div>
+        ) : null}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {automationRuns.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">No automation runs yet for this school.</div>
+          ) : (
+            automationRuns.map((run) => (
+              <div key={run.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-black text-slate-900">Run #{run.id}</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-1">{run.status}</div>
+                </div>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">{run.summary}</p>
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(run.created_at).toLocaleString()}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {AGENTS.map((agent) => (
           <Link 

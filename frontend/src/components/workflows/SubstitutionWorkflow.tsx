@@ -13,13 +13,18 @@ export default function SubstitutionWorkflow({ onExecute, isExecuting }: Substit
   const [slot, setSlot] = useState("Thu 10:00-11:00");
   const [section, setSection] = useState("FY-CSE-A");
 
-  const context = [
-    `Absent Faculty: ${faculty}`,
-    `Subject: ${subject}`,
-    `Class Slot: ${slot}`,
-    `Section: ${section}`,
-    "Goal: identify best substitute, notify HOD and students, and update timetable state.",
-  ].join("\n");
+  const buildContext = (action: string) => {
+    return JSON.stringify({
+      action,
+      school_id: "atlas",
+      absent_faculty: faculty,
+      subject,
+      class_slot: slot,
+      section,
+      reason: "Faculty leave",
+      affected_classes: [{ section, subject, slot }],
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -33,9 +38,9 @@ export default function SubstitutionWorkflow({ onExecute, isExecuting }: Substit
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <ActionCard icon={<UserCheck className="w-6 h-6 text-cyan-600 mb-3" />} title="Find Substitute" desc="Rank substitutes by free slot and subject fit." onClick={() => onExecute("Find Substitute", context)} disabled={isExecuting} />
-        <ActionCard icon={<Bell className="w-6 h-6 text-cyan-600 mb-3" />} title="Notify Students" desc="Generate student + HOD notification draft." onClick={() => onExecute("Notify Students", context)} disabled={isExecuting} />
-        <ActionCard icon={<Users className="w-6 h-6 text-cyan-600 mb-3" />} title="Update Timetable" desc="Apply substitution into timetable state." onClick={() => onExecute("Update Timetable", context)} disabled={isExecuting} />
+        <ActionCard icon={<UserCheck className="w-6 h-6 text-cyan-600 mb-3" />} title="Find Substitute" desc="Rank substitutes by free slot and subject fit." onClick={() => onExecute("Find Substitute", buildContext("Find Substitute"))} disabled={isExecuting} />
+        <ActionCard icon={<Bell className="w-6 h-6 text-cyan-600 mb-3" />} title="Notify Students" desc="Generate student + HOD notification draft." onClick={() => onExecute("Notify Students", buildContext("Notify Students"))} disabled={isExecuting} />
+        <ActionCard icon={<Users className="w-6 h-6 text-cyan-600 mb-3" />} title="Update Timetable" desc="Apply substitution into timetable state." onClick={() => onExecute("Update Timetable", buildContext("Update Timetable"))} disabled={isExecuting} />
       </div>
     </div>
   );

@@ -12,12 +12,19 @@ export default function CurriculumWorkflow({ onExecute, isExecuting }: Curriculu
   const [semester, setSemester] = useState("Semester 5");
   const [referenceSet, setReferenceSet] = useState("Last 5 years question papers + industry skills trend");
 
-  const context = [
-    `Programme: ${programme}`,
-    `Semester: ${semester}`,
-    `Reference Data: ${referenceSet}`,
-    "Need: over-tested vs under-taught topic map and actionable curriculum revision recommendations.",
-  ].join("\n");
+  const buildContext = (action: string) => {
+    return JSON.stringify({
+      action,
+      school_id: "atlas",
+      programme,
+      semester,
+      reference_set: referenceSet,
+      benchmarks: ["NEP 2020", "NASSCOM FutureSkills", "OBE Rubric"],
+      track: "Data Science",
+      industry_roles: ["Data Analyst", "ML Engineer", "Data Engineer"],
+      programmes: [programme],
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -28,10 +35,10 @@ export default function CurriculumWorkflow({ onExecute, isExecuting }: Curriculu
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <ActionCard icon={<BookOpenCheck className="w-6 h-6 text-cyan-600 mb-3" />} title="Audit Syllabus" desc="Gap analysis with exam/skill trend alignment." onClick={() => onExecute("Audit Syllabus", context)} disabled={isExecuting} />
-        <ActionCard icon={<ShieldCheck className="w-6 h-6 text-cyan-600 mb-3" />} title="NEP Compliance" desc="NEP 2020 policy readiness checks." onClick={() => onExecute("NEP Compliance", context)} disabled={isExecuting} />
-        <ActionCard icon={<TrendingUp className="w-6 h-6 text-cyan-600 mb-3" />} title="Industry Alignment" desc="Compare syllabus with role-demand skills." onClick={() => onExecute("Industry Alignment", context)} disabled={isExecuting} />
-        <ActionCard icon={<FileBarChart className="w-6 h-6 text-cyan-600 mb-3" />} title="Generate Audit Report" desc="Produce department-ready summary report." onClick={() => onExecute("Generate Audit Report", context)} disabled={isExecuting} />
+        <ActionCard icon={<BookOpenCheck className="w-6 h-6 text-cyan-600 mb-3" />} title="Audit Syllabus" desc="Gap analysis with exam/skill trend alignment." onClick={() => onExecute("Audit Syllabus", buildContext("Audit Syllabus"))} disabled={isExecuting} />
+        <ActionCard icon={<ShieldCheck className="w-6 h-6 text-cyan-600 mb-3" />} title="NEP Compliance" desc="NEP 2020 policy readiness checks." onClick={() => onExecute("NEP Compliance", buildContext("NEP Compliance"))} disabled={isExecuting} />
+        <ActionCard icon={<TrendingUp className="w-6 h-6 text-cyan-600 mb-3" />} title="Industry Alignment" desc="Compare syllabus with role-demand skills." onClick={() => onExecute("Industry Alignment", buildContext("Industry Alignment"))} disabled={isExecuting} />
+        <ActionCard icon={<FileBarChart className="w-6 h-6 text-cyan-600 mb-3" />} title="Generate Audit Report" desc="Produce department-ready summary report." onClick={() => onExecute("Generate Audit Report", buildContext("Generate Audit Report"))} disabled={isExecuting} />
       </div>
     </div>
   );

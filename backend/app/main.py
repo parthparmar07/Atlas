@@ -86,7 +86,16 @@ async def seed_data():
                     await db.flush() # Get ID for course assignment
                     
                     # Add a default course
-                    db.add(Course(name=f"Advanced {f['dept']}", code=f"{str(f['school']).upper()}-101", credit_hours=4, faculty_id=fac_obj.id))
+                    db.add(
+                        Course(
+                            name=f"Advanced {f['dept']}",
+                            code=f"{str(f['school']).upper()}-101",
+                            semester=1,
+                            faculty_id=fac_obj.id,
+                            school_id=f["school"],
+                            syllabus_summary=f"Core foundations and applied practice for {f['dept']}",
+                        )
+                    )
                 
                 print("Faculty & Courses seeded.")
 
@@ -99,11 +108,11 @@ async def seed_data():
                     {"name": "Ananya Iyer", "email": "ananya.i@student.atlas.edu.in", "roll": "AT2024-002", "level": StudentLevel.UNDERGRADUATE, "school": "atlas", "attendance": 92.1, "gpa": 9.4, "risk": 5, "prog": "B.Des (Fashion)"},
                     # ISME
                     {"name": "Priya Sharma", "email": "priya.s@student.isme.in", "roll": "IS2024-042", "level": StudentLevel.UNDERGRADUATE, "school": "isme", "attendance": 68.2, "gpa": 5.2, "risk": 78, "prog": "MBA (Global)"},
-                    {"name": "Karan Malhotra", "email": "karan.m@student.isme.in", "roll": "IS2024-043", "level": StudentLevel.POSTGRADUATE, "school": "isme", "attendance": 85.0, "gpa": 8.1, "risk": 12, "prog": "PGDM (Finance)"},
+                    {"name": "Karan Malhotra", "email": "karan.m@student.isme.in", "roll": "IS2024-043", "level": StudentLevel.GRADUATE, "school": "isme", "attendance": 85.0, "gpa": 8.1, "risk": 12, "prog": "PGDM (Finance)"},
                     # ISDI
                     {"name": "Zoya Khan", "email": "zoya.k@student.isdi.in", "roll": "ID2024-101", "level": StudentLevel.UNDERGRADUATE, "school": "isdi", "attendance": 71.5, "gpa": 7.3, "risk": 30, "prog": "Communication Design"},
                     # DOT
-                    {"name": "Leo Zhang", "email": "leo.z@student.dot.tech", "roll": "DT2024-999", "level": StudentLevel.EXECUTIVE, "school": "dot", "attendance": 45.0, "gpa": 8.5, "risk": 90, "prog": "AI & Robotics Boot Camp"},
+                    {"name": "Leo Zhang", "email": "leo.z@student.dot.tech", "roll": "DT2024-999", "level": StudentLevel.GRADUATE, "school": "dot", "attendance": 45.0, "gpa": 8.5, "risk": 90, "prog": "AI & Robotics Boot Camp"},
                     # VGS
                     {"name": "Master Arjun", "email": "arjun@vgs.edu.in", "roll": "VGS-501", "level": StudentLevel.UNDERGRADUATE, "school": "vgs", "attendance": 99.0, "gpa": 9.8, "risk": 0, "prog": "Grade 10 - ICSE"},
                     # iSchool

@@ -1,4 +1,13 @@
+import logging
+from typing import Any, List
+
+from app.core.database import async_session_maker
+from app.modules.academics.service import academics_ops_service
+from app.services.ai.agentic.pipeline import AgentState
 from app.services.ai.agents.base import AgentBase
+
+
+logger = logging.getLogger(__name__)
 
 
 class TimetableAIAgent(AgentBase):
@@ -99,3 +108,37 @@ Ensure no student has two exams on the same day. Distribute across available hal
 Output: day-wise exam schedule, hall allotment table, and student seating plan format.
 Mark all outputs as proposed pending Principal approval.""",
     }
+
+    async def execute(self, state: AgentState) -> List[Any]:
+            context = academics_ops_service.parse_context(state.context)
+            try:
+                    async with async_session_maker() as db:
+                            if state.goal == "Parse Timetable Constraints":
+                                    reflection, steps = await academics_ops_service.parse_timetable_constraints(db, context)
+                            elif state.goal == "Detect Conflicts":
+                                    reflection, steps = await academics_ops_service.detect_timetable_conflicts(db, context)
+                            elif state.goal == "Manage Substitutions":
+                                    reflection, steps = await academics_ops_service.manage_substitutions(db, context)
+                            elif state.goal == "Audit Curriculum Coverage":
+                                    reflection, steps = await academics_ops_service.audit_syllabus(db, context)
+                            elif state.goal == "Generate Academic Calendar":
+                                    reflection, steps = await academics_ops_service.generate_calendar(db, context)
+                            elif state.goal == "Schedule Examinations":
+                                    reflection, steps = await academics_ops_service.schedule_exams(db, context)
+                            else:
+                                    state.reflection = f"No execution branch found for '{state.goal}'."
+                                    return [{"status": "unsupported_action", "goal": state.goal}]
+
+                            await db.commit()
+
+                    state.reflection = reflection
+                    return steps
+            except Exception as exc:
+                    logger.exception("Timetable AI execution failed for goal=%s", state.goal)
+                    state.reflection = f"Execution failed for '{state.goal}': {exc}"
+                    return [{"status": "failed", "goal": state.goal, "error": str(exc)}]
+
+    async def reflect(self, state: AgentState) -> str:
+            if state.reflection:
+                    return state.reflection
+            return await super().reflect(state)

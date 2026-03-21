@@ -2,8 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from app.core.database import get_db
-from app.models.academics import Student, Faculty, Course, AttendanceRecord, LeaveRequest, AttendanceStatus, LeaveStatus
+from app.models.academics import (
+    Student,
+    Faculty,
+    Course,
+    AttendanceRecord,
+    LeaveRequest,
+    LeaveStatus,
+    AcademicsAutomationRun,
+)
 from app.models.audit import AuditLog
+from app.modules.academics.service import academics_ops_service
 from app.core.config import settings
 import google.generativeai as genai
 import json
@@ -155,4 +164,54 @@ async def get_school_stats(school: str = "atlas", db: AsyncSession = Depends(get
         "average_gpa": avg_gpa,
         "institutional_peak": "92.4%", # Mocked for now
         "system_health": "99.9%"
+    }
+
+
+# 8. Academics Automation Orchestrator
+@router.post("/automation/run")
+async def run_automation(
+    school: str = Body("atlas", embed=True),
+    trigger_type: str = Body("manual", embed=True),
+    trigger_ref: str | None = Body(None, embed=True),
+    db: AsyncSession = Depends(get_db),
+):
+    run = await academics_ops_service.run_automation_cycle(
+        db,
+        school_id=(school or "atlas").strip().lower(),
+        trigger_type=(trigger_type or "manual").strip().lower(),
+        trigger_ref=(trigger_ref or None),
+    )
+    await db.commit()
+    return run
+
+
+@router.get("/automation/runs")
+async def list_automation_runs(
+    school: str = "atlas",
+    limit: int = 25,
+    db: AsyncSession = Depends(get_db),
+):
+    safe_limit = max(1, min(limit, 100))
+    rows = await db.execute(
+        select(AcademicsAutomationRun)
+        .where(AcademicsAutomationRun.school_id == (school or "atlas").strip().lower())
+        .order_by(AcademicsAutomationRun.created_at.desc())
+        .limit(safe_limit)
+    )
+    items = rows.scalars().all()
+    return {
+        "count": len(items),
+        "runs": [
+            {
+                "id": item.id,
+                "school_id": item.school_id,
+                "trigger_type": item.trigger_type,
+                "trigger_ref": item.trigger_ref,
+                "status": item.status,
+                "summary": item.summary,
+                "execution_details": item.execution_details,
+                "created_at": item.created_at,
+            }
+            for item in items
+        ],
     }

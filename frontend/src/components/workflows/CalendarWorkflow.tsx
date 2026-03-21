@@ -12,12 +12,26 @@ export default function CalendarWorkflow({ onExecute, isExecuting }: CalendarWor
   const [boardDates, setBoardDates] = useState("University exam block: Nov 12-28, Apr 10-26");
   const [holidays, setHolidays] = useState("State gazetted + university declared holidays");
 
-  const context = [
-    `Academic Year: ${academicYear}`,
-    `Exam Board Dates: ${boardDates}`,
-    `Holiday Inputs: ${holidays}`,
-    "Need: complete conflict-checked academic calendar with distribution-ready format.",
-  ].join("\n");
+  const buildContext = (action: string) => {
+    return JSON.stringify({
+      action,
+      school_id: "atlas",
+      academic_year: academicYear,
+      exam_board_dates: boardDates,
+      holiday_inputs: holidays,
+      start_date: "2026-07-01",
+      end_date: "2027-05-31",
+      event: {
+        name: "Institutional Event",
+        date: "2026-08-20",
+        type: "event",
+      },
+      holidays: [
+        { name: "Independence Day", date: "2026-08-15" },
+        { name: "Republic Day", date: "2027-01-26" },
+      ],
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -28,10 +42,10 @@ export default function CalendarWorkflow({ onExecute, isExecuting }: CalendarWor
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <ActionCard icon={<CalendarDays className="w-6 h-6 text-cyan-600 mb-3" />} title="Generate Calendar" desc="Build full year academic calendar." onClick={() => onExecute("Generate Calendar", context)} disabled={isExecuting} />
-        <ActionCard icon={<CalendarClock className="w-6 h-6 text-cyan-600 mb-3" />} title="Add Event" desc="Insert event with conflict checks." onClick={() => onExecute("Add Event", context)} disabled={isExecuting} />
-        <ActionCard icon={<Landmark className="w-6 h-6 text-cyan-600 mb-3" />} title="Holiday Mapping" desc="Map holidays and calculate teaching-day impact." onClick={() => onExecute("Holiday Mapping", context)} disabled={isExecuting} />
-        <ActionCard icon={<Download className="w-6 h-6 text-cyan-600 mb-3" />} title="Export Calendar" desc="Generate publication-ready calendar output." onClick={() => onExecute("Export Calendar", context)} disabled={isExecuting} />
+        <ActionCard icon={<CalendarDays className="w-6 h-6 text-cyan-600 mb-3" />} title="Generate Calendar" desc="Build full year academic calendar." onClick={() => onExecute("Generate Calendar", buildContext("Generate Calendar"))} disabled={isExecuting} />
+        <ActionCard icon={<CalendarClock className="w-6 h-6 text-cyan-600 mb-3" />} title="Add Event" desc="Insert event with conflict checks." onClick={() => onExecute("Add Event", buildContext("Add Event"))} disabled={isExecuting} />
+        <ActionCard icon={<Landmark className="w-6 h-6 text-cyan-600 mb-3" />} title="Holiday Mapping" desc="Map holidays and calculate teaching-day impact." onClick={() => onExecute("Holiday Mapping", buildContext("Holiday Mapping"))} disabled={isExecuting} />
+        <ActionCard icon={<Download className="w-6 h-6 text-cyan-600 mb-3" />} title="Export Calendar" desc="Generate publication-ready calendar output." onClick={() => onExecute("Export Calendar", buildContext("Export Calendar"))} disabled={isExecuting} />
       </div>
     </div>
   );

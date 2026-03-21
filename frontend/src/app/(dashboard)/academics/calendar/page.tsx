@@ -9,6 +9,7 @@ import {
   MoreHorizontal, Users, Target, ShieldCheck,
   AlertCircle, Activity, Globe, PlusCircle, Bookmark
 } from "lucide-react";
+import AcademicsActionRunner from "@/components/academics/AcademicsActionRunner";
 
 const SCHOOLS = [
   { id: "isme", name: "ISME Business", color: "bg-indigo-500", text: "text-indigo-500" },
@@ -61,6 +62,33 @@ export default function AcademicsCalendarPage() {
            </button>
         </div>
       </div>
+
+         <AcademicsActionRunner
+            title="Calendar Generator Control"
+            agentId="academics-calendar"
+            actions={[
+               { label: "Generate Calendar", description: "Create full semester calendar with teaching and exam windows." },
+               { label: "Add Event", description: "Insert approved milestones with overlap checks." },
+               { label: "Holiday Mapping", description: "Evaluate teaching-day impact from holiday load." },
+               { label: "Export Calendar", description: "Prepare publish-ready calendar payload by month." },
+            ]}
+            buildContext={(action) => ({
+               action,
+               school_id: actualSchoolId === "all" ? "atlas" : actualSchoolId,
+               academic_year: "2026-2027",
+               start_date: "2026-07-01",
+               end_date: "2027-05-31",
+               event: {
+                  name: "Industry Conclave",
+                  date: "2026-09-15",
+                  type: "event",
+               },
+               holidays: [
+                  { name: "Independence Day", date: "2026-08-15" },
+                  { name: "Republic Day", date: "2027-01-26" },
+               ],
+            })}
+         />
 
       <div className="grid grid-cols-12 gap-8">
          {/* Left Side: Modular Calendar Grid */}

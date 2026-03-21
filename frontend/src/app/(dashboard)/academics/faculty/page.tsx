@@ -15,15 +15,43 @@ interface Faculty {
   subjects: string[];
 }
 
+function normalizeFaculty(raw: unknown, index: number): Faculty {
+  const item = (raw ?? {}) as Record<string, unknown>;
+  const subjectList = Array.isArray(item.subjects)
+    ? item.subjects.filter((s): s is string => typeof s === "string")
+    : [];
+
+  return {
+    id: typeof item.id === "number" ? item.id : index,
+    name: typeof item.name === "string" && item.name.trim() ? item.name : "Unknown Faculty",
+    email: typeof item.email === "string" ? item.email : "",
+    qualification: typeof item.qualification === "string" && item.qualification.trim() ? item.qualification : "Not Provided",
+    experience: typeof item.experience === "number" ? item.experience : 0,
+    achievements: typeof item.achievements === "string" && item.achievements.trim() ? item.achievements : "No achievements listed.",
+    subjects: subjectList,
+  };
+}
+
 export default function FacultyTransparencyPage() {
   const { currentSchool } = useSchool();
   const [faculty, setFaculty] = useState<Faculty[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api<Faculty[]>(`/api/academics/faculty?school=${currentSchool.id}`)
-      .then(setFaculty)
+    setLoading(true);
+    setError(null);
+
+    api<unknown>(`/api/academics/faculty?school=${currentSchool.id}`)
+      .then((payload) => {
+        const rows = Array.isArray(payload) ? payload : [];
+        setFaculty(rows.map((item, index) => normalizeFaculty(item, index)));
+      })
+      .catch(() => {
+        setFaculty([]);
+        setError("Unable to load faculty data right now.");
+      })
       .finally(() => setLoading(false));
   }, [currentSchool.id]);
 
@@ -59,6 +87,14 @@ export default function FacultyTransparencyPage() {
           Array(4).fill(0).map((_, i) => (
             <div key={i} className="h-64 bg-slate-100 animate-pulse rounded-[2.5rem]" />
           ))
+        ) : error ? (
+          <div className="lg:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700 font-semibold">
+            {error}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-8 text-slate-600 font-semibold">
+            No faculty records found for this school.
+          </div>
         ) : filtered.map((prof) => (
           <div key={prof.id} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
             <div className={`absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform`}>
@@ -89,7 +125,11 @@ export default function FacultyTransparencyPage() {
                   <Book className="w-3.5 h-3.5" /> Current Subjects
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {prof.subjects.map(s => (
+                  {prof.subjects.length === 0 ? (
+                    <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-xs font-bold border border-slate-100">
+                      No subjects assigned
+                    </span>
+                  ) : prof.subjects.map(s => (
                     <span key={s} className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-xs font-bold border border-slate-100 italic">
                       {s}
                     </span>
@@ -107,7 +147,7 @@ export default function FacultyTransparencyPage() {
             </div>
 
             <div className="mt-8 flex justify-end">
-              <a href={`mailto:${prof.email}`} className={`flex items-center gap-2 px-6 py-2.5 ${currentSchool.bg} ${currentSchool.color} rounded-xl font-bold text-sm hover:opacity-80 transition shadow-sm`}>
+              <a href={prof.email ? `mailto:${prof.email}` : "#"} className={`flex items-center gap-2 px-6 py-2.5 ${currentSchool.bg} ${currentSchool.color} rounded-xl font-bold text-sm hover:opacity-80 transition shadow-sm`}>
                 <Mail className="w-4 h-4" /> Contact via Portal
               </a>
             </div>

@@ -8,6 +8,7 @@ import {
   Cpu, Gavel, ArrowRight, Download, Printer,
   Sparkles, Activity
 } from "lucide-react";
+import AcademicsActionRunner from "@/components/academics/AcademicsActionRunner";
 
 const SCHOOLS = [
   { id: "isme", name: "ISME (Business & Management)", icon: BookOpen, color: "bg-indigo-500", programs: ["BBA Hons.", "MBA", "B.Sc Finance", "Global Management"] },
@@ -59,6 +60,28 @@ export default function AcademicsExamsPage() {
            </button>
         </div>
       </div>
+
+         <AcademicsActionRunner
+            title="Exam Ops Control"
+            agentId="academics-exams"
+            actions={[
+               { label: "Schedule Exams", description: "Generate a clash-safe baseline schedule with hall assignment." },
+               { label: "Check for Clashes", description: "Audit conflicts across section, hall, and capacity constraints." },
+               { label: "Optimize Schedule", description: "Reduce load spikes and optimize room utilization." },
+            ]}
+            buildContext={(action) => ({
+               action,
+               school_id: actualSchoolId === "all" ? "atlas" : actualSchoolId,
+               exam_type: "End Semester",
+               exam_cycle: "End Semester",
+               course_scope: filteredExams.map((exam) => exam.subject),
+               halls: [
+                  { name: "Hall A", capacity: 120 },
+                  { name: "Hall B", capacity: 90 },
+                  { name: "Lab 1", capacity: 60 },
+               ],
+            })}
+         />
 
       {/* School Selective Filter */}
       {currentSchool.id === 'atlas' && (
