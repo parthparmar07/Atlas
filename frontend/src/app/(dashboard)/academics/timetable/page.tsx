@@ -8,7 +8,7 @@ import {
   Layers, Cpu, Gavel, Sparkles, CheckCircle2,
   Printer, Download, PlusSquare
 } from "lucide-react";
-import AcademicsActionRunner from "@/components/academics/AcademicsActionRunner";
+import TimetableOpsControl from "@/components/academics/TimetableOpsControl";
 
 const SCHOOLS = [
   { id: "isme", name: "ISME Business", icon: BookOpen, color: "text-indigo-500", border: "border-indigo-500/20", bg: "bg-indigo-500/5", programs: ["BBA Hons.", "B.Sc Finance", "MBA"] },
@@ -59,37 +59,9 @@ export default function AcademicsTimetablePage() {
         </div>
       </div>
 
-         <AcademicsActionRunner
-            title="Timetable AI Control"
-            agentId="academics-timetable"
-            actions={[
-               { label: "Parse Timetable Constraints", description: "Convert operating constraints into structured scheduling rules." },
-               { label: "Detect Conflicts", description: "Run a complete clash and overload scan across published slots." },
-               { label: "Manage Substitutions", description: "Prepare substitute recommendations for absence disruptions." },
-               { label: "Generate Academic Calendar", description: "Build a synchronized semester calendar with holiday overlays." },
-               { label: "Schedule Examinations", description: "Generate a capacity-safe exam schedule proposal." },
-            ]}
-            buildContext={(action) => ({
-               action,
-               school_id: actualSchoolId,
-               programme: schoolObj.programs[0],
-               semester: "Fall 2026",
-               constraints: [
-                  "No faculty double-booking allowed",
-                  "Labs must run only in certified lab rooms",
-                  "Keep one break between long sessions",
-               ],
-               absent_faculty: "Dr. Rao",
-               reason: "Medical leave",
-               day: "Thursday",
-               start_date: "2026-07-01",
-               end_date: "2026-11-30",
-               halls: [
-                  { name: "Hall A", capacity: 120 },
-                  { name: "Hall B", capacity: 90 },
-                  { name: "Lab 1", capacity: 60 },
-               ],
-            })}
+         <TimetableOpsControl
+            schoolId={actualSchoolId}
+            defaultProgramme={schoolObj.programs[0]}
          />
 
       <div className="grid grid-cols-12 gap-8">

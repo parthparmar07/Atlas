@@ -1,0 +1,148 @@
+{
+  "info": {
+    "_postman_id": "a7fc4a50-9a15-4fd7-b6db-1e7d315f15a8",
+    "name": "Atlas Calendar Generator Control",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ready-to-run requests for academics-calendar agent: Generate Calendar, Add Event, Holiday Mapping, Export Calendar."
+  },
+  "item": [
+    {
+      "name": "Generate Calendar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": \"academics-calendar\",\n  \"action\": \"Generate Calendar\",\n  \"context\": \"{\\\"school_id\\\":\\\"{{school_id}}\\\",\\\"academic_year\\\":\\\"{{academic_year}}\\\",\\\"start_date\\\":\\\"{{start_date}}\\\",\\\"end_date\\\":\\\"{{end_date}}\\\",\\\"holidays\\\":[{\\\"name\\\":\\\"Independence Day\\\",\\\"date\\\":\\\"2026-08-15\\\"},{\\\"name\\\":\\\"Republic Day\\\",\\\"date\\\":\\\"2027-01-26\\\"}],\\\"exam_windows\\\":[{\\\"name\\\":\\\"Mid Sem\\\",\\\"start\\\":\\\"2026-11-12\\\",\\\"end\\\":\\\"2026-11-28\\\"},{\\\"name\\\":\\\"End Sem\\\",\\\"start\\\":\\\"2027-04-10\\\",\\\"end\\\":\\\"2027-04-26\\\"}]}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/agent-exec/run",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "agent-exec",
+            "run"
+          ]
+        },
+        "description": "Creates semester calendar with teaching days and holiday adjustments."
+      },
+      "response": []
+    },
+    {
+      "name": "Add Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": \"academics-calendar\",\n  \"action\": \"Add Event\",\n  \"context\": \"{\\\"school_id\\\":\\\"{{school_id}}\\\",\\\"owner\\\":\\\"Academic Cell\\\",\\\"event\\\":{\\\"name\\\":\\\"Industry Conclave\\\",\\\"date\\\":\\\"2026-09-15\\\",\\\"type\\\":\\\"event\\\"}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/agent-exec/run",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "agent-exec",
+            "run"
+          ]
+        },
+        "description": "Adds a milestone and returns overlap check summary."
+      },
+      "response": []
+    },
+    {
+      "name": "Holiday Mapping",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": \"academics-calendar\",\n  \"action\": \"Holiday Mapping\",\n  \"context\": \"{\\\"school_id\\\":\\\"{{school_id}}\\\",\\\"holidays\\\":[{\\\"name\\\":\\\"Independence Day\\\",\\\"date\\\":\\\"2026-08-15\\\"},{\\\"name\\\":\\\"Republic Day\\\",\\\"date\\\":\\\"2027-01-26\\\"}],\\\"target_teaching_days\\\":90}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/agent-exec/run",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "agent-exec",
+            "run"
+          ]
+        },
+        "description": "Assesses lost teaching days and returns recommendations."
+      },
+      "response": []
+    },
+    {
+      "name": "Export Calendar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": \"academics-calendar\",\n  \"action\": \"Export Calendar\",\n  \"context\": \"{\\\"school_id\\\":\\\"{{school_id}}\\\",\\\"academic_year\\\":\\\"{{academic_year}}\\\",\\\"export_format\\\":\\\"publish\\\",\\\"include_owner\\\":true}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/agent-exec/run",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "agent-exec",
+            "run"
+          ]
+        },
+        "description": "Builds month-wise publish-ready payload."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "school_id",
+      "value": "atlas"
+    },
+    {
+      "key": "academic_year",
+      "value": "2026-2027"
+    },
+    {
+      "key": "start_date",
+      "value": "2026-07-01"
+    },
+    {
+      "key": "end_date",
+      "value": "2027-05-31"
+    }
+  ]
+}

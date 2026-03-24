@@ -97,7 +97,16 @@
       "updated_at": "2026-03-19T09:07:14.805490+00:00"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Match Now",
+      "context": "[SUCCESS] Eligible Batch: 3rd Year 2026\nTarget Domains: AI/ML, Full Stack, Cybersecurity, VLSI\nPartner Pool: Microsoft, Intel, Infosys, TCS\nPartner Details: NVIDIA - AI Research Internship Tracks\nTemplate Type: compliance\nHR Partner: HR Industry Mentor Cell\nInternship | student=Aman Bansal | company=Microsoft | role=AI Engineer Intern | status=in_progress | risk=medium | fit_score=84\nInternship | student=Sneha Rao | company=Infosys | role=Data Analyst Intern | status=active | risk=low | fit_score=78\nInternship | student=Ritika Jain | company=Intel | role=MLOps Intern | status=pipeline | risk=high | fit_score=72\nAction: Match Now\nNeed: matching logic, MOU readiness, reporting compliance and completion pipeline.",
+      "status": "SUCCESS",
+      "result": "Match Now executed successfully for students/internships",
+      "created_at": "2026-03-24T16:05:15.221051+00:00"
+    }
+  ],
   "communications": [],
   "created_at": "2026-03-19T09:07:14.397606+00:00"
 }

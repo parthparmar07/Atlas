@@ -8,7 +8,7 @@ import {
   BookOpen, Layers, Cpu, Gavel, 
   Sparkles, Zap, ClipboardList, Shield
 } from "lucide-react";
-import AcademicsActionRunner from "@/components/academics/AcademicsActionRunner";
+import SubstitutionAgentControl from "@/components/academics/SubstitutionAgentControl";
 
 const SCHOOLS = [
   { id: "isme", name: "ISME Business", icon: BookOpen, color: "text-indigo-500", programs: ["BBA Hons.", "MBA", "B.Sc Finance"] },
@@ -60,30 +60,7 @@ export default function AcademicsSubstitutionPage() {
         </div>
       </div>
 
-         <AcademicsActionRunner
-            title="Substitution Agent Control"
-            agentId="academics-substitution"
-            actions={[
-               { label: "Find Substitute", description: "Rank best substitutes by availability, fit, and load." },
-               { label: "Notify Students", description: "Generate complete communication drafts for stakeholders." },
-               { label: "Update Timetable", description: "Apply selected substitutions directly into active timetable slots." },
-            ]}
-            buildContext={(action) => ({
-               action,
-               school_id: selectedSchool === "all" ? "atlas" : selectedSchool,
-               absent_faculty: filteredRequests[0]?.professor ?? "Dr. Anjali Rao",
-               subject: filteredRequests[0]?.subject ?? "Macro-Economics",
-               section: "FY-CSE-A",
-               class_slot: filteredRequests[0]?.session ?? "10:45 AM - 12:15 PM",
-               reason: filteredRequests[0]?.reason ?? "Sick Leave",
-               affected_classes: filteredRequests.slice(0, 3).map((req) => ({
-                  professor: req.professor,
-                  subject: req.subject,
-                  room: req.room,
-                  session: req.session,
-               })),
-            })}
-         />
+         <SubstitutionAgentControl schoolId={selectedSchool === "all" ? "atlas" : selectedSchool} />
 
       <div className="grid grid-cols-12 gap-8">
          {/* Left: Leave / Substitute Requests List */}

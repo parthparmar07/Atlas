@@ -32,8 +32,46 @@ import { useSchool } from "@/context/SchoolContext";
 export default function AcademicsCalendarPage() {
   const { currentSchool } = useSchool();
   const [selectedSchool, setSelectedSchool] = useState("all");
+   const [academicYear, setAcademicYear] = useState("2026-2027");
+   const [startDate, setStartDate] = useState("2026-07-01");
+   const [endDate, setEndDate] = useState("2027-05-31");
+   const [eventName, setEventName] = useState("Industry Conclave");
+   const [eventDate, setEventDate] = useState("2026-09-15");
+   const [eventType, setEventType] = useState("event");
+   const [holidayInput, setHolidayInput] = useState(
+      "Independence Day|2026-08-15\nRepublic Day|2027-01-26"
+   );
+   const [examWindowInput, setExamWindowInput] = useState(
+      "Mid Sem|2026-11-12|2026-11-28\nEnd Sem|2027-04-10|2027-04-26"
+   );
 
   const actualSchoolId = currentSchool.id === 'atlas' ? selectedSchool : currentSchool.id;
+
+   const parseHolidayInput = () => {
+      return holidayInput
+         .split("\n")
+         .map((line) => line.trim())
+         .filter(Boolean)
+         .map((line) => {
+            const [name, date] = line.split("|").map((v) => v.trim());
+            return { name: name || "Holiday", date: date || startDate };
+         });
+   };
+
+   const parseExamWindows = () => {
+      return examWindowInput
+         .split("\n")
+         .map((line) => line.trim())
+         .filter(Boolean)
+         .map((line) => {
+            const [name, start, end] = line.split("|").map((v) => v.trim());
+            return {
+               name: name || "Exam Window",
+               start: start || startDate,
+               end: end || endDate,
+            };
+         });
+   };
 
   return (
     <div className="p-8 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-500">
@@ -63,6 +101,100 @@ export default function AcademicsCalendarPage() {
         </div>
       </div>
 
+         <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xl space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+               <div>
+                  <h3 className="text-lg font-black text-slate-900">Calendar Input Control</h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                     Set these once and run any calendar action. Format for lines: Name|Date and Name|Start|End.
+                  </p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+               <label className="text-xs font-bold text-slate-500">
+                  Academic Year
+                  <input
+                     value={academicYear}
+                     onChange={(e) => setAcademicYear(e.target.value)}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                  />
+               </label>
+               <label className="text-xs font-bold text-slate-500">
+                  Start Date
+                  <input
+                     value={startDate}
+                     onChange={(e) => setStartDate(e.target.value)}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                  />
+               </label>
+               <label className="text-xs font-bold text-slate-500">
+                  End Date
+                  <input
+                     value={endDate}
+                     onChange={(e) => setEndDate(e.target.value)}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                  />
+               </label>
+               <label className="text-xs font-bold text-slate-500">
+                  Event Type
+                  <select
+                     value={eventType}
+                     onChange={(e) => setEventType(e.target.value)}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                  >
+                     <option value="event">event</option>
+                     <option value="exam">exam</option>
+                     <option value="holiday">holiday</option>
+                     <option value="teaching_day">teaching_day</option>
+                  </select>
+               </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+               <label className="text-xs font-bold text-slate-500">
+                  Event Name
+                  <input
+                     value={eventName}
+                     onChange={(e) => setEventName(e.target.value)}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                  />
+               </label>
+               <label className="text-xs font-bold text-slate-500">
+                  Event Date
+                  <input
+                     value={eventDate}
+                     onChange={(e) => setEventDate(e.target.value)}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                  />
+               </label>
+               <div className="text-[11px] text-slate-500 font-medium rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 flex items-center">
+                  Active School: <span className="font-black text-slate-700 ml-1">{actualSchoolId === "all" ? "atlas" : actualSchoolId}</span>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+               <label className="text-xs font-bold text-slate-500">
+                  Holidays (Name|Date per line)
+                  <textarea
+                     value={holidayInput}
+                     onChange={(e) => setHolidayInput(e.target.value)}
+                     rows={4}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700"
+                  />
+               </label>
+               <label className="text-xs font-bold text-slate-500">
+                  Exam Windows (Name|Start|End per line)
+                  <textarea
+                     value={examWindowInput}
+                     onChange={(e) => setExamWindowInput(e.target.value)}
+                     rows={4}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700"
+                  />
+               </label>
+            </div>
+         </div>
+
          <AcademicsActionRunner
             title="Calendar Generator Control"
             agentId="academics-calendar"
@@ -75,18 +207,16 @@ export default function AcademicsCalendarPage() {
             buildContext={(action) => ({
                action,
                school_id: actualSchoolId === "all" ? "atlas" : actualSchoolId,
-               academic_year: "2026-2027",
-               start_date: "2026-07-01",
-               end_date: "2027-05-31",
+               academic_year: academicYear,
+               start_date: startDate,
+               end_date: endDate,
                event: {
-                  name: "Industry Conclave",
-                  date: "2026-09-15",
-                  type: "event",
+                  name: eventName,
+                  date: eventDate,
+                  type: eventType,
                },
-               holidays: [
-                  { name: "Independence Day", date: "2026-08-15" },
-                  { name: "Republic Day", date: "2027-01-26" },
-               ],
+               holidays: parseHolidayInput(),
+               exam_windows: parseExamWindows(),
             })}
          />
 

@@ -8,6 +8,14 @@
       "status": "SUCCESS",
       "result": "Analyze Burn Rate executed successfully for finance-governance/finance-budget",
       "created_at": "2026-03-24T03:15:31.539357+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Analyze Burn Rate",
+      "context": "[SUCCESS] Department: All Departments\nQuarter: Q3 2026\nRelease Mode: Rolling release\nHR Cost Owner: HR Workforce Planning Cell\nBudgets[]: Provided\nTransactions[]: Provided\nBudget | department=Computer Science | allocated=12000000 | spent=8900000 | pending_approvals=2 | headcount_gap=31 | status=On Track\nBudget | department=ECE | allocated=8600000 | spent=7800000 | pending_approvals=1 | headcount_gap=18 | status=Warning\nBudget | department=Central Facilities | allocated=6400000 | spent=6400000 | pending_approvals=3 | headcount_gap=5 | status=Critical\nTransaction | tx_id=TX-1901 | dept=Computer Science | amount=420000 | category=Lab | duplicate_flag=No | approval_trail=Approved\nTransaction | tx_id=TX-1936 | dept=ECE | amount=96000 | category=Consumables | duplicate_flag=No | approval_trail=Approved\nTransaction | tx_id=TX-1982 | dept=Central Facilities | amount=185000 | category=Maintenance | duplicate_flag=Yes | approval_trail=Bypass\nAction: Analyze Burn Rate\nRequired Outputs: burn analysis, variance table, and runway estimate\nNeed: burn trend, anomaly confidence, spend controls, and owner-tagged approvals.",
+      "status": "SUCCESS",
+      "result": "Analyze Burn Rate executed successfully for finance-governance/finance-budget",
+      "created_at": "2026-03-24T16:10:34.358174+00:00"
     }
   ],
   "communications": [],

@@ -141,6 +141,14 @@
       "status": "SUCCESS",
       "result": "Payroll Summary executed successfully for hr-faculty/hr-bot",
       "created_at": "2026-03-24T04:55:26.846677+00:00"
+    },
+    {
+      "id": 17,
+      "action": "Draft Notice",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Draft a notice for upcoming Diwali holidays\nAction: Draft Notice",
+      "status": "SUCCESS",
+      "result": "Draft Notice executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T16:09:43.103999+00:00"
     }
   ],
   "communications": [],

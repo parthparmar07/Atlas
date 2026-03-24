@@ -8,6 +8,22 @@
       "status": "SUCCESS",
       "result": "Design Course Outline executed successfully for students/course-builder",
       "created_at": "2026-03-21T18:59:46.316436+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Design Course Outline",
+      "context": "[SUCCESS] Course: Applied AI Systems\nOutcomes: Design ML pipelines, evaluate model fairness, deploy monitored APIs\nTopic: Model Evaluation and Drift Monitoring\nTopics[]: Prompt design, retrieval augmentation, model governance\nModule Rows:\nModule 1 | title=Foundations | hours=12 | assessment=Quiz\nModule 2 | title=Applied Build | hours=18 | assessment=Lab\nModule 3 | title=Capstone | hours=20 | assessment=Project\nAction: Design Course Outline\nRequired Outputs: module sequence, week plan, and outcome coverage report",
+      "status": "SUCCESS",
+      "result": "Design Course Outline executed successfully for students/course-builder",
+      "created_at": "2026-03-24T14:31:59.615404+00:00"
+    },
+    {
+      "id": 3,
+      "action": "Find Learning Resources",
+      "context": "[SUCCESS] Course: Applied AI Systems\nCredits: 4\nSemester: Semester 5\nOutcomes: Design ML pipelines, evaluate model fairness, deploy monitored APIs\nTopic: Model Evaluation and Drift Monitoring\nTopics: Prompt design, retrieval augmentation, model governance\nResource Depth: Core + Advanced\nHR Capability Bridge: Placement Cell + HR Industry Mentor\nModule | module=M1 | title=Foundations of ML Ops | hours=12 | assessment=Quiz | outcome=CO1\nModule | module=M2 | title=Evaluation and Monitoring | hours=14 | assessment=Lab | outcome=CO2\nModule | module=M3 | title=Responsible AI in Production | hours=10 | assessment=Case Study | outcome=CO3\nModule | module=M4 | title=Capstone Delivery | hours=16 | assessment=Project | outcome=CO4\nAction: Find Learning Resources\nRequired Outputs: resource list with level tags and rationale",
+      "status": "SUCCESS",
+      "result": "Find Learning Resources executed successfully for students/course-builder",
+      "created_at": "2026-03-24T16:03:51.244415+00:00"
     }
   ],
   "communications": [],

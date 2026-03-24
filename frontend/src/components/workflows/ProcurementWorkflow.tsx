@@ -11,24 +11,57 @@ export default function ProcurementWorkflow({ onExecute, isExecuting }: Procurem
   const [department, setDepartment] = useState("Computer Science");
   const [category, setCategory] = useState("Lab Equipment");
   const [budgetBand, setBudgetBand] = useState("2L - 5L");
+  const [policyTrack, setPolicyTrack] = useState("3-bid + safety validation");
+  const [hrSafetyLead, setHrSafetyLead] = useState("Campus Operations HR Safety Lead");
+  const [requestRows, setRequestRows] = useState(
+    "REQ-410|Computer Science|50 Lab Monitors|420000|TechCore|Raised|No\nREQ-422|Chemistry|Reagents|96000|LabLink|In Review|Yes\nREQ-436|Mechanical|Tool Set|185000|InduMart|Approved|No"
+  );
+  const [orderRows, setOrderRows] = useState("PO-1045|TechCore|7|Dispatched\nPO-1068|LabLink|3|Packed");
+  const [invoiceRows, setInvoiceRows] = useState("INV-770|TechCore|210000|5|Pending\nINV-781|InduMart|92500|2|Approved");
+
+  const requestContextRows = requestRows
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [reqId, reqDept, title, value, vendor, status, safetySensitive] = line.split("|").map((part) => part.trim());
+      return `Request | request_id=${reqId || "REQ-100"} | department=${reqDept || "Department"} | title=${title || "Requirement"} | value=${value || "0"} | vendor=${vendor || "Vendor TBD"} | status=${status || "Raised"} | safety_sensitive=${safetySensitive || "No"}`;
+    });
+
+  const orderContextRows = orderRows
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [poId, vendor, etaDays, status] = line.split("|").map((part) => part.trim());
+      return `Order | po_id=${poId || "PO-1000"} | vendor=${vendor || "Vendor TBD"} | eta_days=${etaDays || "5"} | status=${status || "In Transit"}`;
+    });
+
+  const invoiceContextRows = invoiceRows
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [invoiceId, vendor, amount, dueInDays, status] = line.split("|").map((part) => part.trim());
+      return `Invoice | invoice_id=${invoiceId || "INV-1000"} | vendor=${vendor || "Vendor TBD"} | amount=${amount || "0"} | due_in_days=${dueInDays || "5"} | status=${status || "Pending"}`;
+    });
 
   const buildContext = (action: string, requiredOutput: string) => {
     return [
       `Requesting Department: ${department}`,
       `Purchase Category: ${category}`,
       `Budget Band: ${budgetBand}`,
-      "Requests[]:",
-      "REQ-410 | department=Computer Science | title=50 Lab Monitors | value=420000 | vendor=TechCore | status=Raised",
-      "REQ-422 | department=Chemistry | title=Reagents | value=96000 | vendor=LabLink | status=In Review",
-      "REQ-436 | department=Mechanical | title=Tool Set | value=185000 | vendor=InduMart | status=Approved",
-      "Orders[]:",
-      "PO-1045 | vendor=TechCore | eta_days=7 | status=Dispatched",
-      "PO-1068 | vendor=LabLink | eta_days=3 | status=Packed",
-      "Invoices[]:",
-      "INV-770 | vendor=TechCore | amount=210000 | due_in_days=5 | status=Pending",
-      "INV-781 | vendor=InduMart | amount=92500 | due_in_days=2 | status=Approved",
+      `Policy Track: ${policyTrack}`,
+      `HR Safety Lead: ${hrSafetyLead}`,
+      "Requests[]: Provided",
+      "Orders[]: Provided",
+      "Invoices[]: Provided",
+      ...requestContextRows,
+      ...orderContextRows,
+      ...invoiceContextRows,
       `Action: ${action}`,
       `Required Outputs: ${requiredOutput}`,
+      "Need: policy checks, ETA risk, vendor-payment sequencing, and safety/compliance owners.",
     ].join("\n");
   };
 
@@ -38,6 +71,11 @@ export default function ProcurementWorkflow({ onExecute, isExecuting }: Procurem
         <Input label="Department" value={department} setValue={setDepartment} />
         <Input label="Category" value={category} setValue={setCategory} />
         <Input label="Budget Band" value={budgetBand} setValue={setBudgetBand} />
+        <Input label="Policy Track" value={policyTrack} setValue={setPolicyTrack} />
+        <Input label="HR Safety Lead" value={hrSafetyLead} setValue={setHrSafetyLead} />
+        <TextArea label="Requests (ReqID|Dept|Title|Value|Vendor|Status|SafetySensitive)" value={requestRows} setValue={setRequestRows} rows={4} />
+        <TextArea label="Orders (POID|Vendor|ETADays|Status)" value={orderRows} setValue={setOrderRows} rows={3} />
+        <TextArea label="Invoices (InvoiceID|Vendor|Amount|DueInDays|Status)" value={invoiceRows} setValue={setInvoiceRows} rows={3} />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -70,6 +108,30 @@ export default function ProcurementWorkflow({ onExecute, isExecuting }: Procurem
           Workflow context includes department, category, and budget band so the agent can return approval-ready procurement artifacts.
         </p>
       </div>
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  setValue,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <div className="col-span-3">
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rows={rows}
+        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm"
+      />
     </div>
   );
 }

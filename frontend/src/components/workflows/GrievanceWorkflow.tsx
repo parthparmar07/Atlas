@@ -11,13 +11,33 @@ export default function GrievanceWorkflow({ onExecute, isExecuting }: GrievanceW
   const [windowPeriod, setWindowPeriod] = useState("Current Month");
   const [priority, setPriority] = useState("High + Critical");
   const [channels, setChannels] = useState("Portal, Email, Anonymous Box");
+  const [slaPolicy, setSlaPolicy] = useState("Ragging/POSH:24h | Academic:5d | Admin:3d");
+  const [hrEscalationOwner, setHrEscalationOwner] = useState("HR Conduct Desk");
+  const [grievanceRows, setGrievanceRows] = useState(
+    "GR-101|Academic|high|HOD Office|24h|open\nGR-102|Infrastructure|medium|Admin Office|72h|open\nGR-103|POSH|critical|ICC|24h|open\nGR-104|Administrative|low|Registrar|5d|resolved"
+  );
 
-  const context = [
-    `Reporting Window: ${windowPeriod}`,
-    `Priority Focus: ${priority}`,
-    `Input Channels: ${channels}`,
-    "Need: categorization, routing, SLA tracking, and escalation evidence.",
-  ].join("\n");
+  const caseRows = grievanceRows
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [id, category, severity, owner, sla, status] = line.split("|").map((part) => part.trim());
+      return `Case | id=${id || "GR-000"} | category=${category || "Academic"} | severity=${severity || "medium"} | owner=${owner || "Student Affairs"} | sla=${sla || "5d"} | status=${status || "open"}`;
+    });
+
+  const buildContext = (action: string) => {
+    return [
+      `Reporting Window: ${windowPeriod}`,
+      `Priority Focus: ${priority}`,
+      `Input Channels: ${channels}`,
+      `SLA Policy: ${slaPolicy}`,
+      `HR Escalation Owner: ${hrEscalationOwner}`,
+      ...caseRows,
+      `Action: ${action}`,
+      "Need: categorization, routing, SLA tracking, anonymization controls, and escalation evidence.",
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -25,14 +45,46 @@ export default function GrievanceWorkflow({ onExecute, isExecuting }: GrievanceW
         <Input label="Reporting Window" value={windowPeriod} setValue={setWindowPeriod} />
         <Input label="Priority Focus" value={priority} setValue={setPriority} />
         <Input label="Input Channels" value={channels} setValue={setChannels} />
+        <Input label="SLA Policy" value={slaPolicy} setValue={setSlaPolicy} />
+        <Input label="HR Escalation Owner" value={hrEscalationOwner} setValue={setHrEscalationOwner} />
+        <TextArea
+          label="Grievance Rows (ID|Category|Severity|Owner|SLA|Status)"
+          value={grievanceRows}
+          setValue={setGrievanceRows}
+          rows={5}
+        />
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <ActionCard icon={<FileWarning className="w-6 h-6 text-indigo-600 mb-3" />} title="Process Grievances" desc="Categorize incoming complaints and route owners." onClick={() => onExecute("Process Grievances", context)} disabled={isExecuting} />
-        <ActionCard icon={<Siren className="w-6 h-6 text-indigo-600 mb-3" />} title="Escalation Report" desc="List SLA breaches and escalation pipeline status." onClick={() => onExecute("Escalation Report", context)} disabled={isExecuting} />
-        <ActionCard icon={<Shield className="w-6 h-6 text-indigo-600 mb-3" />} title="Anonymise Report" desc="Generate privacy-safe grievance trends for IQAC." onClick={() => onExecute("Anonymise Report", context)} disabled={isExecuting} />
-        <ActionCard icon={<Gauge className="w-6 h-6 text-indigo-600 mb-3" />} title="SLA Dashboard" desc="Produce compliance metrics by category and owner." onClick={() => onExecute("SLA Dashboard", context)} disabled={isExecuting} />
+        <ActionCard icon={<FileWarning className="w-6 h-6 text-indigo-600 mb-3" />} title="Process Grievances" desc="Categorize incoming complaints and route owners." onClick={() => onExecute("Process Grievances", buildContext("Process Grievances"))} disabled={isExecuting} />
+        <ActionCard icon={<Siren className="w-6 h-6 text-indigo-600 mb-3" />} title="Escalation Report" desc="List SLA breaches and escalation pipeline status." onClick={() => onExecute("Escalation Report", buildContext("Escalation Report"))} disabled={isExecuting} />
+        <ActionCard icon={<Shield className="w-6 h-6 text-indigo-600 mb-3" />} title="Anonymise Report" desc="Generate privacy-safe grievance trends for IQAC." onClick={() => onExecute("Anonymise Report", buildContext("Anonymise Report"))} disabled={isExecuting} />
+        <ActionCard icon={<Gauge className="w-6 h-6 text-indigo-600 mb-3" />} title="SLA Dashboard" desc="Produce compliance metrics by category and owner." onClick={() => onExecute("SLA Dashboard", buildContext("SLA Dashboard"))} disabled={isExecuting} />
       </div>
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  setValue,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <div className="col-span-3">
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rows={rows}
+        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm"
+      />
     </div>
   );
 }

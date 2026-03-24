@@ -169,9 +169,35 @@
       },
       "created_at": "2026-03-19T09:11:53.597058+00:00",
       "updated_at": "2026-03-19T09:11:53.597058+00:00"
+    },
+    {
+      "id": 11,
+      "title": "Imported Subject 11",
+      "status": "REVIEWING",
+      "owner": "system",
+      "priority": "medium",
+      "source": "import",
+      "notes": "",
+      "metadata": {
+        "code": "CS511",
+        "alignment": 70,
+        "examFreq": 60,
+        "syllabusWeight": 68
+      },
+      "created_at": "2026-03-24T14:09:41.446163+00:00",
+      "updated_at": "2026-03-24T14:09:41.446163+00:00"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Import Syllabus",
+      "context": "Course pack imported from faculty upload",
+      "status": "SUCCESS",
+      "result": "Import Syllabus executed successfully for academics/curriculum",
+      "created_at": "2026-03-24T14:09:41.572811+00:00"
+    }
+  ],
   "communications": [],
   "created_at": "2026-03-19T09:11:53.002515+00:00"
 }

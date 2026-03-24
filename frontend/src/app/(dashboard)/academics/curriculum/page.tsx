@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BookOpen, TrendingUp, AlertTriangle, Send, Sparkles, Plus, Book, Activity, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from "recharts";
 import { api } from "@/lib/api";
-import AcademicsActionRunner from "@/components/academics/AcademicsActionRunner";
+import CurriculumAuditorControl from "@/components/academics/CurriculumAuditorControl";
 
 type OpsRecord = {
     id: number;
@@ -180,26 +180,7 @@ export default function CurriculumAuditorPage() {
 
             {error ? <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div> : null}
 
-            <AcademicsActionRunner
-                title="Curriculum Auditor Control"
-                agentId="academics-curriculum"
-                actions={[
-                    { label: "Audit Syllabus", description: "Refresh curriculum gap map against exam and skill signals." },
-                    { label: "NEP Compliance", description: "Evaluate NEP 2020 compliance metrics across active entries." },
-                    { label: "Industry Alignment", description: "Benchmark relevance to current role-family expectations." },
-                    { label: "Generate Audit Report", description: "Produce programme-level audit rollup with top gaps." },
-                ]}
-                buildContext={(action) => ({
-                    action,
-                    school_id: "atlas",
-                    programme: "B.Tech CSE",
-                    semester: "Semester 5",
-                    benchmarks: ["NEP 2020", "NASSCOM FutureSkills", "OBE"],
-                    track: "Data Science",
-                    industry_roles: ["Data Analyst", "ML Engineer", "Data Engineer"],
-                    programmes: ["B.Tech CSE", "B.Tech AI/ML"],
-                })}
-            />
+            <CurriculumAuditorControl schoolId="atlas" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         

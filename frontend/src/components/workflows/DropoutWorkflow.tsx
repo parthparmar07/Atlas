@@ -11,13 +11,31 @@ export default function DropoutWorkflow({ onExecute, isExecuting }: DropoutWorkf
   const [programme, setProgramme] = useState("All Programmes");
   const [lookback, setLookback] = useState("Last 30 Days");
   const [signals, setSignals] = useState("Attendance, Internal Marks, Fee Delay, LMS Activity, Mentoring Visits");
+  const [hrPartner, setHrPartner] = useState("Student Success + HR Wellbeing Desk");
+  const [studentRows, setStudentRows] = useState(
+    "Aman Bansal|61|8|16|42\nSneha Rao|74|4|0|68\nRitika Jain|58|10|24|35\nRohan Mehta|82|2|0|79"
+  );
 
-  const context = [
-    `Programme Scope: ${programme}`,
-    `Lookback Window: ${lookback}`,
-    `Signals: ${signals}`,
-    "Need: risk buckets, counselor queue, and measurable intervention follow-up plan.",
-  ].join("\n");
+  const recordRows = studentRows
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, attendance, assignmentLatency, feeDelayDays, lmsActivity] = line.split("|").map((part) => part.trim());
+      return `Student | name=${name || "Student"} | attendance=${attendance || "75"} | assignment_latency=${assignmentLatency || "3"} | fee_delay_days=${feeDelayDays || "0"} | lms_activity=${lmsActivity || "70"}`;
+    });
+
+  const buildContext = (action: string) => {
+    return [
+      `Programme Scope: ${programme}`,
+      `Lookback Window: ${lookback}`,
+      `Signals: ${signals}`,
+      `HR Partner: ${hrPartner}`,
+      ...recordRows,
+      `Action: ${action}`,
+      "Need: risk buckets, counselor queue, HR-supported escalation path, and measurable intervention follow-up plan.",
+    ].join("\n");
+  };
 
   return (
     <div className="space-y-8">
@@ -25,14 +43,45 @@ export default function DropoutWorkflow({ onExecute, isExecuting }: DropoutWorkf
         <Input label="Programme Scope" value={programme} setValue={setProgramme} />
         <Input label="Lookback Window" value={lookback} setValue={setLookback} />
         <Input label="Risk Signals" value={signals} setValue={setSignals} />
+        <Input label="HR Partner Lane" value={hrPartner} setValue={setHrPartner} />
+        <TextArea
+          label="Student Signals (Name|Attendance|AssignmentLatency|FeeDelayDays|LMSActivity)"
+          value={studentRows}
+          setValue={setStudentRows}
+          rows={5}
+        />
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <ActionCard icon={<LineChart className="w-6 h-6 text-rose-600 mb-3" />} title="Run Prediction" desc="Compute current high/medium/low risk cohorts." onClick={() => onExecute("Run Prediction", context)} disabled={isExecuting} />
-        <ActionCard icon={<ShieldCheck className="w-6 h-6 text-rose-600 mb-3" />} title="Intervention Plan" desc="Generate counselor-led action plans per risk profile." onClick={() => onExecute("Intervention Plan", context)} disabled={isExecuting} />
-        <ActionCard icon={<BellRing className="w-6 h-6 text-rose-600 mb-3" />} title="Early Warning" desc="Build this week priority intervention alert queue." onClick={() => onExecute("Early Warning", context)} disabled={isExecuting} />
-        <ActionCard icon={<AlertCircle className="w-6 h-6 text-rose-600 mb-3" />} title="Trend Analysis" desc="Review multi-year dropout patterns and drivers." onClick={() => onExecute("Trend Analysis", context)} disabled={isExecuting} />
+        <ActionCard icon={<LineChart className="w-6 h-6 text-rose-600 mb-3" />} title="Run Prediction" desc="Compute current high/medium/low risk cohorts." onClick={() => onExecute("Run Prediction", buildContext("Run Prediction"))} disabled={isExecuting} />
+        <ActionCard icon={<ShieldCheck className="w-6 h-6 text-rose-600 mb-3" />} title="Intervention Plan" desc="Generate counselor-led action plans per risk profile." onClick={() => onExecute("Intervention Plan", buildContext("Intervention Plan"))} disabled={isExecuting} />
+        <ActionCard icon={<BellRing className="w-6 h-6 text-rose-600 mb-3" />} title="Early Warning" desc="Build this week priority intervention alert queue." onClick={() => onExecute("Early Warning", buildContext("Early Warning"))} disabled={isExecuting} />
+        <ActionCard icon={<AlertCircle className="w-6 h-6 text-rose-600 mb-3" />} title="Trend Analysis" desc="Review multi-year dropout patterns and drivers." onClick={() => onExecute("Trend Analysis", buildContext("Trend Analysis"))} disabled={isExecuting} />
       </div>
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  setValue,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <div className="col-span-3">
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rows={rows}
+        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm"
+      />
     </div>
   );
 }

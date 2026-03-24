@@ -91,7 +91,24 @@
       "updated_at": "2026-03-19T09:13:14.509995+00:00"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Process Grievances",
+      "context": "[SUCCESS] Reporting Window: Current Month\nPriority Focus: High + Critical\nInput Channels: Portal, Email, Anonymous Box\nNeed: categorization, routing, SLA tracking, and escalation evidence.",
+      "status": "SUCCESS",
+      "result": "Process Grievances executed successfully for students/grievance",
+      "created_at": "2026-03-24T14:34:06.535863+00:00"
+    },
+    {
+      "id": 2,
+      "action": "SLA Dashboard",
+      "context": "[SUCCESS] Reporting Window: Current Month\nPriority Focus: High + Critical\nInput Channels: Portal, Email, Anonymous Box\nSLA Policy: Ragging/POSH:24h | Academic:5d | Admin:3d\nHR Escalation Owner: HR Conduct Desk\nCase | id=GR-101 | category=Academic | severity=high | owner=HOD Office | sla=24h | status=open\nCase | id=GR-102 | category=Infrastructure | severity=medium | owner=Admin Office | sla=72h | status=open\nCase | id=GR-103 | category=POSH | severity=critical | owner=ICC | sla=24h | status=open\nCase | id=GR-104 | category=Administrative | severity=low | owner=Registrar | sla=5d | status=resolved\nAction: SLA Dashboard\nNeed: categorization, routing, SLA tracking, anonymization controls, and escalation evidence.",
+      "status": "SUCCESS",
+      "result": "SLA Dashboard executed successfully for students/grievance",
+      "created_at": "2026-03-24T16:04:40.427992+00:00"
+    }
+  ],
   "communications": [],
   "created_at": "2026-03-19T09:13:14.211798+00:00"
 }

@@ -12,20 +12,29 @@ export default function EventsWorkflow({ onExecute, isExecuting }: EventsWorkflo
   const [date, setDate] = useState("2026-04-12");
   const [venue, setVenue] = useState("Main Auditorium");
   const [budget, setBudget] = useState("450000");
+  const [audienceSegments, setAudienceSegments] = useState("First-year, Final-year, Alumni, Industry Guests");
+  const [channels, setChannels] = useState("Instagram, Email, Noticeboard, WhatsApp");
+  const [checklist, setChecklist] = useState("Permissions, Security, Medical, AV, Registration");
+  const [contacts, setContacts] = useState("Ops Lead, Student Volunteer Lead, Security Supervisor");
+  const [attendanceSeries, setAttendanceSeries] = useState("180,220,195");
+  const [feedback, setFeedback] = useState("Great sessions, Improve queue flow, Better mic setup");
+  const [budgetActual, setBudgetActual] = useState("418000");
+  const [hrSafetyLead, setHrSafetyLead] = useState("HR Safety & Compliance Desk");
 
   const buildContext = (action: string, requiredOutput: string) => {
     return [
-      `Event: ${eventName}`,
+      `Event Name: ${eventName}`,
       `Date: ${date}`,
       `Venue: ${venue}`,
       `Budget: ${budget}`,
-      "Audience Segments[]: First-year, Final-year, Alumni",
-      "Channels[]: Instagram, Email, Noticeboard",
-      "Event Checklist[]: Permissions, Audio check, Security desk, Medical support",
-      "Event Contacts[]: Ops lead, Student volunteer lead, Security supervisor",
-      "Attendance[]: 180, 220, 195",
-      "Feedback[]: Great sessions, Improve queue flow, Better mic setup",
-      "Budget Actual: 418000",
+      `Audience Segments: ${audienceSegments}`,
+      `Channels: ${channels}`,
+      `Event Checklist: ${checklist}`,
+      `Event Contacts: ${contacts}`,
+      `Attendance: ${attendanceSeries}`,
+      `Feedback: ${feedback}`,
+      `Budget Actual: ${budgetActual}`,
+      `HR Safety Lead: ${hrSafetyLead}`,
       `Action: ${action}`,
       `Required Outputs: ${requiredOutput}`,
     ].join("\n");
@@ -38,6 +47,14 @@ export default function EventsWorkflow({ onExecute, isExecuting }: EventsWorkflo
         <Input label="Date" value={date} setValue={setDate} />
         <Input label="Venue" value={venue} setValue={setVenue} />
         <Input label="Budget" value={budget} setValue={setBudget} />
+        <Input label="Audience Segments" value={audienceSegments} setValue={setAudienceSegments} />
+        <Input label="Promotion Channels" value={channels} setValue={setChannels} />
+        <Input label="Logistics Checklist" value={checklist} setValue={setChecklist} />
+        <Input label="Escalation Contacts" value={contacts} setValue={setContacts} />
+        <Input label="Attendance Series" value={attendanceSeries} setValue={setAttendanceSeries} />
+        <Input label="Feedback Notes" value={feedback} setValue={setFeedback} />
+        <Input label="Budget Actual" value={budgetActual} setValue={setBudgetActual} />
+        <Input label="HR Safety Lead" value={hrSafetyLead} setValue={setHrSafetyLead} />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

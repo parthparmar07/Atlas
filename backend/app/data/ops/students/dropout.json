@@ -1,0 +1,15 @@
+{
+  "records": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Intervention Plan",
+      "context": "[SUCCESS] Programme Scope: All Programmes\nLookback Window: Last 30 Days\nSignals: Attendance, Internal Marks, Fee Delay, LMS Activity, Mentoring Visits\nHR Partner: Student Success + HR Wellbeing Desk\nStudent | name=Aman Bansal | attendance=61 | assignment_latency=8 | fee_delay_days=16 | lms_activity=42\nStudent | name=Sneha Rao | attendance=74 | assignment_latency=4 | fee_delay_days=0 | lms_activity=68\nStudent | name=Ritika Jain | attendance=58 | assignment_latency=10 | fee_delay_days=24 | lms_activity=35\nStudent | name=Rohan Mehta | attendance=82 | assignment_latency=2 | fee_delay_days=0 | lms_activity=79\nAction: Intervention Plan\nNeed: risk buckets, counselor queue, HR-supported escalation path, and measurable intervention follow-up plan.",
+      "status": "SUCCESS",
+      "result": "Intervention Plan executed successfully for students/dropout",
+      "created_at": "2026-03-24T16:04:07.187858+00:00"
+    }
+  ],
+  "communications": [],
+  "created_at": "2026-03-24T16:04:07.187806+00:00"
+}

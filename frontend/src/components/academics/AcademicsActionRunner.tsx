@@ -17,8 +17,10 @@ type RunResponse = {
     title?: string;
     summary?: string;
     hash?: string;
+    [key: string]: unknown;
   };
   execution_details?: any[];
+  [key: string]: unknown;
 };
 
 interface AcademicsActionRunnerProps {
@@ -32,6 +34,7 @@ export default function AcademicsActionRunner({ title, agentId, actions, buildCo
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
   const [response, setResponse] = useState<RunResponse | null>(null);
+  const [lastContext, setLastContext] = useState<Record<string, unknown> | null>(null);
 
   const backendBase = useMemo(() => process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000", []);
 
@@ -42,6 +45,7 @@ export default function AcademicsActionRunner({ title, agentId, actions, buildCo
 
     try {
       const payloadContext = buildContext ? buildContext(action.label) : { school_id: "atlas", action: action.label };
+      setLastContext(payloadContext);
       const res = await fetch(`${backendBase}/api/agent-exec/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,6 +127,22 @@ export default function AcademicsActionRunner({ title, agentId, actions, buildCo
           ) : (
             <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No execution trace was returned for this run.</div>
           )}
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 mb-2">Input Sent</div>
+              <pre className="text-xs text-slate-700 overflow-auto max-h-80 whitespace-pre-wrap break-words">
+                {JSON.stringify(lastContext ?? {}, null, 2)}
+              </pre>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 mb-2">Output Received</div>
+              <pre className="text-xs text-slate-700 overflow-auto max-h-80 whitespace-pre-wrap break-words">
+                {JSON.stringify(response, null, 2)}
+              </pre>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

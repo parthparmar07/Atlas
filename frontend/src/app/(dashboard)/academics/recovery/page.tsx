@@ -1,28 +1,93 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
 import { BookOpen, Sparkles, LayoutList, CheckSquare, Target, Clock, ArrowRight, RefreshCw, Activity } from "lucide-react";
+
+type RecoveryCandidate = {
+  id: number;
+  name: string;
+  roll_number: string;
+  school_id: string;
+  programme: string;
+  attendance_rate: number;
+  gpa: number;
+  risk_score: number;
+};
 
 export default function AcademicRecoveryPage() {
   const { currentSchool } = useSchool();
   const [studentId, setStudentId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
+  const [candidates, setCandidates] = useState<RecoveryCandidate[]>([]);
   const [plan, setPlan] = useState<any>(null);
+  const [priorityMarks, setPriorityMarks] = useState<Record<number, boolean>>({});
   const [error, setError] = useState("");
 
+  const selectedSchoolId = useMemo(() => {
+    if (!currentSchool?.id || currentSchool.id === "all") {
+      return "atlas";
+    }
+    return currentSchool.id;
+  }, [currentSchool?.id]);
+
+  useEffect(() => {
+    const loadCandidates = async () => {
+      setLoadingCandidates(true);
+      try {
+        const data = await api<RecoveryCandidate[]>(
+          `/api/academics/students/recovery-candidates?school=${encodeURIComponent(selectedSchoolId)}&limit=12`
+        );
+        setCandidates(data);
+        if (data.length > 0) {
+          setStudentId((prev) => {
+            const trimmed = prev.trim();
+            if (!trimmed) {
+              return String(data[0].id);
+            }
+            const parsed = Number.parseInt(trimmed, 10);
+            const exists = data.some((candidate) => candidate.id === parsed);
+            return exists ? trimmed : String(data[0].id);
+          });
+        }
+      } catch {
+        setCandidates([]);
+      } finally {
+        setLoadingCandidates(false);
+      }
+    };
+
+    void loadCandidates();
+  }, [selectedSchoolId]);
+
   const generatePlan = async () => {
-    if (!studentId) return;
+    const trimmed = studentId.trim();
+    if (!trimmed) {
+      setError("Enter a valid student ID to generate blueprint.");
+      setPlan(null);
+      return;
+    }
+
+    const parsedId = Number.parseInt(trimmed, 10);
+    if (Number.isNaN(parsedId) || parsedId <= 0) {
+      setError("Student ID must be a positive number.");
+      setPlan(null);
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
-      const data = await api<any>(`/api/academics/students/${studentId}/recovery`, {
+      const data = await api<any>(`/api/academics/students/${parsedId}/recovery`, {
         method: "POST"
       });
       setPlan(data);
+      setPriorityMarks({});
     } catch (e) {
-      setError("Student ID not found or plan generation failed.");
+      setError("Student ID not found or blueprint generation failed.");
+      setPlan(null);
     } finally {
       setLoading(false);
     }
@@ -51,7 +116,7 @@ export default function AcademicRecoveryPage() {
             <div className="flex flex-col md:flex-row gap-4 pt-4">
                 <input 
                   type="text" 
-                  placeholder="Enter Student ID (e.g., 1, 102)..." 
+                  placeholder="Enter Student ID (e.g., 1, 102)..."
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   className="px-8 py-5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-white font-bold text-lg min-w-[350px] shadow-inner"
@@ -64,6 +129,34 @@ export default function AcademicRecoveryPage() {
                   {loading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Target className="w-6 h-6" />}
                   Generate Recovery Blueprint
                 </button>
+            </div>
+
+            <div className="pt-2 space-y-3">
+              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/50">
+                {loadingCandidates ? "Loading test student IDs..." : "Quick Test Student IDs"}
+              </div>
+              {!loadingCandidates && candidates.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {candidates.map((candidate) => {
+                    const active = studentId.trim() === String(candidate.id);
+                    return (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        onClick={() => setStudentId(String(candidate.id))}
+                        className={`px-3 py-2 rounded-xl border text-xs font-bold transition-colors ${
+                          active
+                            ? "bg-indigo-500/25 border-indigo-400 text-indigo-100"
+                            : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                        }`}
+                        title={`${candidate.name} • ${candidate.roll_number}`}
+                      >
+                        ID {candidate.id} • {candidate.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
          </div>
       </div>
@@ -116,11 +209,25 @@ export default function AcademicRecoveryPage() {
                                 {i+1}
                               </div>
                               <div className="p-8 bg-slate-50/50 rounded-3xl border border-slate-100 group-hover:bg-white group-hover:shadow-xl transition-all">
+                                 {priorityMarks[i] ? (
+                                   <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-indigo-700">
+                                     Priority Marked
+                                   </div>
+                                 ) : null}
                                  <h4 className="text-lg font-black text-slate-900 mb-2">Phase {i+1} Implementation</h4>
                                  <p className="text-slate-500 font-medium leading-relaxed italic">{step}</p>
                                  <div className="mt-4 flex justify-end">
-                                    <button className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-500 tracking-widest py-2 px-4 hover:bg-indigo-50 rounded-lg transition-colors">
-                                        Mark Phase Priority <ArrowRight className="w-3 h-3" />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setPriorityMarks((prev) => ({
+                                          ...prev,
+                                          [i]: !prev[i],
+                                        }))
+                                      }
+                                      className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-500 tracking-widest py-2 px-4 hover:bg-indigo-50 rounded-lg transition-colors"
+                                    >
+                                        {priorityMarks[i] ? "Unmark Priority" : "Mark Phase Priority"} <ArrowRight className="w-3 h-3" />
                                     </button>
                                  </div>
                               </div>

@@ -706,6 +706,9 @@ class AgentBase(AgenticPipeline):
             fee_rows = [r for r in rows if r.get("amount_due") or r.get("due_date") or r.get("status")]
             if not fee_rows and rows:
                 fee_rows = rows[:30]
+            finance_owner = str(fields.get("finance_owner") or "Accounts Recovery Lead")
+            hr_escalation_owner = str(fields.get("hr_escalation_owner") or fields.get("hr_partner") or "Student Welfare + HR Support Cell")
+            policy_mode = str(fields.get("policy_mode") or "Standard collection")
 
             fee_cases = []
             for idx, row in enumerate(fee_rows[:50], start=1):
@@ -716,13 +719,24 @@ class AgentBase(AgenticPipeline):
                 status = str(row.get("status") or "Upcoming")
                 channel = str(row.get("channel") or "Email")
                 overdue_days = self._to_number(row.get("overdue_days") or 0)
+                scholarship_hold = str(row.get("scholarship_hold") or "No")
+                guardian_reach = str(row.get("guardian_reach") or "Pending")
                 if not overdue_days and due_date:
                     try:
                         due_dt = datetime.datetime.fromisoformat(due_date)
                         overdue_days = max(0.0, (datetime.datetime.now() - due_dt).days)
                     except Exception:
                         overdue_days = 0.0
-                risk_score = safe_round(min(100.0, (overdue_days * 3.5) + (amount_due / 1000.0) + (20.0 if "Escalated" in status else 0.0)), 2)
+                risk_score = safe_round(
+                    min(
+                        100.0,
+                        (overdue_days * 3.5)
+                        + (amount_due / 1000.0)
+                        + (20.0 if "Escalated" in status else 0.0)
+                        - (8.0 if scholarship_hold.lower() == "yes" else 0.0),
+                    ),
+                    2,
+                )
                 fee_cases.append(
                     {
                         "student": student,
@@ -732,6 +746,8 @@ class AgentBase(AgenticPipeline):
                         "status": status,
                         "channel": channel,
                         "overdue_days": overdue_days,
+                        "scholarship_hold": scholarship_hold,
+                        "guardian_reach": guardian_reach,
                         "risk_score": risk_score,
                     }
                 )
@@ -740,11 +756,16 @@ class AgentBase(AgenticPipeline):
                 reminder_queue = []
                 for case in fee_cases[:25]:
                     urgency = "High" if float(case.get("overdue_days", 0.0)) >= 15 else "Medium" if float(case.get("overdue_days", 0.0)) >= 7 else "Low"
+                    scholarship_hold = str(case.get("scholarship_hold") or "No")
                     reminder_queue.append(
                         {
                             "student": case.get("student"),
                             "channel": case.get("channel"),
                             "urgency": urgency,
+                            "case_owner": finance_owner if urgency != "Low" else "Fee Operations Desk",
+                            "hr_support": hr_escalation_owner if scholarship_hold.lower() == "yes" else "Not Required",
+                            "guardian_reach": case.get("guardian_reach"),
+                            "installment_option": "Offer 3-part installment" if urgency in {"High", "Medium"} else "No installment required",
                             "message_template": "Gentle reminder" if urgency == "Low" else "Payment due notice" if urgency == "Medium" else "Final reminder before escalation",
                         }
                     )
@@ -752,9 +773,11 @@ class AgentBase(AgenticPipeline):
                     "action": action,
                     "handler": handler,
                     "reminder_queue": reminder_queue,
+                    "policy_mode": policy_mode,
                     "next_actions": [
                         "Dispatch reminders by preferred channel",
                         "Track payment responses within 72 hours",
+                        "Escalate welfare-sensitive cases to HR support lane",
                     ],
                 }
 
@@ -763,14 +786,30 @@ class AgentBase(AgenticPipeline):
                 return {
                     "action": action,
                     "handler": handler,
-                    "defaulter_report": ranked[:20],
+                    "defaulter_report": [
+                        {
+                            **case,
+                            "risk_band": "Critical"
+                            if float(case.get("risk_score", 0.0)) >= 80
+                            else "High"
+                            if float(case.get("risk_score", 0.0)) >= 65
+                            else "Moderate",
+                            "escalation_owner": hr_escalation_owner
+                            if str(case.get("scholarship_hold", "")).lower() == "yes"
+                            else finance_owner,
+                        }
+                        for case in ranked[:20]
+                    ],
                     "summary": {
                         "total_cases": len(fee_cases),
                         "high_risk": len([c for c in fee_cases if float(c.get("risk_score", 0.0)) >= 70]),
+                        "policy_mode": policy_mode,
+                        "hr_sensitive_cases": len([c for c in fee_cases if str(c.get("scholarship_hold", "")).lower() == "yes"]),
                     },
                     "next_actions": [
                         "Review top-risk defaulters in finance committee",
                         "Assign owner for case-wise resolution",
+                        "Create scholarship-sensitive exception queue",
                     ],
                 }
 
@@ -779,24 +818,41 @@ class AgentBase(AgenticPipeline):
                 plan = []
                 for case in ranked[:20]:
                     risk_score = float(case.get("risk_score", 0.0))
-                    step = "Counsel + structured installments" if risk_score < 70 else "Escalate to finance officer with final timeline"
                     plan.append(
                         {
                             "student": case.get("student"),
                             "risk_score": risk_score,
-                            "recommended_step": step,
+                            "lane": "Supportive" if risk_score < 65 else "Escalated",
+                            "owner": finance_owner if risk_score >= 65 else "Fee Counselor",
+                            "hr_owner": hr_escalation_owner if str(case.get("scholarship_hold", "")).lower() == "yes" else "Not Required",
+                            "milestones": [
+                                "Week 0: Notice + counseling call",
+                                "Week 2: Installment validation",
+                                "Week 4: Escalation or closure",
+                            ],
                         }
                     )
                 return {
                     "action": action,
                     "handler": handler,
                     "recovery_plan": plan,
+                    "governance": {
+                        "finance_owner": finance_owner,
+                        "hr_escalation_owner": hr_escalation_owner,
+                        "policy_mode": policy_mode,
+                    },
                     "next_actions": [
                         "Issue recovery notices with owner mapping",
                         "Track closure progress weekly",
+                        "Review unresolved cases in weekly welfare huddle",
                     ],
                 }
 
+            aging_buckets = {
+                "0_6_days": len([c for c in fee_cases if float(c.get("overdue_days", 0.0)) <= 6]),
+                "7_14_days": len([c for c in fee_cases if 7 <= float(c.get("overdue_days", 0.0)) <= 14]),
+                "15_plus_days": len([c for c in fee_cases if float(c.get("overdue_days", 0.0)) >= 15]),
+            }
             return {
                 "action": action,
                 "handler": handler,
@@ -804,11 +860,15 @@ class AgentBase(AgenticPipeline):
                     "total_due": safe_round(sum(float(c.get("amount_due", 0.0)) for c in fee_cases), 2),
                     "paid_cases": len([c for c in fee_cases if str(c.get("status", "")).lower() == "paid"]),
                     "escalated_cases": len([c for c in fee_cases if "escalated" in str(c.get("status", "")).lower()]),
+                    "aging_buckets": aging_buckets,
+                    "finance_owner": finance_owner,
+                    "hr_escalation_owner": hr_escalation_owner,
                 },
                 "fee_cases": fee_cases[:20],
                 "next_actions": [
                     "Segment overdue cases by risk band",
                     "Launch reminder + recovery workflow",
+                    "Publish aging dashboard to finance governance",
                 ],
             }
 
@@ -816,31 +876,42 @@ class AgentBase(AgenticPipeline):
             budget_rows = [r for r in rows if r.get("allocated") or r.get("spent") or r.get("department")]
             if not budget_rows:
                 budget_rows = rows[:30]
+            release_mode = str(fields.get("release_mode") or "Standard")
+            hr_cost_owner = str(fields.get("hr_cost_owner") or "HR Workforce Planning Cell")
 
             if "anomalies" in action_l:
                 tx_rows = [r for r in rows if r.get("duplicate_flag") or r.get("amount") or str(r.get("field_1", "")).lower().startswith("tx-")]
                 anomaly_flags = []
                 for idx, row in enumerate(tx_rows[:30], start=1):
-                    tx_id = str(row.get("field_1") or row.get("tx_id") or f"TX-{idx}")
+                    tx_id = str(row.get("tx_id") or row.get("field_1") or f"TX-{idx}")
                     amount = self._to_number(row.get("amount") or 0)
                     duplicate = str(row.get("duplicate_flag") or "No").lower() == "yes"
-                    suspicious = duplicate or amount >= 300000
+                    approval_trail = str(row.get("approval_trail") or "Approved")
+                    suspicious = duplicate or amount >= 300000 or approval_trail.lower() in {"bypass", "missing"}
                     if suspicious:
                         anomaly_flags.append(
                             {
                                 "transaction_id": tx_id,
                                 "amount": amount,
-                                "reason": "Duplicate pattern" if duplicate else "High-value outlier",
-                                "severity": "High" if duplicate else "Medium",
+                                "reason": "Duplicate pattern"
+                                if duplicate
+                                else "Approval bypass"
+                                if approval_trail.lower() in {"bypass", "missing"}
+                                else "High-value outlier",
+                                "severity": "High" if duplicate or approval_trail.lower() in {"bypass", "missing"} else "Medium",
+                                "control_owner": "Internal Audit" if duplicate else "Finance Controller",
+                                "hr_owner": hr_cost_owner if str(row.get("category") or "").lower() in {"training", "headcount", "staffing"} else "Not Required",
                             }
                         )
                 return {
                     "action": action,
                     "handler": handler,
                     "anomaly_flags": anomaly_flags,
+                    "release_mode": release_mode,
                     "next_actions": [
                         "Open audit tickets for high-severity anomalies",
                         "Verify supporting approvals for flagged transactions",
+                        "Escalate workforce-linked spend anomalies to HR cost owner",
                     ],
                 }
 
@@ -850,14 +921,22 @@ class AgentBase(AgenticPipeline):
                 allocated = self._to_number(row.get("allocated") or 0)
                 spent = self._to_number(row.get("spent") or 0)
                 pending = self._to_number(row.get("pending_approvals") or 0)
+                headcount_gap = self._to_number(row.get("headcount_gap") or 0)
                 utilization = safe_round((spent / max(1.0, allocated)) * 100.0, 2)
+                remaining = max(0.0, allocated - spent)
+                monthly_burn = spent / 3.0 if spent > 0 else 0.0
+                runway_months = safe_round(remaining / monthly_burn, 2) if monthly_burn > 0 else 12.0
                 burn_analysis.append(
                     {
                         "department": department,
                         "allocated": allocated,
                         "spent": spent,
+                        "remaining": remaining,
                         "pending_approvals": pending,
+                        "headcount_gap": headcount_gap,
                         "utilization_percent": utilization,
+                        "runway_months": runway_months,
+                        "owner": hr_cost_owner if headcount_gap > 0 else "Finance Business Partner",
                         "status": "Critical" if utilization >= 95 else "Warning" if utilization >= 80 else "On Track",
                     }
                 )
@@ -867,27 +946,34 @@ class AgentBase(AgenticPipeline):
                 "burn_analysis": burn_analysis,
                 "summary": {
                     "warning_or_critical": len([b for b in burn_analysis if b.get("status") != "On Track"]),
+                    "critical": len([b for b in burn_analysis if b.get("status") == "Critical"]),
                     "average_utilization": safe_round(
                         sum(float(b.get("utilization_percent", 0.0)) for b in burn_analysis) / max(1, len(burn_analysis)),
                         2,
                     ),
+                    "release_mode": release_mode,
+                    "hr_cost_owner": hr_cost_owner,
                 },
                 "next_actions": [
                     "Issue cost-control advisories to high-utilization departments",
                     "Review pending approvals before next release",
+                    "Run capacity-impact review for departments with headcount gaps",
                 ],
             }
 
         if handler == "finance_procurement":
-            request_rows = [r for r in rows if r.get("title") or r.get("vendor") or str(r.get("field_1", "")).lower().startswith("req-")]
-            order_rows = [r for r in rows if r.get("eta_days") or str(r.get("field_1", "")).lower().startswith("po-")]
-            invoice_rows = [r for r in rows if str(r.get("field_1", "")).lower().startswith("inv-") or r.get("due_in_days")]
+            request_rows = [r for r in rows if r.get("title") or r.get("vendor") or r.get("request_id") or str(r.get("field_1", "")).lower().startswith("req-")]
+            order_rows = [r for r in rows if r.get("eta_days") or r.get("po_id") or str(r.get("field_1", "")).lower().startswith("po-")]
+            invoice_rows = [r for r in rows if r.get("invoice_id") or str(r.get("field_1", "")).lower().startswith("inv-") or r.get("due_in_days")]
+            policy_track = str(fields.get("policy_track") or "Standard procurement")
+            hr_safety_lead = str(fields.get("hr_safety_lead") or "Campus Operations HR Safety Lead")
 
             if "process requests" in action_l:
                 triage = []
                 for idx, row in enumerate(request_rows[:30], start=1):
-                    req_id = str(row.get("field_1") or f"REQ-{idx}")
+                    req_id = str(row.get("request_id") or row.get("field_1") or f"REQ-{idx}")
                     value = self._to_number(row.get("value") or 0)
+                    safety_sensitive = str(row.get("safety_sensitive") or "No").lower() == "yes"
                     policy_flag = "Additional approval needed" if value >= 400000 else "Standard approval"
                     triage.append(
                         {
@@ -896,22 +982,26 @@ class AgentBase(AgenticPipeline):
                             "value": value,
                             "vendor": row.get("vendor"),
                             "policy_flag": policy_flag,
+                            "approval_route": "CFO + Purchase Committee" if value >= 400000 else "Department + Purchase Desk",
+                            "safety_owner": hr_safety_lead if safety_sensitive else "Not Required",
                         }
                     )
                 return {
                     "action": action,
                     "handler": handler,
                     "request_triage": triage,
+                    "policy_track": policy_track,
                     "next_actions": [
                         "Route high-value requests to finance approver",
                         "Generate PO drafts for approved requests",
+                        "Add HR safety review for safety-sensitive equipment",
                     ],
                 }
 
             if "track orders" in action_l:
                 tracking = []
                 for idx, row in enumerate(order_rows[:30], start=1):
-                    po_id = str(row.get("field_1") or f"PO-{idx}")
+                    po_id = str(row.get("po_id") or row.get("field_1") or f"PO-{idx}")
                     eta_days = self._to_number(row.get("eta_days") or 0)
                     tracking.append(
                         {
@@ -920,6 +1010,7 @@ class AgentBase(AgenticPipeline):
                             "status": row.get("status") or "In Transit",
                             "eta_days": eta_days,
                             "risk": "High" if eta_days >= 10 else "Medium" if eta_days >= 5 else "Low",
+                            "escalation_owner": "Vendor Manager" if eta_days >= 10 else "Procurement Desk",
                         }
                     )
                 return {
@@ -929,13 +1020,15 @@ class AgentBase(AgenticPipeline):
                     "next_actions": [
                         "Escalate delayed orders to vendor management",
                         "Notify departments about ETA changes",
+                        "Trigger installation readiness checks for high-risk ETAs",
                     ],
                 }
 
             payments = []
             for idx, row in enumerate(invoice_rows[:30], start=1):
-                inv_id = str(row.get("field_1") or f"INV-{idx}")
+                inv_id = str(row.get("invoice_id") or row.get("field_1") or f"INV-{idx}")
                 due_in_days = self._to_number(row.get("due_in_days") or 0)
+                status = str(row.get("status") or "Pending")
                 payments.append(
                     {
                         "invoice_id": inv_id,
@@ -943,15 +1036,19 @@ class AgentBase(AgenticPipeline):
                         "amount": self._to_number(row.get("amount") or 0),
                         "due_in_days": due_in_days,
                         "priority": "High" if due_in_days <= 2 else "Medium" if due_in_days <= 5 else "Low",
+                        "release_blocker": "Approval pending" if status.lower() not in {"approved", "paid"} else "None",
+                        "payment_owner": "Accounts Payable",
                     }
                 )
             return {
                 "action": action,
                 "handler": handler,
                 "vendor_payment_queue": payments,
+                "policy_track": policy_track,
                 "next_actions": [
                     "Schedule high-priority payment run",
                     "Verify invoice and PO linkage before release",
+                    "Review blocked invoices with procurement and finance leads",
                 ],
             }
 
@@ -959,6 +1056,9 @@ class AgentBase(AgenticPipeline):
             criteria_rows = [r for r in rows if r.get("score") or r.get("evidence_count") or r.get("status")]
             if not criteria_rows:
                 criteria_rows = rows[:25]
+            cycle_stage = str(fields.get("cycle_stage") or "Pre-Submission")
+            finance_lead = str(fields.get("finance_lead") or "Finance Controller - Accreditation")
+            hr_capability_lead = str(fields.get("hr_capability_lead") or "HR Capability and Faculty Development")
 
             readiness = []
             for idx, row in enumerate(criteria_rows[:30], start=1):
@@ -966,21 +1066,45 @@ class AgentBase(AgenticPipeline):
                 score = self._to_number(row.get("score") or 0)
                 evidence = self._to_number(row.get("evidence_count") or 0)
                 status = str(row.get("status") or "Missing")
+                owner = str(row.get("owner") or ("Quality Cell" if "NAAC" in criterion else "Department Coordinator"))
+                due_days = self._to_number(row.get("due_days") or 14)
                 readiness.append(
                     {
                         "criterion": criterion,
                         "score": score,
                         "evidence_count": evidence,
                         "status": status,
+                        "owner": owner,
+                        "due_days": due_days,
+                        "gap_index": safe_round(max(0.0, (3.5 - score) * 20.0 + max(0.0, 8.0 - evidence) * 4.0), 2),
                     }
                 )
+
+            if "audit compliance" in action_l:
+                audit_map = sorted(readiness, key=lambda c: float(c.get("gap_index", 0.0)), reverse=True)
+                return {
+                    "action": action,
+                    "handler": handler,
+                    "compliance_audit": audit_map,
+                    "governance_lane": {
+                        "cycle_stage": cycle_stage,
+                        "finance_lead": finance_lead,
+                        "hr_capability_lead": hr_capability_lead,
+                    },
+                    "next_actions": [
+                        "Review top gap-index criteria in governance meeting",
+                        "Assign closure owners with due dates",
+                    ],
+                }
 
             if "prepare documentation" in action_l:
                 doc_pack = [
                     {
                         "criterion": c.get("criterion"),
                         "missing_evidence": max(0.0, 10.0 - float(c.get("evidence_count", 0.0))),
-                        "owner": "Quality Cell" if "NAAC" in str(c.get("criterion")) else "Department Coordinator",
+                        "owner": c.get("owner"),
+                        "due_days": c.get("due_days"),
+                        "review_owner": finance_lead if "finance" in str(c.get("criterion", "")).lower() else "Quality Cell",
                     }
                     for c in readiness
                     if str(c.get("status", "")).lower() in {"missing", "at risk"}
@@ -989,27 +1113,35 @@ class AgentBase(AgenticPipeline):
                     "action": action,
                     "handler": handler,
                     "documentation_pack": doc_pack,
+                    "cycle_stage": cycle_stage,
                     "next_actions": [
                         "Assign evidence owners per criterion",
                         "Track weekly closure status",
+                        "Route capability-building gaps to HR lead",
                     ],
                 }
 
             if "generate report" in action_l:
                 avg_score = safe_round(sum(float(c.get("score", 0.0)) for c in readiness) / max(1, len(readiness)), 2)
+                avg_gap = safe_round(sum(float(c.get("gap_index", 0.0)) for c in readiness) / max(1, len(readiness)), 2)
+                readiness_index = safe_round(max(0.0, min(100.0, (avg_score / 4.0) * 100.0 - avg_gap * 0.4)), 2)
                 return {
                     "action": action,
                     "handler": handler,
                     "accreditation_report": {
                         "criteria_total": len(readiness),
                         "avg_score": avg_score,
+                        "avg_gap_index": avg_gap,
+                        "readiness_index": readiness_index,
                         "met": len([c for c in readiness if str(c.get("status", "")).lower() == "met"]),
                         "at_risk_or_missing": len([c for c in readiness if str(c.get("status", "")).lower() in {"at risk", "missing"}]),
+                        "cycle_stage": cycle_stage,
                     },
                     "criterion_readiness": readiness,
                     "next_actions": [
                         "Review at-risk criteria in governance meeting",
                         "Publish 30-day closure plan",
+                        "Issue capability enablement plan via HR lead",
                     ],
                 }
 
@@ -1017,9 +1149,15 @@ class AgentBase(AgenticPipeline):
                 "action": action,
                 "handler": handler,
                 "criterion_readiness": readiness,
+                "governance_lane": {
+                    "cycle_stage": cycle_stage,
+                    "finance_lead": finance_lead,
+                    "hr_capability_lead": hr_capability_lead,
+                },
                 "next_actions": [
                     "Prioritize low-score criteria for remediation",
                     "Validate evidence sufficiency before audit",
+                    "Review resource support requirements with finance and HR leads",
                 ],
             }
 
@@ -1135,6 +1273,14 @@ class AgentBase(AgenticPipeline):
             if not source_rows and fields:
                 source_rows = [fields]
 
+            hr_partner = str(
+                fields.get("hr_partner")
+                or fields.get("hr_support_owner")
+                or fields.get("counseling_partner")
+                or "Student Success + HR Wellbeing Desk"
+            )
+            lookback_window = str(fields.get("lookback_window") or "Last 30 Days")
+
             for idx, row in enumerate(source_rows, start=1):
                 student = str(row.get("field_1") or row.get("student") or row.get("name") or f"Student {idx}")
                 attendance = self._to_number(row.get("attendance") or row.get("attendance_pct") or 75)
@@ -1172,40 +1318,103 @@ class AgentBase(AgenticPipeline):
             critical = [p for p in predictions if p.get("tier") in {"Critical", "High"}]
 
             if "early warning" in action_l:
+                queue = []
+                for item in critical[:12]:
+                    drivers = cast(Dict[str, Any], item.get("drivers") or {})
+                    queue.append(
+                        {
+                            "student": item.get("student"),
+                            "tier": item.get("tier"),
+                            "risk_score": item.get("risk_score"),
+                            "trigger": {
+                                "attendance": drivers.get("attendance"),
+                                "assignment_latency": drivers.get("assignment_latency"),
+                                "fee_delay_days": drivers.get("fee_delay_days"),
+                            },
+                            "owner": "Counselor" if item.get("tier") == "High" else "Counselor + HoD",
+                            "hr_support": hr_partner,
+                            "first_response_sla": "24h" if item.get("tier") == "Critical" else "48h",
+                        }
+                    )
                 return {
                     "action": action,
                     "handler": handler,
-                    "early_warning_queue": critical,
-                    "count": len(critical),
+                    "window": lookback_window,
+                    "early_warning_queue": queue,
+                    "count": len(queue),
                     "next_actions": [
                         "Assign counselor follow-up within 24 hours",
                         "Trigger mentor outreach for critical cohort",
+                        f"Notify HR partner lane: {hr_partner}",
                     ],
                 }
 
             if "intervention plan" in action_l:
                 plan = []
                 for item in critical[:10]:
+                    drivers = cast(Dict[str, Any], item.get("drivers") or {})
+                    attendance = self._to_number(drivers.get("attendance") or 0)
+                    latency = self._to_number(drivers.get("assignment_latency") or 0)
+                    fee_delay = self._to_number(drivers.get("fee_delay_days") or 0)
+                    actions: List[str] = []
+                    if attendance < 70:
+                        actions.append("Initiate attendance recovery contract with daily mentor check-in")
+                    if latency >= 5:
+                        actions.append("Create assignment backlog sprint with subject TA support")
+                    if fee_delay > 0:
+                        actions.append("Trigger financial aid triage with accounts and HR wellbeing desk")
+                    if not actions:
+                        actions.append("Continue weekly counselor review and progress monitoring")
+
                     plan.append(
                         {
                             "student": item.get("student"),
                             "tier": item.get("tier"),
-                            "plan": "Counselor call, attendance contract, and weekly progress tracking",
+                            "risk_score": item.get("risk_score"),
+                            "owner_lane": f"Counselor + {hr_partner}",
+                            "plan": actions,
+                            "checkpoints": ["Week 1 review", "Week 2 intervention audit", "Week 4 escalation gate"],
                         }
                     )
                 return {
                     "action": action,
                     "handler": handler,
                     "intervention_plan": plan,
+                    "coordination": {
+                        "primary_lane": "Student Success Cell",
+                        "hr_partner": hr_partner,
+                        "window": lookback_window,
+                    },
                     "next_actions": [
                         "Share plan with student success office",
                         "Review improvement after 7 days",
+                        "Escalate unresolved critical cases to dean and HR partner",
                     ],
                 }
 
             if "trend analysis" in action_l:
                 avg_score = safe_round(
                     (sum(float(p.get("risk_score", 0.0)) for p in predictions) / max(1, len(predictions))),
+                    2,
+                )
+                avg_attendance = safe_round(
+                    (
+                        sum(
+                            self._to_number(cast(Dict[str, Any], p.get("drivers") or {}).get("attendance") or 0)
+                            for p in predictions
+                        )
+                        / max(1, len(predictions))
+                    ),
+                    2,
+                )
+                avg_lms = safe_round(
+                    (
+                        sum(
+                            self._to_number(cast(Dict[str, Any], p.get("drivers") or {}).get("lms_activity") or 0)
+                            for p in predictions
+                        )
+                        / max(1, len(predictions))
+                    ),
                     2,
                 )
                 return {
@@ -1215,6 +1424,9 @@ class AgentBase(AgenticPipeline):
                         "cohort_size": len(predictions),
                         "average_risk_score": avg_score,
                         "high_risk_count": len(critical),
+                        "average_attendance": avg_attendance,
+                        "average_lms_activity": avg_lms,
+                        "window": lookback_window,
                     },
                     "top_risk_students": predictions[:8],
                     "next_actions": [
@@ -1240,6 +1452,7 @@ class AgentBase(AgenticPipeline):
             }
 
         if handler == "students_grievance":
+            hr_owner = str(fields.get("hr_escalation_owner") or "HR Conduct Desk")
             grievances = []
             for idx, row in enumerate(rows[:40], start=1):
                 gid = str(row.get("field_1") or row.get("id") or f"GR-{100 + idx}")
@@ -1263,6 +1476,13 @@ class AgentBase(AgenticPipeline):
                 category_count: Dict[str, int] = {}
                 for g in grievances:
                     category_count[g["category"]] = category_count.get(g["category"], 0) + 1
+                sla_pressure = len(
+                    [
+                        g
+                        for g in grievances
+                        if g.get("severity") in {"high", "critical"} or "24" in str(g.get("sla", ""))
+                    ]
+                )
                 return {
                     "action": action,
                     "handler": handler,
@@ -1270,6 +1490,7 @@ class AgentBase(AgenticPipeline):
                         "total_cases": len(grievances),
                         "category_distribution": category_count,
                         "high_severity_cases": len([g for g in grievances if g.get("severity") in {"high", "critical"}]),
+                        "sla_pressure_cases": sla_pressure,
                     },
                     "next_actions": [
                         "Share anonymized trends with quality council",
@@ -1282,23 +1503,42 @@ class AgentBase(AgenticPipeline):
                     {
                         "id": g.get("id"),
                         "owner": g.get("owner"),
-                        "reason": "High severity or SLA pressure",
+                        "reason": (
+                            "Mandatory 24h escalation (Ragging/POSH)"
+                            if str(g.get("category", "")).strip().lower() in {"ragging", "posh"}
+                            else "High severity or SLA pressure"
+                        ),
+                        "sla": g.get("sla"),
+                        "category": g.get("category"),
                     }
                     for g in grievances
-                    if g.get("severity") in {"high", "critical"} or "24" in str(g.get("sla", ""))
+                    if g.get("severity") in {"high", "critical"}
+                    or "24" in str(g.get("sla", ""))
+                    or str(g.get("category", "")).strip().lower() in {"ragging", "posh"}
                 ]
                 return {
                     "action": action,
                     "handler": handler,
                     "escalation_queue": escalations,
                     "count": len(escalations),
+                    "hr_escalation_owner": hr_owner,
                     "next_actions": [
                         "Notify escalation owners",
                         "Review unresolved escalations daily",
+                        f"Route conduct-sensitive escalations to {hr_owner}",
                     ],
                 }
 
             if "sla dashboard" in action_l:
+                owner_summary: Dict[str, Dict[str, int]] = {}
+                for case in grievances:
+                    owner = str(case.get("owner") or "Unassigned")
+                    owner_block = owner_summary.setdefault(owner, {"total": 0, "open": 0, "critical": 0})
+                    owner_block["total"] += 1
+                    if str(case.get("status", "")).lower() != "resolved":
+                        owner_block["open"] += 1
+                    if str(case.get("severity", "")).lower() == "critical":
+                        owner_block["critical"] += 1
                 return {
                     "action": action,
                     "handler": handler,
@@ -1306,6 +1546,8 @@ class AgentBase(AgenticPipeline):
                         "total_cases": len(grievances),
                         "open_cases": len([g for g in grievances if str(g.get("status", "")).lower() != "resolved"]),
                         "critical_cases": len([g for g in grievances if g.get("severity") == "critical"]),
+                        "hr_escalation_owner": hr_owner,
+                        "owner_summary": owner_summary,
                     },
                     "cases": grievances[:12],
                     "next_actions": [
@@ -1344,6 +1586,7 @@ class AgentBase(AgenticPipeline):
             }
 
         if handler == "students_internships":
+            hr_partner = str(fields.get("hr_partner") or "HR Industry Mentor Cell")
             internships = []
             for idx, row in enumerate(rows[:30], start=1):
                 student = str(row.get("field_1") or row.get("student") or f"STU-{900 + idx}")
@@ -1351,10 +1594,12 @@ class AgentBase(AgenticPipeline):
                 status = str(row.get("status") or "pipeline")
                 risk = str(row.get("risk") or "low")
                 fit = self._to_number(row.get("fit") or row.get("fit_score") or row.get("score") or 72)
+                role = str(row.get("role") or row.get("target_role") or "Role TBD")
                 internships.append(
                     {
                         "student": student,
                         "company": company,
+                        "role": role,
                         "status": status,
                         "risk": risk,
                         "fit_score": fit,
@@ -1373,6 +1618,12 @@ class AgentBase(AgenticPipeline):
                         "name": partner_raw,
                         "domains": domains,
                         "onboarding_status": "Draft Ready",
+                        "hr_partner": hr_partner,
+                        "mou_milestones": [
+                            "Compliance checklist signed",
+                            "MOU legal review",
+                            "Coordinator assignment + kickoff",
+                        ],
                     },
                     "next_actions": [
                         "Initiate MOU review",
@@ -1388,6 +1639,7 @@ class AgentBase(AgenticPipeline):
                         "total_internships": len(internships),
                         "completed": len([i for i in internships if "complete" in str(i.get("status", "")).lower()]),
                         "at_risk": len([i for i in internships if str(i.get("risk", "")).lower() in {"high", "medium"}]),
+                        "hr_partner": hr_partner,
                     },
                     "sample_records": internships[:10],
                     "next_actions": [
@@ -1399,14 +1651,16 @@ class AgentBase(AgenticPipeline):
             if "template library" in action_l:
                 template_type = fields.get("template_type", "general")
                 templates = [
-                    {"name": "Offer Acceptance Template", "type": "onboarding"},
-                    {"name": "Weekly Internship Log", "type": "progress"},
-                    {"name": "Mentor Feedback Form", "type": "evaluation"},
+                    {"name": "Offer Acceptance Template", "type": "onboarding", "owner": "Placement Office"},
+                    {"name": "Weekly Internship Log", "type": "progress", "owner": "Student + Mentor"},
+                    {"name": "Mentor Feedback Form", "type": "evaluation", "owner": "Industry Mentor"},
+                    {"name": "MOU Summary Sheet", "type": "compliance", "owner": "Legal + TPO"},
                 ]
                 return {
                     "action": action,
                     "handler": handler,
                     "template_type_requested": template_type,
+                        "hr_partner": hr_partner,
                     "templates": templates,
                     "next_actions": [
                         "Select required template bundle",
@@ -1418,6 +1672,7 @@ class AgentBase(AgenticPipeline):
                 "action": action,
                 "handler": handler,
                 "fit_matches": internships[:12],
+                "hr_partner": hr_partner,
                 "next_actions": [
                     "Confirm top-fit student-company interviews",
                     "Monitor risk flags weekly",
@@ -1429,6 +1684,7 @@ class AgentBase(AgenticPipeline):
             event_date = fields.get("date", fields.get("event_date", "TBD"))
             venue = fields.get("venue", "TBD")
             budget = self._to_number(fields.get("budget") or fields.get("event_budget") or 0)
+            hr_safety_lead = str(fields.get("hr_safety_lead") or fields.get("hr_partner") or "People & Safety Desk")
 
             if "plan event" in action_l:
                 return {
@@ -1439,17 +1695,34 @@ class AgentBase(AgenticPipeline):
                         "date": event_date,
                         "venue": venue,
                         "budget": budget,
-                        "milestones": ["Venue lock", "Promotion kickoff", "Final logistics rehearsal"],
+                        "milestones": [
+                            {"phase": "Week -4", "task": "Venue lock and permits", "owner": "Events Ops"},
+                            {"phase": "Week -3", "task": "Promotion kickoff", "owner": "Marketing Cell"},
+                            {"phase": "Week -1", "task": "Final logistics rehearsal", "owner": "Ops + Volunteers"},
+                            {"phase": "Day 0", "task": "Execution command desk", "owner": "Events Control Room"},
+                        ],
+                        "hr_safety_owner": hr_safety_lead,
                     },
                     "next_actions": [
                         "Assign owners for each milestone",
                         "Confirm venue and vendor availability",
+                        "Share safety runbook with HR safety owner",
                     ],
                 }
 
             if "promote event" in action_l:
                 segments = self._split_values(fields.get("audience_segments", "Students, Alumni"))
                 channels = self._split_values(fields.get("channels", "Email, Social"))
+                matrix = []
+                for segment in segments:
+                    primary_channel = channels[0] if channels else "Email"
+                    matrix.append(
+                        {
+                            "segment": segment,
+                            "primary_channel": primary_channel,
+                            "cta": f"Register now - {segment} track",
+                        }
+                    )
                 return {
                     "action": action,
                     "handler": handler,
@@ -1457,6 +1730,7 @@ class AgentBase(AgenticPipeline):
                         "segments": segments,
                         "channels": channels,
                         "estimated_reach": max(500, int(350 * max(1, len(segments)) * max(1, len(channels)))),
+                        "segment_channel_matrix": matrix,
                     },
                     "next_actions": [
                         "Publish campaign schedule",
@@ -1467,6 +1741,7 @@ class AgentBase(AgenticPipeline):
             if "risk" in action_l or "logistics" in action_l:
                 checklist = self._split_values(fields.get("event_checklist", "Permissions, Security, Medical"))
                 risks = [{"item": c, "risk": "Open", "mitigation": "Assign owner and confirm completion"} for c in checklist[:8]]
+                critical_blockers = len([r for r in risks if str(r.get("item", "")).lower() in {"security", "medical", "permissions"}])
                 return {
                     "action": action,
                     "handler": handler,
@@ -1474,6 +1749,9 @@ class AgentBase(AgenticPipeline):
                         "event": event_name,
                         "venue": venue,
                         "open_risks": len(risks),
+                        "critical_blockers": critical_blockers,
+                        "go_no_go": "GO" if critical_blockers == 0 else "NO-GO",
+                        "hr_safety_owner": hr_safety_lead,
                         "items": risks,
                     },
                     "next_actions": [
@@ -1494,6 +1772,7 @@ class AgentBase(AgenticPipeline):
                     "budget": budget,
                     "actual_spend": budget_actual,
                     "variance": safe_round(budget - budget_actual, 2),
+                    "hr_safety_owner": hr_safety_lead,
                 },
                 "next_actions": [
                     "Share final report with student council",
@@ -1584,16 +1863,20 @@ class AgentBase(AgenticPipeline):
             course = fields.get("course", "Course")
             topic = fields.get("topic", "Core Topic")
             outcomes = self._split_values(fields.get("outcomes", ""))
+            hr_capability_bridge = str(fields.get("hr_capability_bridge") or "Placement Cell + Faculty Mentors")
 
             if "design course outline" in action_l:
                 modules = []
                 for idx, row in enumerate(rows[:8], start=1):
+                    hours = self._to_number(row.get("hours") or 8)
                     modules.append(
                         {
                             "module": row.get("field_1") or f"Module {idx}",
                             "title": row.get("title") or "Topic Block",
-                            "hours": self._to_number(row.get("hours") or 8),
+                            "hours": hours,
+                            "week_span": max(1, int(hours // 3) or 1),
                             "assessment": row.get("assessment") or "Quiz",
+                            "outcome_tag": row.get("outcome") or (outcomes[idx - 1] if idx - 1 < len(outcomes) else "CO-Gen"),
                         }
                     )
                 return {
@@ -1601,6 +1884,7 @@ class AgentBase(AgenticPipeline):
                     "handler": handler,
                     "course_outline": {
                         "course": course,
+                        "hr_capability_bridge": hr_capability_bridge,
                         "outcomes": outcomes,
                         "modules": modules,
                     },
@@ -1615,9 +1899,9 @@ class AgentBase(AgenticPipeline):
                     "action": action,
                     "handler": handler,
                     "resource_recommendations": [
-                        {"topic": topic, "resource": "Foundations Handbook", "level": "Core"},
-                        {"topic": topic, "resource": "Applied Case Repository", "level": "Intermediate"},
-                        {"topic": topic, "resource": "Capstone Implementation Guide", "level": "Advanced"},
+                        {"topic": topic, "resource": "Foundations Handbook", "level": "Core", "resource_type": "Textbook"},
+                        {"topic": topic, "resource": "Applied Case Repository", "level": "Intermediate", "resource_type": "Casebook"},
+                        {"topic": topic, "resource": "Capstone Implementation Guide", "level": "Advanced", "resource_type": "Project Toolkit"},
                     ],
                     "next_actions": [
                         "Share curated list with faculty",
@@ -1631,9 +1915,9 @@ class AgentBase(AgenticPipeline):
                 "assessment_blueprint": {
                     "course": course,
                     "components": [
-                        {"type": "Quiz", "weight": 20},
-                        {"type": "Lab", "weight": 35},
-                        {"type": "Project", "weight": 45},
+                        {"type": "Quiz", "weight": 20, "rubric_focus": "Concept recall + correctness"},
+                        {"type": "Lab", "weight": 35, "rubric_focus": "Execution + documentation"},
+                        {"type": "Project", "weight": 45, "rubric_focus": "Problem framing + solution impact"},
                     ],
                 },
                 "next_actions": [

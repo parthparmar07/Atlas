@@ -10,21 +10,46 @@ interface BudgetWorkflowProps {
 export default function BudgetWorkflow({ onExecute, isExecuting }: BudgetWorkflowProps) {
   const [department, setDepartment] = useState("All Departments");
   const [quarter, setQuarter] = useState("Q3 2026");
+  const [releaseMode, setReleaseMode] = useState("Rolling release");
+  const [hrCostOwner, setHrCostOwner] = useState("HR Workforce Planning Cell");
+  const [budgetRows, setBudgetRows] = useState(
+    "Computer Science|12000000|8900000|2|31|On Track\nECE|8600000|7800000|1|18|Warning\nCentral Facilities|6400000|6400000|3|5|Critical"
+  );
+  const [txRows, setTxRows] = useState(
+    "TX-1901|Computer Science|420000|Lab|No|Approved\nTX-1936|ECE|96000|Consumables|No|Approved\nTX-1982|Central Facilities|185000|Maintenance|Yes|Bypass"
+  );
+
+  const budgetContextRows = budgetRows
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [dept, allocated, spent, pendingApprovals, headcountGap, status] = line.split("|").map((part) => part.trim());
+      return `Budget | department=${dept || "Department"} | allocated=${allocated || "0"} | spent=${spent || "0"} | pending_approvals=${pendingApprovals || "0"} | headcount_gap=${headcountGap || "0"} | status=${status || "On Track"}`;
+    });
+
+  const txContextRows = txRows
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [txId, dept, amount, category, duplicateFlag, approvalTrail] = line.split("|").map((part) => part.trim());
+      return `Transaction | tx_id=${txId || "TX-1000"} | dept=${dept || "Department"} | amount=${amount || "0"} | category=${category || "General"} | duplicate_flag=${duplicateFlag || "No"} | approval_trail=${approvalTrail || "Approved"}`;
+    });
 
   const buildContext = (action: string, requiredOutput: string) => {
     return [
       `Department: ${department}`,
       `Quarter: ${quarter}`,
-      "Budget Lines[]:",
-      "Computer Science | allocated=12000000 | spent=8900000 | pending_approvals=2 | status=On Track",
-      "ECE | allocated=8600000 | spent=7800000 | pending_approvals=1 | status=Warning",
-      "Central Facilities | allocated=6400000 | spent=6400000 | pending_approvals=3 | status=Critical",
-      "Transactions[]:",
-      "TX-1901 | dept=Computer Science | amount=420000 | category=Lab | duplicate_flag=No",
-      "TX-1936 | dept=ECE | amount=96000 | category=Consumables | duplicate_flag=No",
-      "TX-1982 | dept=Central Facilities | amount=185000 | category=Maintenance | duplicate_flag=Yes",
+      `Release Mode: ${releaseMode}`,
+      `HR Cost Owner: ${hrCostOwner}`,
+      "Budgets[]: Provided",
+      "Transactions[]: Provided",
+      ...budgetContextRows,
+      ...txContextRows,
       `Action: ${action}`,
       `Required Outputs: ${requiredOutput}`,
+      "Need: burn trend, anomaly confidence, spend controls, and owner-tagged approvals.",
     ].join("\n");
   };
 
@@ -33,6 +58,10 @@ export default function BudgetWorkflow({ onExecute, isExecuting }: BudgetWorkflo
       <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-200/30 grid grid-cols-2 gap-4">
         <Input label="Department" value={department} setValue={setDepartment} />
         <Input label="Quarter" value={quarter} setValue={setQuarter} />
+        <Input label="Release Mode" value={releaseMode} setValue={setReleaseMode} />
+        <Input label="HR Cost Owner" value={hrCostOwner} setValue={setHrCostOwner} />
+        <TextArea label="Budget Rows (Dept|Allocated|Spent|PendingApprovals|HeadcountGap|Status)" value={budgetRows} setValue={setBudgetRows} rows={4} />
+        <TextArea label="Transactions (TxID|Dept|Amount|Category|DuplicateFlag|ApprovalTrail)" value={txRows} setValue={setTxRows} rows={4} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -51,6 +80,30 @@ export default function BudgetWorkflow({ onExecute, isExecuting }: BudgetWorkflo
           disabled={isExecuting}
         />
       </div>
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  setValue,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <div className="col-span-2">
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rows={rows}
+        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm"
+      />
     </div>
   );
 }
