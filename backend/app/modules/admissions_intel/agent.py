@@ -445,32 +445,3 @@ class AdmissionsIntelligenceAgent(AgentBase):
             {"status": "lead_briefing_scope_ready", "records": len(briefs)},
             {"status": "counsellor_briefings_completed", "briefings": briefs},
         ]
-
-    async def execute(self, state: AgentState) -> List[Any]:
-        context = self._parse_context(state.context)
-
-        try:
-            if state.goal == "Qualify Leads":
-                return await self._qualify_leads(state, context)
-            if state.goal == "Parse Documents":
-                return await self._parse_documents(state, context)
-            if state.goal == "Track Funnel":
-                return await self._track_funnel(state, context)
-            if state.goal == "Generate Follow-Up Messages":
-                return await self._generate_followups(state, context)
-            if state.goal == "Match Scholarships":
-                return await self._match_scholarships(state, context)
-            if state.goal == "Brief Counsellors":
-                return await self._brief_counsellors(state, context)
-        except Exception as exc:
-            logger.exception("Admissions intelligence execution failed for goal=%s", state.goal)
-            state.reflection = f"Execution failed for '{state.goal}': {exc}"
-            return [{"status": "failed", "goal": state.goal, "error": str(exc)}]
-
-        state.reflection = f"No execution branch found for '{state.goal}'."
-        return [{"status": "unsupported_action", "goal": state.goal}]
-
-    async def reflect(self, state: AgentState) -> str:
-        if state.reflection:
-            return state.reflection
-        return await super().reflect(state)

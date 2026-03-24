@@ -47,8 +47,6 @@ DEFAULT_PLATFORM_CORE = [
     {"title": "Active Directory", "href": "/admin/users", "icon": "users", "color": "text-slate-300"},
     {"title": "Administrator", "href": "/settings", "icon": "settings", "color": "text-slate-300"},
     {"title": "Audit Logs", "href": "/admin/audit", "icon": "activity", "color": "text-slate-300"},
-    {"title": "Security Core", "href": "/ai/policies", "icon": "shield", "color": "text-slate-300"},
-    {"title": "Orchestrator God Mode", "href": "/admin/orchestrator", "icon": "target", "color": "text-amber-400"},
 ]
 
 
@@ -265,9 +263,9 @@ async def get_audit_logs(
             "id": log.id,
             "user_email": user_email or "system",
             "action": log.action,
-            "resource": log.details or "-",
+            "resource": log.resource or log.details or "-",
             "details": log.details,
-            "status": "SUCCESS" if "failed" not in log.action.lower() else "ERROR",
+            "status": log.status or ("ERROR" if "FAIL" in (log.action or "").upper() else "SUCCESS"),
             "ip_address": log.ip_address or "-",
             "created_at": log.timestamp.isoformat() if log.timestamp else datetime.now().isoformat()
         })

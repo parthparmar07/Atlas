@@ -78,5 +78,4 @@ Mark as internal working document — pending Principal approval for external re
             "status": "NON_COMPLIANT"
         })
 
-    async def execute(self, state: AgentState) -> List[Any]:
-        return await super().execute(state)
+

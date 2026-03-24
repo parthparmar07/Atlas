@@ -91,36 +91,16 @@ Fee reports: tables with outstanding amounts, days overdue, recommended action. 
 
     ACTION_PROMPTS = {
         "Collect Dues": """Generate the fee collection status report for the current semester.
-Identify all defaulters by overdue tier: T+0 (reminder), T+7 (email warning), T+15 (hold-on-services notice), T+30 (Principal escalation).
 Calculate outstanding amounts: total due vs total collected, broken down by programme, semester, and department.
-For each defaulter tier, generate the appropriate tiered communication (WhatsApp / email / formal letter).
-All figures must reference source data. Never use threatening language — institutional dignity always.""",
-
-        "NAAC Readiness Check": """Run the current NAAC accreditation readiness assessment.
-Score all 7 criteria against the NAAC rubric (1–4 scale): Curricular Aspects, Teaching-Learning, Research & Extension, Infrastructure, Student Support, Governance, Institutional Values.
-For each criterion: identify evidence gaps, prioritise by impact on final grade.
-Generate a live readiness score (0–100%). Draft the SSR section outline for the 2 lowest-scoring criteria.
-All drafts are internal working documents — not for external distribution without Principal sign-off.""",
-
-        "Monitor Budgets": """Generate the monthly budget utilisation report for all departments.
-Flag overspend risk (>80% spent before Q3) and underspend risk (<30% spent by Q3 end).
-Produce a variance analysis table: department / allocated / spent / % utilised / variance / risk flag.
-Identify recurring overspend categories. Flag any department where remaining budget can fund a pending procurement request.
-Never recommend expenditure approval — flag for Finance Officer review.""",
-
-        "Track Grants": """Generate the research grant and government scheme utilisation status report.
-For each active grant: amount, disbursements received, expenditure to date, balance, utilisation certificate due date.
-Flag: utilisation certificate due within 30 days, grants expiring with >20% unspent balance, overdue compliance reports.
-For flagged grants, generate: utilisation certificate draft or extension request letter as appropriate.
-All figures must be traceable to source records.""",
-
-        "Support Audit": """Process the current batch of internal/external audit queries.
-For each query: map to the relevant financial record or policy, identify documents to produce, and flag any compliance gaps revealed.
-Generate management response drafts for each audit observation: factual, non-defensive, with corrective action and target date.
-Audit observations are confidential — restricted to Principal, Finance Officer, and relevant department head.""",
-
-        "Compliance Calendar": """Generate the regulatory compliance calendar for the current and next quarter.
-Cover all mandatory filings: AICTE ARS (June), NAAC SSR, UGC annual returns (September), university affiliation renewal, Income Tax (80G/12A, TDS), PF/ESI monthly + annual, POSH annual report (January 31).
-Output a date-sorted table: deadline / compliance item / responsible person / consequence of non-compliance / current status.
-Flag items due within 30 days as Priority, within 60 days as Watch.""",
+All figures must reference source data.""",
+        "Send Reminders": """Generate a segmented reminder strategy for all defaulters.
+Identify defaulters by overdue tier: T+0 (reminder), T+7 (email warning), T+15 (hold-on-services), T+30 (escalation).
+For each tier, generate the appropriate tiered communication (WhatsApp / email / formal letter).
+Never use threatening language — institutional dignity always.""",
+        "Defaulter Report": """Generate high-risk defaulter intelligence.
+Identify students with chronic late payments or exceptionally high outstanding balances.
+Output table: Student / Overdue Days / Total Due / Past Default History / Risk Category.""",
+        "Recovery Plan": """Build an escalation and recovery action plan for chronic cases.
+Determine which students need Principal escalation, which might qualify for instalment plans, and which require immediate service holds.
+Output structured recovery blueprint."""
     }

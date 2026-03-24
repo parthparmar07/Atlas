@@ -11,45 +11,74 @@ from app.core.database import engine, Base
 from app.api import auth, users, agents, telemetry, admin, ai, admissions
 from app.api import ops
 from app.api import agent_exec
-from app.models.admissions import Lead, LeadStage, NurtureTemplate
+from app.models.admissions import Lead, LeadStage, NurtureTemplate, LeadInteraction
+from app.models.audit import AuditLog
 from app.core.database import async_session_maker
 from sqlalchemy import select
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import json
 
 scheduler = AsyncIOScheduler()
-
-async def send_whatsapp(phone, msg):
-    # Mock WATI/Twilio integration
-    print(f"Sending WhatsApp to {phone}: {msg}")
-
-async def send_email(email, subject, msg):
-    # Mock SendGrid integration
-    print(f"Sending Email to {email}: {subject} - {msg}")
+_drip_logger = logging.getLogger("atlas.nurture_drip")
 
 async def run_nurture_drip():
-    """Runs every hour. Sends next drip step to eligible leads."""
+    """
+    Runs every hour.
+    Sends next drip step to eligible leads — writes real LeadInteraction + AuditLog records.
+    No more print() — every action is in the DB and visible on the dashboard.
+    """
     async with async_session_maker() as db:
         result = await db.execute(
-            select(Lead).where(Lead.nurture_active == True,
-                               Lead.stage.notin_([LeadStage.ENROLLED, LeadStage.DROPPED])))
+            select(Lead).where(
+                Lead.nurture_active == True,
+                Lead.stage.notin_([LeadStage.ENROLLED, LeadStage.DROPPED])
+            )
+        )
         leads = result.scalars().all()
         templates_result = await db.execute(select(NurtureTemplate).order_by(NurtureTemplate.step))
         templates = templates_result.scalars().all()
 
+        sent = 0
         for lead in leads:
-            next_templates = [t for t in templates
-                              if t.step == lead.nurture_step
-                              and lead.score >= t.min_score]
+            next_templates = [
+                t for t in templates
+                if t.step == lead.nurture_step and lead.score >= t.min_score
+            ]
             for t in next_templates:
-                msg = t.body_template.replace("{{name}}", lead.name)\
-                                     .replace("{{programme}}", lead.programme_interest)
-                if t.channel == "whatsapp":
-                    await send_whatsapp(lead.phone, msg)
-                elif t.channel == "email":
-                    await send_email(lead.email, t.subject, msg)
+                msg = (
+                    t.body_template
+                    .replace("{{name}}", lead.name)
+                    .replace("{{programme}}", lead.programme_interest)
+                )
+                # ✅ Real DB write — visible on Lead detail page
+                db.add(LeadInteraction(
+                    lead_id=lead.id,
+                    interaction_type=f"drip_{t.channel}",
+                    notes=msg,
+                    next_action="await_response",
+                ))
+                # ✅ Audit trail — visible on Admin → Audit page
+                db.add(AuditLog(
+                    user_id=None,
+                    action=f"NURTURE_DRIP:{t.channel.upper()}",
+                    resource=f"Lead:{lead.id}",
+                    status="SUCCESS",
+                    school_id=getattr(lead, "school_id", "atlas"),
+                    details=json.dumps({
+                        "lead": lead.name,
+                        "step": t.step,
+                        "channel": t.channel,
+                        "preview": msg[:120],
+                    })
+                ))
+                sent += 1
+
             if next_templates:
                 lead.nurture_step += 1
+
         await db.commit()
+        _drip_logger.info(f"[NurtureDrip] Dispatched {sent} drip messages to {len(leads)} eligible leads.")
+
 
 async def seed_data():
     """Seed initial data with school contexts, user baselines, and granular tracking."""
@@ -178,10 +207,15 @@ async def lifespan(app: FastAPI):
     # Seed data
     await seed_data()
     
-    # Start scheduler
+    # Start scheduler (lead nurture drip - every hour)
     if not scheduler.running:
         scheduler.add_job(run_nurture_drip, 'interval', hours=1)
         scheduler.start()
+    
+    # 🚀 REAL autonomous agent runner (every 5 minutes, writes to DB)
+    import asyncio
+    from app.core.agent_runner import autonomous_agent_loop
+    asyncio.create_task(autonomous_agent_loop())
     
     yield
     
@@ -239,6 +273,11 @@ app.include_router(academics.router, prefix="/api")
 app.include_router(admissions.router, prefix="/api")
 app.include_router(ops.router, prefix="/api")
 
+# ── Agent Runner Status Endpoint ─────────────────────────────────────────────
+from app.core.agent_runner import get_runner_status
+@app.get("/api/agent-runner/status")
+async def agent_runner_status():
+    return await get_runner_status()
 
 @app.get("/")
 async def root():

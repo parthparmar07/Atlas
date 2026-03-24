@@ -1,0 +1,1 @@
+{"detail":[{"type":"string_type","loc":["body","context"],"msg":"Input should be a valid string","input":{"jd_rows":[{"title":"Data Analyst","job_id":"J1","location":"Remote","skills":"python,sql"}],"student_rows":[{"name":"Alex","student_id":"S1","location":"Remote","skills":"python,sql"}]},"url":"https://errors.pydantic.dev/2.6/v/string_type"}]}

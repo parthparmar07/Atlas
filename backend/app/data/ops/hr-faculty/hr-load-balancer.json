@@ -1,0 +1,23 @@
+{
+  "records": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Analyse Load",
+      "context": "[SUCCESS] Run inequity scan and identify overload risk",
+      "status": "SUCCESS",
+      "result": "Analyse Load executed successfully for hr-faculty/hr-load-balancer",
+      "created_at": "2026-03-21T17:27:26.049786+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Generate Report",
+      "context": "[SUCCESS] Export department-wise utilization matrix",
+      "status": "SUCCESS",
+      "result": "Generate Report executed successfully for hr-faculty/hr-load-balancer",
+      "created_at": "2026-03-21T17:41:57.750450+00:00"
+    }
+  ],
+  "communications": [],
+  "created_at": "2026-03-21T17:27:26.049565+00:00"
+}

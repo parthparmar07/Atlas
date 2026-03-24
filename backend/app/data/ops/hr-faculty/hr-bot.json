@@ -29,6 +29,118 @@
       "status": "SUCCESS",
       "result": "Draft Notice executed successfully for hr-faculty/hr-bot",
       "created_at": "2026-03-19T14:49:47.097056+00:00"
+    },
+    {
+      "id": 3,
+      "action": "Payroll Summary",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Give me a summary of my current basic and HRA\nAction: Payroll Summary",
+      "status": "SUCCESS",
+      "result": "Payroll Summary executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-21T17:40:04.156970+00:00"
+    },
+    {
+      "id": 4,
+      "action": "Onboarding Checklist",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Create a checklist for a new Faculty joining CSE\nAction: Onboarding Checklist",
+      "status": "SUCCESS",
+      "result": "Onboarding Checklist executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-21T17:40:31.395411+00:00"
+    },
+    {
+      "id": 5,
+      "action": "Onboarding Checklist",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Create a checklist for a new Faculty joining CSE\nAction: Onboarding Checklist",
+      "status": "SUCCESS",
+      "result": "Onboarding Checklist executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-21T17:43:22.367333+00:00"
+    },
+    {
+      "id": 6,
+      "action": "Onboarding Checklist",
+      "context": "[SUCCESS] Role-specific onboarding tasks for new hires",
+      "status": "SUCCESS",
+      "result": "Onboarding Checklist executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-21T17:43:23.179774+00:00"
+    },
+    {
+      "id": 7,
+      "action": "Onboarding Checklist",
+      "context": "[SUCCESS] Role-specific onboarding tasks for new hires",
+      "status": "SUCCESS",
+      "result": "Onboarding Checklist executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-21T17:43:23.291379+00:00"
+    },
+    {
+      "id": 8,
+      "action": "Payroll Summary",
+      "context": "[SUCCESS] Generate monthly payroll report with breakdowns",
+      "status": "SUCCESS",
+      "result": "Payroll Summary executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-21T21:03:08.878596+00:00"
+    },
+    {
+      "id": 9,
+      "action": "Payroll Summary",
+      "context": "[SUCCESS] Generate monthly payroll report with breakdowns",
+      "status": "SUCCESS",
+      "result": "Payroll Summary executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:04:22.870031+00:00"
+    },
+    {
+      "id": 10,
+      "action": "Process Leaves",
+      "context": "[SUCCESS] handler: hr_leave\nrequired_inputs: department, date_range",
+      "status": "SUCCESS",
+      "result": "Process Leaves executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:04:31.920629+00:00"
+    },
+    {
+      "id": 11,
+      "action": "Draft Notice",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Draft a notice for upcoming Diwali holidays\nAction: Draft Notice",
+      "status": "SUCCESS",
+      "result": "Draft Notice executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:10:32.415145+00:00"
+    },
+    {
+      "id": 12,
+      "action": "Process Leaves",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: hey\nAction: Process Leaves",
+      "status": "SUCCESS",
+      "result": "Process Leaves executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:10:39.260355+00:00"
+    },
+    {
+      "id": 13,
+      "action": "Payroll Summary",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Give me a summary of my current basic and HRA\nAction: Payroll Summary",
+      "status": "SUCCESS",
+      "result": "Payroll Summary executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:10:43.805650+00:00"
+    },
+    {
+      "id": 14,
+      "action": "Process Leaves",
+      "context": "[SUCCESS] Validate eligibility, check quota, auto-approve or escalate",
+      "status": "SUCCESS",
+      "result": "Process Leaves executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:11:00.115082+00:00"
+    },
+    {
+      "id": 15,
+      "action": "Payroll Summary",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Give me a summary of my current basic and HRA\nAction: Payroll Summary",
+      "status": "SUCCESS",
+      "result": "Payroll Summary executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:50:09.493936+00:00"
+    },
+    {
+      "id": 16,
+      "action": "Payroll Summary",
+      "context": "[SUCCESS] Employee ID: EMP-2024-089\nQuery: Give me a summary of my current basic and HRA\nAction: Payroll Summary",
+      "status": "SUCCESS",
+      "result": "Payroll Summary executed successfully for hr-faculty/hr-bot",
+      "created_at": "2026-03-24T04:55:26.846677+00:00"
     }
   ],
   "communications": [],

@@ -1,0 +1,31 @@
+{
+  "records": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Screen CVs",
+      "context": "[SUCCESS] Role: Assistant Professor - AI/ML\nDepartment: Computer Science\nOpenings: 3\nMust-Have Criteria: PhD/ME, Teaching Experience, Publications\nCandidate Snapshot:\nPriya Nair | Exp=5y | Publications=8 | Teaching=Strong\nVikram Rao | Exp=8y | Publications=3 | Teaching=Strong\nAnita Sen | Exp=4y | Publications=11 | Teaching=Moderate\nRequired Outputs: shortlist rationale, interview plan, and next-step communication drafts.",
+      "status": "SUCCESS",
+      "result": "Screen CVs executed successfully for hr-faculty/hr-recruitment",
+      "created_at": "2026-03-21T17:27:35.842073+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Screen CVs",
+      "context": "[SUCCESS] Role: Assistant Professor - AI/ML\nDepartment: Computer Science\nOpenings: 3\nMust-Have Criteria: PhD/ME, Teaching Experience, Publications\nCandidate Snapshot:\nPriya Nair | Exp=5y | Publications=8 | Teaching=Strong\nVikram Rao | Exp=8y | Publications=3 | Teaching=Strong\nAnita Sen | Exp=4y | Publications=11 | Teaching=Moderate\nRequired Outputs: shortlist rationale, interview plan, and next-step communication drafts.",
+      "status": "SUCCESS",
+      "result": "Screen CVs executed successfully for hr-faculty/hr-recruitment",
+      "created_at": "2026-03-21T17:42:09.452886+00:00"
+    },
+    {
+      "id": 3,
+      "action": "Screen CVs",
+      "context": "[SUCCESS] Role: Assistant Professor - AI/ML\nDepartment: Computer Science\nOpenings: 3\nMust-Have Criteria: PhD/ME, Teaching Experience, Publications\nCandidate Snapshot:\nPriya Nair | Exp=5y | Publications=8 | Teaching=Strong\nVikram Rao | Exp=8y | Publications=3 | Teaching=Strong\nAnita Sen | Exp=4y | Publications=11 | Teaching=Moderate\nRequired Outputs: shortlist rationale, interview plan, and next-step communication drafts.",
+      "status": "SUCCESS",
+      "result": "Screen CVs executed successfully for hr-faculty/hr-recruitment",
+      "created_at": "2026-03-21T21:05:14.704387+00:00"
+    }
+  ],
+  "communications": [],
+  "created_at": "2026-03-21T17:27:35.842014+00:00"
+}

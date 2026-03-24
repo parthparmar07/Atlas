@@ -1,0 +1,13 @@
+﻿{
+    "context":  {
+                    "fee_rows":  [
+                                     {
+                                         "status":  "pending",
+                                         "channel":  "online",
+                                         "amount_due":  "1200"
+                                     }
+                                 ]
+                },
+    "agent_id":  "finance-fees",
+    "action":  "Collect Dues"
+}

@@ -300,27 +300,3 @@ from the catalogue. Return: lead pseudonym, matched scheme name, eligibility con
                 "lead_results": leaderboard,
             },
         ]
-
-    async def execute(self, state: AgentState) -> List[Any]:
-        context = self._parse_context(state.context)
-        try:
-            if state.goal == "Send Campaigns":
-                return await self._send_campaigns(state, context)
-            if state.goal == "Check Drop-offs":
-                return await self._check_dropoffs(state, context)
-            if state.goal == "Segment Leads":
-                return await self._segment_leads(state)
-            if state.goal == "Match Scholarships":
-                return await self._match_scholarships(state, context)
-        except Exception as exc:
-            logger.exception("Lead nurture execution failed for goal=%s", state.goal)
-            state.reflection = f"Execution failed for '{state.goal}': {exc}"
-            return [{"status": "failed", "goal": state.goal, "error": str(exc)}]
-
-        state.reflection = f"No execution branch found for '{state.goal}'."
-        return [{"status": "unsupported_action", "goal": state.goal}]
-
-    async def reflect(self, state: AgentState) -> str:
-        if state.reflection:
-            return state.reflection
-        return await super().reflect(state)

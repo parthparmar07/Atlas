@@ -59,5 +59,4 @@ Route Critical anomalies to the Finance Officer immediately.""",
             return json.dumps({department: data[department]})
         return json.dumps(data)
 
-    async def execute(self, state: AgentState) -> List[Any]:
-        return await super().execute(state)
+

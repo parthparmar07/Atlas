@@ -64,7 +64,32 @@
       "updated_at": "2026-03-19T09:51:43.021717+00:00"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Review Resumes",
+      "context": "[SUCCESS] Batch: B.Tech CSE 2026\nTarget Companies: TCS, Infosys, Wipro, Accenture, Capgemini\nCurrent Skill Profile: DSA, SQL, Python, OOP, React, Cloud Basics\nNeed: JD analysis, company matching, skill-gap intelligence, resume review, interview prep, and outreach strategy.",
+      "status": "SUCCESS",
+      "result": "Review Resumes executed successfully for placement/intelligence",
+      "created_at": "2026-03-21T19:19:08.254804+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Manage Company Pipeline",
+      "context": "[SUCCESS] Batch: B.Tech CSE 2026\nTarget Companies: TCS, Infosys, Wipro, Accenture, Capgemini\nCurrent Skill Profile: DSA, SQL, Python, OOP, React, Cloud Basics\nNeed: JD analysis, company matching, skill-gap intelligence, resume review, interview prep, and outreach strategy.",
+      "status": "SUCCESS",
+      "result": "Manage Company Pipeline executed successfully for placement/intelligence",
+      "created_at": "2026-03-21T19:19:27.103556+00:00"
+    },
+    {
+      "id": 3,
+      "action": "Prepare for Interviews",
+      "context": "[SUCCESS] Batch: B.Tech CSE 2026\nTarget Companies: TCS, Infosys, Wipro, Accenture, Capgemini\nCurrent Skill Profile: DSA, SQL, Python, OOP, React, Cloud Basics\nJD Library[]:\nJD-101 | role=Software Engineer | company=TCS | must_have=DSA, Java, SQL | bonus=System Design\nJD-117 | role=Data Analyst | company=Accenture | must_have=SQL, Python, BI | bonus=Statistics\nJD-133 | role=Backend Engineer | company=Infosys | must_have=API, OOP, DBMS | bonus=Cloud\nStudent Profiles[]:\nAarav Nair | cgpa=8.4 | skills=Python, SQL, React | mock_score=71 | preferred_role=Software Engineer\nNisha Patel | cgpa=8.9 | skills=Python, BI, Statistics | mock_score=79 | preferred_role=Data Analyst\nRahul Menon | cgpa=7.8 | skills=Java, API, DBMS | mock_score=65 | preferred_role=Backend Engineer\nAction: Prepare for Interviews\nRequired Outputs: question set, answer rubric, and coaching plan",
+      "status": "SUCCESS",
+      "result": "Prepare for Interviews executed successfully for placement/intelligence",
+      "created_at": "2026-03-24T03:19:12.583887+00:00"
+    }
+  ],
   "communications": [],
   "created_at": "2026-03-19T09:51:42.804245+00:00"
 }

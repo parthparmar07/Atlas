@@ -1,0 +1,37 @@
+{
+  "records": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "smoke-Post Job",
+      "context": "workflow sync smoke",
+      "status": "SUCCESS",
+      "result": "smoke-Post Job executed successfully for hr-faculty/recruitment",
+      "created_at": "2026-03-21T17:24:19.090306+00:00"
+    }
+  ],
+  "communications": [
+    {
+      "id": 1,
+      "channel": "email",
+      "recipient": "test@example.com",
+      "message": "workflow sync smoke",
+      "status": "queued",
+      "provider": "sendgrid",
+      "provider_detail": "missing_sendgrid_config",
+      "attempts": 1,
+      "last_attempt_at": "2026-03-21T17:24:19.227040+00:00",
+      "receipts": [
+        {
+          "attempt": 1,
+          "attempted_at": "2026-03-21T17:24:19.226902+00:00",
+          "status": "queued",
+          "provider": "sendgrid",
+          "provider_detail": "missing_sendgrid_config"
+        }
+      ],
+      "created_at": "2026-03-21T17:24:19.227053+00:00"
+    }
+  ],
+  "created_at": "2026-03-21T17:24:19.090259+00:00"
+}

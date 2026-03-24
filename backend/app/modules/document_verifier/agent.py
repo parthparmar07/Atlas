@@ -252,27 +252,3 @@ Return a commit log with: student ID, documents committed, timestamp, and ERP ac
             {"status": "erp_payload_prepared", "records": len(commit_logs)},
             {"status": "erp_push_completed", "commit_log": commit_logs},
         ]
-
-    async def execute(self, state: AgentState) -> List[Any]:
-        context = self._parse_context(state.context)
-        try:
-            if state.goal == "Verify Batch":
-                return await self._verify_batch(state, context)
-            if state.goal == "Flag Issues":
-                return await self._flag_issues(state, context)
-            if state.goal == "Generate Checklist":
-                return await self._generate_checklist(state)
-            if state.goal == "Push to ERP":
-                return await self._push_to_erp(state, context)
-        except Exception as exc:
-            logger.exception("Document verifier execution failed for goal=%s", state.goal)
-            state.reflection = f"Execution failed for '{state.goal}': {exc}"
-            return [{"status": "failed", "goal": state.goal, "error": str(exc)}]
-
-        state.reflection = f"No execution branch found for '{state.goal}'."
-        return [{"status": "unsupported_action", "goal": state.goal}]
-
-    async def reflect(self, state: AgentState) -> str:
-        if state.reflection:
-            return state.reflection
-        return await super().reflect(state)

@@ -221,8 +221,9 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
 
         {!collapsed && (
           <div className="max-h-[65vh] overflow-y-auto p-6 bg-slate-50 custom-scrollbar">
-            {data?.type === "STUDENT_RISK_DOSSIER" ? (
-              <div className="space-y-6">
+            {/* Custom Specialized Module Views */}
+            {data?.type === "STUDENT_RISK_DOSSIER" && (
+              <div className="space-y-6 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk Intensity</div>
@@ -250,8 +251,10 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
                   </div>
                 </div>
               </div>
-            ) : data?.type === "ONBOARDING_PACK" ? (
-              <div className="space-y-6">
+            )}
+
+            {data?.type === "ONBOARDING_PACK" && (
+              <div className="space-y-6 mb-6">
                 <div className="bg-slate-900 text-white p-8 rounded-3xl relative overflow-hidden">
                   <Shield className="absolute top-[-20px] right-[-20px] w-32 h-32 opacity-10 rotate-12" />
                   <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-2">Digital Employee Record</div>
@@ -261,17 +264,21 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
                     <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-bold border border-emerald-500/30 uppercase tracking-widest">Digital Sign: Verified</div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {Object.entries(data.onboarding_30_60_90 || {}).map(([k, v]: any) => (
-                    <div key={k} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{k.replace(/_/g, " ")} Goals</div>
-                      <p className="text-xs text-slate-600 font-medium leading-relaxed">{v}</p>
-                    </div>
-                  ))}
-                </div>
+                {Object.keys(data.onboarding_30_60_90 || {}).length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {Object.entries(data.onboarding_30_60_90 || {}).map(([k, v]: any) => (
+                      <div key={k} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{k.replace(/_/g, " ")} Goals</div>
+                        <p className="text-xs text-slate-600 font-medium leading-relaxed">{v}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : data?.type === "MERIT_MATRIX" ? (
-              <div className="space-y-6">
+            )}
+
+            {data?.type === "MERIT_MATRIX" && (
+              <div className="space-y-6 mb-6">
                  <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                        <div>
@@ -283,38 +290,116 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
                           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Enrollment Probability</div>
                        </div>
                     </div>
-                    <div className="grid gap-6">
-                       {data.key_drivers?.map((driver: string, i: number) => (
-                          <div key={i} className="space-y-2">
-                             <div className="flex justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                                <span>{driver}</span>
-                                <span>Impact: {95 - i*10}%</span>
-                             </div>
-                             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-500" style={{ width: `${95 - i*10}%` }} />
-                             </div>
-                          </div>
-                       ))}
-                    </div>
+                    {data.key_drivers?.length > 0 && (
+                      <div className="grid gap-6">
+                         {data.key_drivers?.map((driver: string, i: number) => (
+                            <div key={i} className="space-y-2">
+                               <div className="flex justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                  <span>{driver}</span>
+                                  <span>Impact: {95 - i*10}%</span>
+                               </div>
+                               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-indigo-500" style={{ width: `${95 - i*10}%` }} />
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                    )}
                  </div>
               </div>
-            ) : (result?.execution_details && result.execution_details.length > 0) ? (
-              <div className="space-y-6">
-                 <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+            )}
+
+            {/* Global Execution Data Flow & Traces */}
+            <div className="space-y-6">
+                {(result?.execution_details && result.execution_details.length > 0) && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                        <div>
                           <h3 className="text-xl font-black text-slate-900 tracking-tight underline decoration-indigo-200 decoration-4">Autonomous Execution Trace</h3>
                           <p className="text-xs text-slate-400 mt-1 font-bold italic">Generated via AI Pipeline</p>
                        </div>
                     </div>
-                      <ExecutionTrace steps={result.execution_details} />
-                 </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <pre className="text-[13px] leading-6 text-slate-700 whitespace-pre-wrap font-mono">
-                  {typeof result.result === "string" ? result.result : JSON.stringify(result.result, null, 2)}
-                </pre>
+                    <ExecutionTrace steps={result.execution_details} />
+                  </div>
+                )}
+                
+                {(data?.output_preview ? Object.entries(data.output_preview) : Object.entries(data || {})).map(([key, value]) => {
+                  if (key === "action" || key === "handler" || key === "type" || key === "hash" || !value) return null;
+                  
+                  if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
+                    // Render array of objects as a beautiful data grid / table
+                    const headers = Object.keys(value[0]);
+                    return (
+                      <div key={key} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
+                          <Activity className="w-4 h-4 text-indigo-500" />
+                          <h4 className="font-black text-slate-800 capitalize tracking-tight">{key.replace(/_/g, " ")}</h4>
+                          <span className="ml-auto bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">{value.length} Records</span>
+                        </div>
+                        <div className="overflow-x-auto custom-scrollbar">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr>
+                                {headers.map((h, i) => (
+                                  <th key={i} className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap bg-white border-b border-slate-100">{h.replace(/_/g, " ")}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {value.map((row: any, i) => (
+                                <tr key={i} className="hover:bg-slate-50 transition-colors group">
+                                  {headers.map((h, j) => (
+                                    <td key={j} className="px-6 py-4 text-[13px] font-medium text-slate-600 border-b border-slate-50 whitespace-nowrap group-hover:text-slate-900 transition-colors">
+                                      {typeof row[h] === "boolean" ? (row[h] ? "Yes" : "No") : String(row[h])}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  if (typeof value === "object" && !Array.isArray(value)) {
+                    // Render single object as KPI cards
+                    return (
+                      <div key={key} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <h4 className="font-black text-slate-800 capitalize tracking-tight mb-4 flex items-center gap-2"><Settings className="w-4 h-4 text-indigo-500"/>{key.replace(/_/g, " ")}</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                          {Object.entries(value).map(([k, v], i) => (
+                            <div key={i} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">{k.replace(/_/g, " ")}</div>
+                              <div className="text-sm font-bold text-slate-800 truncate">{String(v)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  if (Array.isArray(value) && typeof value[0] !== "object") {
+                     // Render basic array as tags
+                     return (
+                        <div key={key} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                          <h4 className="font-black text-slate-800 capitalize tracking-tight mb-4">{key.replace(/_/g, " ")}</h4>
+                          <div className="flex flex-wrap gap-2">
+                             {value.map((v, i) => (
+                                <span key={i} className="px-3 py-1.5 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-lg border border-indigo-100">{String(v)}</span>
+                             ))}
+                          </div>
+                        </div>
+                     )
+                  }
+
+                  return (
+                    <div key={key} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm">
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{key.replace(/_/g, " ")}</span>
+                      <span className="text-sm font-bold text-slate-800 mt-1 sm:mt-0">{String(value)}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
             <div className="mt-6 p-4 rounded-xl border border-slate-200/60 bg-white/50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">

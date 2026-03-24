@@ -1,0 +1,22 @@
+﻿{
+    "context":  {
+                    "jd_rows":  [
+                                    {
+                                        "title":  "Data Analyst",
+                                        "job_id":  "J1",
+                                        "location":  "Remote",
+                                        "skills":  "python,sql"
+                                    }
+                                ],
+                    "student_rows":  [
+                                         {
+                                             "name":  "Alex",
+                                             "student_id":  "S1",
+                                             "location":  "Remote",
+                                             "skills":  "python,sql"
+                                         }
+                                     ]
+                },
+    "agent_id":  "placement-intelligence",
+    "action":  "Match Students to Jobs"
+}

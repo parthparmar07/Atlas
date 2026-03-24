@@ -1,0 +1,1 @@
+{"agent_id": "academics-calendar", "action": "Generate Calendar", "context": "{\"school_id\": \"atlas\", \"action\": \"Generate Calendar\", \"start_date\": \"2026-07-01\", \"end_date\": \"2026-11-30\"}"}

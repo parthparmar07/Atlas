@@ -317,6 +317,53 @@ const getIndicatorClasses = (status: string) => {
   return "bg-slate-400";
 };
 
+// ── Autonomous Runner Banner ──────────────────────────────────────────────────
+
+function AutonomousRunnerBanner() {
+  const [status, setStatus] = useState<{cycles_run: number; last_run: string | null; interval_seconds: number} | null>(null);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/agent-runner/status`, { cache: "no-store" });
+        if (res.ok) setStatus(await res.json());
+      } catch {}
+    };
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!status) return null;
+
+  const lastRun = status.last_run ? new Date(status.last_run).toLocaleTimeString() : "Starting...";
+  const isRunning = status.cycles_run > 0;
+
+  return (
+    <div className={cn(
+      "flex items-center justify-between px-6 py-3.5 rounded-2xl border text-sm font-semibold transition-all",
+      isRunning
+        ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+        : "bg-slate-50 border-slate-200 text-slate-600"
+    )}>
+      <div className="flex items-center gap-3">
+        <div className={cn("w-2.5 h-2.5 rounded-full", isRunning ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
+        <span className="font-black uppercase tracking-widest text-[10px]">Autonomous Agent Runner</span>
+        <span className="text-[10px] opacity-70">
+          {isRunning ? `${status.cycles_run} cycles executed · DB writes every ${status.interval_seconds / 60}min` : "Initializing..."}
+        </span>
+      </div>
+      <div className="flex items-center gap-4 text-[10px] font-bold opacity-60">
+        <span>Dropout Watchdog</span>
+        <span>Finance Auto-Collect</span>
+        <span>Security Guard</span>
+        <span>HR Cascade</span>
+        <span className="opacity-100">Last: {lastRun}</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Dashboard Page ───────────────────────────────────────────────────────
 import { useSchool } from "@/context/SchoolContext";
 
@@ -508,6 +555,9 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* 🤖 Autonomous Runner Status Banner */}
+        <AutonomousRunnerBanner />
 
         {/* Dashboard Split layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

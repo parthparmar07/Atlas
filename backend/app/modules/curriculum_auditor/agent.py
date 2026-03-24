@@ -35,33 +35,3 @@ Return: skills gap analysis, topics to add, labs to introduce, and certification
         "Generate Audit Report": """Generate the Annual Curriculum Audit Report for all B.Tech programmes.
 Include: programme-wise compliance score, top 5 gaps per programme, and an action plan for the next semester.""",
     }
-
-    async def execute(self, state: AgentState) -> List[Any]:
-        context = academics_ops_service.parse_context(state.context)
-        try:
-            async with async_session_maker() as db:
-                if state.goal == "Audit Syllabus":
-                    reflection, steps = await academics_ops_service.audit_syllabus(db, context)
-                elif state.goal == "NEP Compliance":
-                    reflection, steps = await academics_ops_service.nep_compliance(db, context)
-                elif state.goal == "Industry Alignment":
-                    reflection, steps = await academics_ops_service.industry_alignment(db, context)
-                elif state.goal == "Generate Audit Report":
-                    reflection, steps = await academics_ops_service.generate_curriculum_report(db, context)
-                else:
-                    state.reflection = f"No execution branch found for '{state.goal}'."
-                    return [{"status": "unsupported_action", "goal": state.goal}]
-
-                await db.commit()
-
-            state.reflection = reflection
-            return steps
-        except Exception as exc:
-            logger.exception("Curriculum auditor execution failed for goal=%s", state.goal)
-            state.reflection = f"Execution failed for '{state.goal}': {exc}"
-            return [{"status": "failed", "goal": state.goal, "error": str(exc)}]
-
-    async def reflect(self, state: AgentState) -> str:
-        if state.reflection:
-            return state.reflection
-        return await super().reflect(state)

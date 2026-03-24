@@ -1,0 +1,37 @@
+{
+  "records": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "smoke-Process Leave Requests",
+      "context": "workflow sync smoke",
+      "status": "SUCCESS",
+      "result": "smoke-Process Leave Requests executed successfully for hr-faculty/leave-manager",
+      "created_at": "2026-03-21T17:24:18.854321+00:00"
+    }
+  ],
+  "communications": [
+    {
+      "id": 1,
+      "channel": "email",
+      "recipient": "test@example.com",
+      "message": "workflow sync smoke",
+      "status": "queued",
+      "provider": "sendgrid",
+      "provider_detail": "missing_sendgrid_config",
+      "attempts": 1,
+      "last_attempt_at": "2026-03-21T17:24:18.946806+00:00",
+      "receipts": [
+        {
+          "attempt": 1,
+          "attempted_at": "2026-03-21T17:24:18.946746+00:00",
+          "status": "queued",
+          "provider": "sendgrid",
+          "provider_detail": "missing_sendgrid_config"
+        }
+      ],
+      "created_at": "2026-03-21T17:24:18.946815+00:00"
+    }
+  ],
+  "created_at": "2026-03-21T17:24:18.854281+00:00"
+}

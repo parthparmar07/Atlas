@@ -1,0 +1,1 @@
+{"detail":[{"type":"string_type","loc":["body","context"],"msg":"Input should be a valid string","input":{"fee_rows":[{"status":"pending","channel":"online","amount_due":"1200"}]},"url":"https://errors.pydantic.dev/2.6/v/string_type"}]}

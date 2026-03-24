@@ -131,13 +131,59 @@ async def process_leave(leave_id: int, action: str = Body(..., embed=True), db: 
 # 6. Voice Action Hub
 @router.post("/voice-action")
 async def voice_action(text: str = Body(..., embed=True)):
-    # Simple semantic router
-    text = text.lower()
-    if "audit" in text or "summary" in text:
+    from app.services.ai.groq_service import groq_client
+    from app.services.ai.gemini import gemini_client
+    import json
+
+    system_instruction = """
+    You are the Atlas AI Voice Commander. The user has spoken a command.
+    Return a raw JSON object WITH NO MARKDOWN FORMATTING OR BACKTICKS.
+    Structure: {"action": "NAVIGATE" | "CHAT", "path"?: "/some/path", "message": "Feedback message"}
+    Available paths:
+    - /admin/audit
+    - /academics/faculty
+    - /academics/attendance
+    - /ai/agents
+    - /admissions/leads
+    - /settings
+    - /
+    If the user command sounds like a navigation request, choose NAVIGATE and pick the closest path.
+    Otherwise, choose CHAT and provide a helpful concise response in 'message'.
+    """
+
+    messages = [{"role": "user", "content": text}]
+    
+    try:
+        response_content = ""
+        if groq_client.is_available():
+            res = await groq_client.chat(messages, system_instruction=system_instruction)
+            response_content = res.get("content", "")
+        elif gemini_client.is_available():
+            res = await gemini_client.chat(messages, system_instruction=system_instruction)
+            response_content = res.get("content", "")
+
+        if response_content:
+            # Clean possible markdown formatting
+            clean_content = response_content.strip()
+            if clean_content.startswith("```json"):
+                clean_content = clean_content[7:]
+            if clean_content.startswith("```"):
+                clean_content = clean_content[3:]
+            if clean_content.endswith("```"):
+                clean_content = clean_content[:-3]
+                
+            return json.loads(clean_content.strip())
+    except Exception as e:
+        print(f"Voice AI Error: {e}")
+        pass
+
+    # Fallback semantic router
+    text_lower = text.lower()
+    if "audit" in text_lower or "summary" in text_lower:
         return {"action": "NAVIGATE", "path": "/admin/audit", "message": "Opening Audit Summarizer"}
-    elif "faculty" in text:
+    elif "faculty" in text_lower:
         return {"action": "NAVIGATE", "path": "/academics/faculty", "message": "Opening Faculty Profiles"}
-    elif "attendance" in text or "risk" in text:
+    elif "attendance" in text_lower or "risk" in text_lower:
         return {"action": "NAVIGATE", "path": "/academics/attendance", "message": "Opening Attendance Watchdog"}
     
     return {"action": "CHAT", "message": f"I heard you say: {text}. How can I help further?"}

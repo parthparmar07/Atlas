@@ -32,9 +32,7 @@ Output request disposition table with recommended next action.""",
 
         "Track Orders": """Generate order tracking status across active POs.
 Include vendor, ETA, delivery status, and breach flags.
-Highlight delayed or partially delivered orders.""",
-
-        "Pay Vendors": """Evaluate invoice payment readiness.
-Check invoice consistency, approval trail, and delivery confirmation.
-Output payable-ready list and blocked-payment list with reasons.""",
+Highlight delayed or partially delivered orders."""
     }
+
+

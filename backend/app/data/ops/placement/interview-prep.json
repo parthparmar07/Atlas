@@ -190,7 +190,24 @@
       "updated_at": "2026-03-20T16:32:26.101029+00:00"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Generate Questions",
+      "context": "[SUCCESS] handler: placement_interview\nrequired_inputs: student_profile, target_role",
+      "status": "SUCCESS",
+      "result": "Generate Questions executed successfully for placement/interview-prep",
+      "created_at": "2026-03-21T19:20:05.418421+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Generate Questions",
+      "context": "[SUCCESS] Create role-specific interview question set",
+      "status": "SUCCESS",
+      "result": "Generate Questions executed successfully for placement/interview-prep",
+      "created_at": "2026-03-21T19:20:15.156704+00:00"
+    }
+  ],
   "communications": [],
   "created_at": "2026-03-19T09:52:10.499650+00:00"
 }

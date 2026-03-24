@@ -36,33 +36,3 @@ Identify: teaching days lost, compensatory working Saturday recommendations, and
         "Export Calendar": """Generate a formatted exportable academic calendar document for 2026–27.
 Structure: month-by-month table with date, day, event/activity, and type (teaching/exam/holiday/recess).""",
     }
-
-    async def execute(self, state: AgentState) -> List[Any]:
-            context = academics_ops_service.parse_context(state.context)
-            try:
-                    async with async_session_maker() as db:
-                            if state.goal == "Generate Calendar":
-                                    reflection, steps = await academics_ops_service.generate_calendar(db, context)
-                            elif state.goal == "Add Event":
-                                    reflection, steps = await academics_ops_service.add_calendar_event(db, context)
-                            elif state.goal == "Holiday Mapping":
-                                    reflection, steps = await academics_ops_service.holiday_mapping(db, context)
-                            elif state.goal == "Export Calendar":
-                                    reflection, steps = await academics_ops_service.export_calendar(db, context)
-                            else:
-                                    state.reflection = f"No execution branch found for '{state.goal}'."
-                                    return [{"status": "unsupported_action", "goal": state.goal}]
-
-                            await db.commit()
-
-                    state.reflection = reflection
-                    return steps
-            except Exception as exc:
-                    logger.exception("Calendar generator execution failed for goal=%s", state.goal)
-                    state.reflection = f"Execution failed for '{state.goal}': {exc}"
-                    return [{"status": "failed", "goal": state.goal, "error": str(exc)}]
-
-    async def reflect(self, state: AgentState) -> str:
-            if state.reflection:
-                    return state.reflection
-            return await super().reflect(state)

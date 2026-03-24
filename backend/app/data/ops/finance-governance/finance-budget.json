@@ -1,0 +1,15 @@
+{
+  "records": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Analyze Burn Rate",
+      "context": "[SUCCESS] Department: All Departments\nQuarter: Q3 2026\nBudget Lines[]:\nComputer Science | allocated=12000000 | spent=8900000 | pending_approvals=2 | status=On Track\nECE | allocated=8600000 | spent=7800000 | pending_approvals=1 | status=Warning\nCentral Facilities | allocated=6400000 | spent=6400000 | pending_approvals=3 | status=Critical\nTransactions[]:\nTX-1901 | dept=Computer Science | amount=420000 | category=Lab | duplicate_flag=No\nTX-1936 | dept=ECE | amount=96000 | category=Consumables | duplicate_flag=No\nTX-1982 | dept=Central Facilities | amount=185000 | category=Maintenance | duplicate_flag=Yes\nAction: Analyze Burn Rate\nRequired Outputs: burn analysis, variance table, and runway estimate",
+      "status": "SUCCESS",
+      "result": "Analyze Burn Rate executed successfully for finance-governance/finance-budget",
+      "created_at": "2026-03-24T03:15:31.539357+00:00"
+    }
+  ],
+  "communications": [],
+  "created_at": "2026-03-24T03:15:31.539299+00:00"
+}

@@ -288,28 +288,3 @@ Include submission state, pending documents, expected decision window, and escal
             },
             {"status": "tracking_completed", "applications": tracker},
         ]
-
-    async def execute(self, state: AgentState) -> List[Any]:
-        context = self._parse_context(state.context)
-        try:
-            if state.goal == "Match Now":
-                return await self._match_now(state, context)
-            if state.goal == "Update Database":
-                return await self._update_database(state)
-            if state.goal == "Generate Letters":
-                return await self._generate_letters(state, context)
-            if state.goal == "Track Applications":
-                return await self._track_applications(state)
-        except Exception as exc:
-            logger.exception("Scholarship matcher execution failed for goal=%s", state.goal)
-            state.reflection = f"Execution failed for '{state.goal}': {exc}"
-            return [{"status": "failed", "goal": state.goal, "error": str(exc)}]
-
-        state.reflection = f"No execution branch found for '{state.goal}'."
-        return [{"status": "unsupported_action", "goal": state.goal}]
-
-    async def reflect(self, state: AgentState) -> str:
-        if state.reflection:
-            return state.reflection
-        return await super().reflect(state)
-

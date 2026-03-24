@@ -37,8 +37,6 @@ const DEFAULT_PLATFORM_CORE = [
   { title: "Active Directory", href: "/admin/users", icon: "users", color: "text-slate-300" },
   { title: "Administrator", href: "/settings", icon: "settings", color: "text-slate-300" },
   { title: "Audit Logs", href: "/admin/audit", icon: "activity", color: "text-slate-300" },
-  { title: "Security Core", href: "/ai/policies", icon: "shield", color: "text-slate-300" },
-  { title: "Orchestrator God Mode", href: "/admin/orchestrator", icon: "target", color: "text-amber-400" },
 ];
 
 const DOMAIN_GROUP = { group: "Platform Domains", items: [

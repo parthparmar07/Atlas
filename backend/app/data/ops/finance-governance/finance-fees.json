@@ -1,0 +1,39 @@
+{
+  "records": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Send Reminders",
+      "context": "[SUCCESS] Fee Term: Semester 6\nProgramme Scope: All Programmes\nOverdue Segment: 7-30 days\nFees[]:\nArjun Rao | program=CSE S6 | amount_due=42500 | due_date=2026-03-25 | status=Paid | channel=WhatsApp\nRitika Das | program=ECE S4 | amount_due=38000 | due_date=2026-03-22 | status=Reminder Sent | channel=Email\nSanjay Kumar | program=ME S2 | amount_due=46500 | due_date=2026-03-18 | status=Escalated | channel=SMS\nAction: Send Reminders\nRequired Outputs: reminder queue with channel strategy and urgency",
+      "status": "SUCCESS",
+      "result": "Send Reminders executed successfully for finance-governance/finance-fees",
+      "created_at": "2026-03-24T03:17:11.749689+00:00"
+    },
+    {
+      "id": 2,
+      "action": "Collect Dues",
+      "context": "[SUCCESS] Fee Term: Semester 6\nProgramme Scope: All Programmes\nOverdue Segment: 7-30 days\nFees[]:\nArjun Rao | program=CSE S6 | amount_due=42500 | due_date=2026-03-25 | status=Paid | channel=WhatsApp\nRitika Das | program=ECE S4 | amount_due=38000 | due_date=2026-03-22 | status=Reminder Sent | channel=Email\nSanjay Kumar | program=ME S2 | amount_due=46500 | due_date=2026-03-18 | status=Escalated | channel=SMS\nAction: Collect Dues\nRequired Outputs: dues summary by status, channel, and aging bucket",
+      "status": "SUCCESS",
+      "result": "Collect Dues executed successfully for finance-governance/finance-fees",
+      "created_at": "2026-03-24T03:52:37.244257+00:00"
+    },
+    {
+      "id": 3,
+      "action": "Send Reminders",
+      "context": "[SUCCESS] Fee Term: Semester 6\nProgramme Scope: All Programmes\nOverdue Segment: 7-30 days\nFees[]:\nArjun Rao | program=CSE S6 | amount_due=42500 | due_date=2026-03-25 | status=Paid | channel=WhatsApp\nRitika Das | program=ECE S4 | amount_due=38000 | due_date=2026-03-22 | status=Reminder Sent | channel=Email\nSanjay Kumar | program=ME S2 | amount_due=46500 | due_date=2026-03-18 | status=Escalated | channel=SMS\nAction: Send Reminders\nRequired Outputs: reminder queue with channel strategy and urgency",
+      "status": "SUCCESS",
+      "result": "Send Reminders executed successfully for finance-governance/finance-fees",
+      "created_at": "2026-03-24T03:52:44.344646+00:00"
+    },
+    {
+      "id": 4,
+      "action": "Defaulter Report",
+      "context": "[SUCCESS] Fee Term: Semester 6\nProgramme Scope: All Programmes\nOverdue Segment: 7-30 days\nFees[]:\nArjun Rao | program=CSE S6 | amount_due=42500 | due_date=2026-03-25 | status=Paid | channel=WhatsApp\nRitika Das | program=ECE S4 | amount_due=38000 | due_date=2026-03-22 | status=Reminder Sent | channel=Email\nSanjay Kumar | program=ME S2 | amount_due=46500 | due_date=2026-03-18 | status=Escalated | channel=SMS\nAction: Defaulter Report\nRequired Outputs: defaulter ranking with risk score and owner",
+      "status": "SUCCESS",
+      "result": "Defaulter Report executed successfully for finance-governance/finance-fees",
+      "created_at": "2026-03-24T03:52:56.596757+00:00"
+    }
+  ],
+  "communications": [],
+  "created_at": "2026-03-24T03:17:11.749624+00:00"
+}

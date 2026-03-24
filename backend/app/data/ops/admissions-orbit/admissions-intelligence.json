@@ -13,7 +13,16 @@
       "updated_at": "2026-03-21T10:00:13.961259+00:00"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "id": 1,
+      "action": "Qualify Leads",
+      "context": "[SUCCESS] Score suitability (0-100) based on academics, fit, and intent",
+      "status": "SUCCESS",
+      "result": "Qualify Leads executed successfully for admissions-orbit/admissions-intelligence",
+      "created_at": "2026-03-21T20:50:55.840004+00:00"
+    }
+  ],
   "communications": [],
   "created_at": "2026-03-21T10:00:13.961220+00:00"
 }
