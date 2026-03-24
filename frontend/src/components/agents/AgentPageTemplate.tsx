@@ -401,7 +401,6 @@ function ResultDrawer({ result, onClose }: DrawerProps) {
                   );
                 })}
               </div>
-            )}
             <div className="mt-6 p-4 rounded-xl border border-slate-200/60 bg-white/50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                <span>Pipeline: 100% Verified</span>
                <span>Certification: OK</span>
